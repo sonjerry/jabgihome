@@ -17,7 +17,11 @@ const __dirname = path.dirname(__filename)
 const app = express()
 
 /* ───────────────────── CORS 설정 ───────────────────── */
-const ALLOW_ORIGINS = (process.env.ALLOW_ORIGINS || '').split(',').map(s => s.trim())
+const ALLOW_ORIGINS = (process.env.ALLOW_ORIGINS || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean)
+
 app.use((req, res, next) => {
   const origin = req.headers.origin
   if (origin && ALLOW_ORIGINS.includes(origin)) {
@@ -44,18 +48,10 @@ if (!ADMIN_HASH) {
   process.exit(1)
 }
 
-/* ───────────────────── 이하 기존 로직 그대로 ───────────────────── */
-// ... (블로그/댓글/업로드 API 그대로 유지)
-
-// 마지막 서버 시작 부분 수정
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`API on http://0.0.0.0:${PORT}`)
-})
-
 /* ───────────────────── 경로/디렉터리 ───────────────────── */
 const DATA_DIR = path.join(__dirname, 'data')
 const POSTS_DIR = path.join(DATA_DIR, 'posts')
-const COMMENTS_DIR = path.join(DATA_DIR, 'comments') // ← 추가
+const COMMENTS_DIR = path.join(DATA_DIR, 'comments')
 const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads')
 
 for (const d of [DATA_DIR, POSTS_DIR, COMMENTS_DIR, UPLOADS_DIR]) {
@@ -95,10 +91,8 @@ function requireAdmin(req, res, next) {
   }
 }
 
-/* ─────────────── 디버그/상태 라우트 (문제 파악용) ─────────────── */
-app.get('/__whoami', (req, res) => {
-  res.json({ pid: process.pid, file: __filename, port: PORT })
-})
+/* ─────────────── 헬스체크 ─────────────── */
+app.get('/api/health', (req, res) => res.json({ ok: true }))
 
 /* ───────────────────── 인증 API ───────────────────── */
 // 현재 로그인 상태
@@ -122,10 +116,11 @@ app.post('/api/auth/login', async (req, res) => {
     if (!ok) return res.status(401).json({ ok: false })
 
     const token = signAdmin()
+    const isProd = process.env.NODE_ENV === 'production'
     res.cookie('token', token, {
       httpOnly: true,
-      sameSite: 'lax',  // 5173↔4000 환경에서 쿠키 전송 가능
-      secure: false,    // http 로컬
+      sameSite: isProd ? 'none' : 'lax',
+      secure: isProd, // HTTPS에서만
       maxAge: 1000 * 60 * 60 * 2,
     })
     res.json({ ok: true })
@@ -137,12 +132,12 @@ app.post('/api/auth/login', async (req, res) => {
 
 // 로그아웃
 app.post('/api/auth/logout', (req, res) => {
-  res.clearCookie('token', { httpOnly: true, sameSite: 'lax', secure: false })
+  const isProd = process.env.NODE_ENV === 'production'
+  res.clearCookie('token', { httpOnly: true, sameSite: isProd ? 'none' : 'lax', secure: isProd })
   res.json({ ok: true })
 })
 
 /* ───────────────────── 업로드 API ───────────────────── */
-// 관리자만 업로드 가능(원본 파일명 비노출: 무작위 이름으로 저장)
 app.post('/api/upload', requireAdmin, upload.single('file'), (req, res) => {
   const f = req.file
   if (!f) return res.status(400).json({ error: 'no file' })
@@ -151,7 +146,6 @@ app.post('/api/upload', requireAdmin, upload.single('file'), (req, res) => {
 })
 
 /* ───────────────────── 블로그 글 API ───────────────────── */
-// 목록(공개)
 app.get('/api/posts', async (req, res) => {
   const files = await fsp.readdir(POSTS_DIR)
   const posts = []
@@ -166,7 +160,6 @@ app.get('/api/posts', async (req, res) => {
   res.json(posts)
 })
 
-// 상세(공개)
 app.get('/api/posts/:id', async (req, res) => {
   const fp = path.join(POSTS_DIR, `${req.params.id}.json`)
   if (!fs.existsSync(fp)) return res.status(404).json({ error: 'not found' })
@@ -174,7 +167,6 @@ app.get('/api/posts/:id', async (req, res) => {
   res.json(JSON.parse(raw))
 })
 
-// 생성/수정/삭제(관리자만)
 app.post('/api/posts', requireAdmin, async (req, res) => {
   const post = req.body
   if (!post || !post.id) return res.status(400).json({ error: 'invalid post' })
@@ -197,8 +189,7 @@ app.delete('/api/posts/:id', requireAdmin, async (req, res) => {
   res.json({ ok: true })
 })
 
-/* ───────────────────── 댓글 API (추가) ───────────────────── */
-// 파일 경로 유틸
+/* ───────────────────── 댓글 API ───────────────────── */
 const commentPath = (cid) => path.join(COMMENTS_DIR, `${cid}.json`)
 
 async function readComment(cid) {
@@ -207,18 +198,15 @@ async function readComment(cid) {
   const raw = await fsp.readFile(fp, 'utf-8')
   return JSON.parse(raw)
 }
-
 async function writeComment(obj) {
   const fp = commentPath(obj.id)
   await fsp.writeFile(fp, JSON.stringify(obj, null, 2), 'utf-8')
 }
-
 async function deleteCommentFile(cid) {
   const fp = commentPath(cid)
   if (fs.existsSync(fp)) await fsp.unlink(fp)
 }
 
-// 특정 포스트의 댓글 목록
 app.get('/api/posts/:postId/comments', async (req, res) => {
   try {
     const postId = req.params.postId
@@ -229,13 +217,15 @@ app.get('/api/posts/:postId/comments', async (req, res) => {
       try {
         const raw = await fsp.readFile(path.join(COMMENTS_DIR, file), 'utf-8')
         const obj = JSON.parse(raw)
-        if (obj.postId === postId) list.push({
-          id: obj.id,
-          postId: obj.postId,
-          nickname: obj.nickname,
-          content: obj.content,
-          createdAt: obj.createdAt,
-        })
+        if (obj.postId === postId) {
+          list.push({
+            id: obj.id,
+            postId: obj.postId,
+            nickname: obj.nickname,
+            content: obj.content,
+            createdAt: obj.createdAt,
+          })
+        }
       } catch {}
     }
     list.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
@@ -246,7 +236,6 @@ app.get('/api/posts/:postId/comments', async (req, res) => {
   }
 })
 
-// 댓글 생성
 app.post('/api/posts/:postId/comments', async (req, res) => {
   try {
     const postId = req.params.postId
@@ -254,7 +243,6 @@ app.post('/api/posts/:postId/comments', async (req, res) => {
     if (!nickname || !password || !content) {
       return res.status(400).json({ error: 'invalid body' })
     }
-    // 포스트 존재 여부 간단 체크(파일 기반)
     const postFile = path.join(POSTS_DIR, `${postId}.json`)
     if (!fs.existsSync(postFile)) return res.status(404).json({ error: 'post not found' })
 
@@ -270,7 +258,6 @@ app.post('/api/posts/:postId/comments', async (req, res) => {
   }
 })
 
-// 비밀번호 검증
 app.post('/api/comments/:cid/verify', async (req, res) => {
   try {
     const { password } = req.body || {}
@@ -285,7 +272,6 @@ app.post('/api/comments/:cid/verify', async (req, res) => {
   }
 })
 
-// 댓글 수정 (비번 필요)
 app.put('/api/comments/:cid', async (req, res) => {
   try {
     const cid = req.params.cid
@@ -305,11 +291,9 @@ app.put('/api/comments/:cid', async (req, res) => {
   }
 })
 
-// 댓글 삭제 (비번 필요)
 app.delete('/api/comments/:cid', async (req, res) => {
   try {
     const cid = req.params.cid
-    // fetch DELETE + JSON body 허용
     const { password } = req.body || {}
     const obj = await readComment(cid)
     if (!obj) return res.status(404).json({ ok: false })
@@ -323,7 +307,7 @@ app.delete('/api/comments/:cid', async (req, res) => {
   }
 })
 
-/* ───────────────────── 서버 시작 ───────────────────── */
-app.listen(PORT, '127.0.0.1', () => {
-  console.log(`API on http://127.0.0.1:${PORT}`)
+/* ───────────────────── 서버 시작 (딱 한 번, 맨 마지막) ───────────────────── */
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`API on http://0.0.0.0:${PORT}`)
 })
