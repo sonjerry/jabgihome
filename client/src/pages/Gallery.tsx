@@ -4,7 +4,7 @@ const Gallery: React.FC = () => {
   // gallery 폴더의 이미지 전부 가져오기
   const images = import.meta.glob("../assets/gallery/*.{jpg,jpeg,png}", {
     eager: true,
-    import: "default",
+     query: '?url', import: 'default',
   }) as Record<string, string>;
 
   // 이미지 URL 배열
