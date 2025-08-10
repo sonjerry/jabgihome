@@ -46,25 +46,6 @@ export default function Home() {
             </h1>
           </header>
 
-          {/* 스택 영역: 남은 높이를 100% 사용 (min-h-0 중요) */}
-          <div className="row-start-2 row-end-3 min-h-0 mt-[-7rem]">
-             <ScrollStack
-              onStackComplete={() => {
-                // 스택 끝 감지 시 페이지 아래로 부드럽게 스크롤
-                window.scrollTo({
-                  top: window.scrollY + window.innerHeight * 0.8, // 80% 정도 추가 스크롤
-                  behavior: 'smooth',
-                })
-              }}
-             >
-              {/* 각 카드가 '남은 높이 100%'로 꽉 차도록 ScrollStackItem이 h-full을 갖습니다 */}
-              <ScrollStackItem itemClassName="bg-white/5 border border-white/10 rounded-[40px]" />
-              <ScrollStackItem itemClassName="bg-white/5 border border-white/10 rounded-[40px]" />
-              <ScrollStackItem itemClassName="bg-white/5 border border-white/10 rounded-[40px]" />
-              <ScrollStackItem itemClassName="bg-white/5 border border-white/10 rounded-[40px]" />
-              <ScrollStackItem itemClassName="bg-white/5 border border-white/10 rounded-[40px]" />
-            </ScrollStack>
-          </div>
         </div>
         {/* 모달 열리면 스티커 숨김(기존 동작) */}
         {!showVideo && <AutoStickers />}

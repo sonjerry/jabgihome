@@ -1,327 +1,246 @@
-// client/src/components/ScrollStack.tsx
-import React, { useLayoutEffect, useRef, useCallback, useEffect } from 'react'
-import Lenis from 'lenis'
-
-type TransformState = {
-  translateY: number
-  scale: number
-  rotation: number
-  blur: number
-}
+import React, { useLayoutEffect, useRef, useCallback } from 'react'
 
 type ScrollStackItemProps = {
-  children: React.ReactNode
+  children?: React.ReactNode
   itemClassName?: string
-  /** 카드 높이 커스터마이징하려면 Tailwind로 넘기세요 (예: h-96). 기본은 h-80. */
 }
-
 export const ScrollStackItem: React.FC<ScrollStackItemProps> = ({
   children,
   itemClassName = '',
 }) => (
   <div
     className={[
-      'scroll-stack-card relative',
-      'h-[35rem]',   // 세로 약 120px (글씨 높이와 비슷)
-      'w-[100%]',      // 가로 폭 넓게 (전체의 90%)
-      'my-8',
-      'p-8',
-      'rounded-[24px]',
+      'scroll-stack-card',
+      'absolute left-0 right-0 top-0',
+      'rounded-[32px] p-6 md:p-8',
       'shadow-[0_0_30px_rgba(0,0,0,0.1)]',
-      'box-border origin-top will-change-transform',
+      'box-border will-change-transform',
       itemClassName,
     ].join(' ')}
-    style={{
-      backfaceVisibility: 'hidden',
-      transformStyle: 'preserve-3d',
-    }}
+    style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d' }}
   >
     {children}
   </div>
 )
 
 type ScrollStackProps = {
-  children: React.ReactNode
-  className?: string
-  /** 카드 사이 간격(px, margin-bottom) */
-  itemDistance?: number
-  /** 카드마다 추가되는 축소 스케일량(작을수록 덜 줄어듦) */
-  itemScale?: number
-  /** 스택 위로 포개질 때 카드 간 간격(px) */
-  itemStackDistance?: number
-  /** 스택이 고정(pinned)되는 기준 위치(px 또는 '%') */
-  stackPosition?: number | string
-  /** 스케일 변화가 끝나는 기준 위치(px 또는 '%') */
-  scaleEndPosition?: number | string
-  /** 기본 스케일(스택 진입 전) */
+  /** 타이틀 바로 아래 sticky 위치(px). Home에서 타이틀 하단값을 넘깁니다. */
+  pinTopPx: number
+  /** 카드 한 장 높이(px) = 타이틀 제외 화면 높이 */
+  viewportHeight: number
+  /** 포개진 뒤 카드 간 최종 간격(px) */
+  stackGap?: number
+  /** 카드 하나가 포개되는 데 필요한 ‘가상’ 스크롤 길이(px) */
+  perCardScroll?: number
+  /** 스케일 감도 */
   baseScale?: number
-  /** 카드 회전(각도, 카드 index * rotationAmount * progress) */
+  itemScale?: number
+  /** 살짝 회전(원치 않으면 0) */
   rotationAmount?: number
-  /** 스택 뒤쪽 카드 블러 강도(px 단위/단계) */
-  blurAmount?: number
-  /** 마지막 카드가 뷰포트 내 핀 상태에 들어오면 1회 호출 */
+  className?: string
+  children: React.ReactNode
+  /** 모든 카드가 포개짐 완료 시 한 번 호출 */
   onStackComplete?: () => void
 }
 
+function clamp01(x: number) { return x < 0 ? 0 : x > 1 ? 1 : x }
+function lerp(a: number, b: number, t: number) { return a + (b - a) * t }
+
 const ScrollStack: React.FC<ScrollStackProps> = ({
-  children,
-  className = '',
-  itemDistance = 100,
-  itemScale = 0.03,
-  itemStackDistance = 30,
-  stackPosition = '20%',
-  scaleEndPosition = '10%',
-  baseScale = 0.85,
+  pinTopPx,
+  viewportHeight,
+  stackGap = 32,
+  perCardScroll,
+  baseScale = 0.92,
+  itemScale = 0.035,
   rotationAmount = 0,
-  blurAmount = 0,
+  className = '',
+  children,
   onStackComplete,
 }) => {
-  const scrollerRef = useRef<HTMLDivElement | null>(null)
-  const stackCompletedRef = useRef(false)
-  const animationFrameRef = useRef<number | null>(null)
-  const lenisRef = useRef<InstanceType<typeof Lenis> | null>(null)
+  const sectionRef = useRef<HTMLDivElement | null>(null)
+  const stageRef = useRef<HTMLDivElement | null>(null)
   const cardsRef = useRef<HTMLDivElement[]>([])
-  const lastTransformsRef = useRef<Map<number, TransformState>>(new Map())
-  const isUpdatingRef = useRef(false)
 
-  const calculateProgress = useCallback((scrollTop: number, start: number, end: number) => {
-    if (scrollTop < start) return 0
-    if (scrollTop > end) return 1
-    return (scrollTop - start) / (end - start)
-  }, [])
+  // 잠금/가상 스크롤 상태
+  const lockedRef = useRef(false)
+  const lockYRef = useRef(0)
+  const vLocalRef = useRef(0)
+  const minLocalRef = useRef(0)
+  const touchStartYRef = useRef(0)
 
-  const parsePercentage = useCallback((value: number | string, containerHeight: number) => {
-    if (typeof value === 'string' && value.includes('%')) {
-      const n = parseFloat(value)
-      return (n / 100) * containerHeight
+  // 완료 콜백 1회 호출 보장
+  const firedRef = useRef(false)
+  const fireCompleteOnce = useCallback(() => {
+    if (!firedRef.current) {
+      firedRef.current = true
+      onStackComplete?.()
     }
-    return Number(value)
-  }, [])
+  }, [onStackComplete])
 
-  const updateCardTransforms = useCallback(() => {
-    const scroller = scrollerRef.current
-    if (!scroller || !cardsRef.current.length || isUpdatingRef.current) return
+  const count = React.Children.count(children)
+  const step = perCardScroll ?? Math.max(0.6 * viewportHeight, 360)
+  const lastAssemble = (count - 1) * step
+  const tail = Math.max(0.4 * viewportHeight, 320) // sticky 해제 후 자연스러운 스크롤 여유
+  const sectionHeight = count * step + viewportHeight + tail
 
-    isUpdatingRef.current = true
-
-    const scrollTop = scroller.scrollTop
-    const containerHeight = scroller.clientHeight
-    const stackPositionPx = parsePercentage(stackPosition, containerHeight)
-    const scaleEndPositionPx = parsePercentage(scaleEndPosition, containerHeight)
-    const endElement = scroller.querySelector('.scroll-stack-end') as HTMLElement | null
-    const endElementTop = endElement ? endElement.offsetTop : 0
-
+  // 카드 변환 적용 (local: 섹션 내 진행도 px)
+  const applyAt = useCallback((local: number) => {
+    const L = Math.max(minLocalRef.current, Math.max(0, Math.min(local, lastAssemble)))
     cardsRef.current.forEach((card, i) => {
-      const cardTop = card.offsetTop
-      const triggerStart = cardTop - stackPositionPx - itemStackDistance * i
-      const triggerEnd = cardTop - scaleEndPositionPx
-      const pinStart = cardTop - stackPositionPx - itemStackDistance * i
-      const pinEnd = endElementTop - containerHeight / 2
+      const start = i * step
+      const end = (i + 1) * step
+      const t = clamp01((L - start) / (end - start))
 
-      const scaleProgress = calculateProgress(scrollTop, triggerStart, triggerEnd)
-      const targetScale = baseScale + i * itemScale
-      const scale = 1 - scaleProgress * (1 - targetScale)
-      const rotation = rotationAmount ? i * rotationAmount * scaleProgress : 0
+      const startY = i === 0 ? 0 : viewportHeight + i * 60
+      const endY = i * stackGap
+      const y = Math.round(lerp(startY, endY, t))
 
-      // Blur: 현재 가장 위 카드(topCardIndex)보다 뒤에 있는 카드에만 블러
-      let blur = 0
-      if (blurAmount) {
-        let topCardIndex = 0
-        for (let j = 0; j < cardsRef.current.length; j++) {
-          const jCard = cardsRef.current[j]
-          const jCardTop = jCard.offsetTop
-          const jTriggerStart = jCardTop - stackPositionPx - itemStackDistance * j
-          if (scrollTop >= jTriggerStart) {
-            topCardIndex = j
-          }
-        }
-        if (i < topCardIndex) {
-          const depthInStack = topCardIndex - i
-          blur = Math.max(0, depthInStack * blurAmount)
-        }
-      }
+      const s0 = 1
+      const s1 = baseScale + i * itemScale
+      const s = Math.round(lerp(s0, s1, t) * 1000) / 1000
 
-      let translateY = 0
-      const isPinned = scrollTop >= pinStart && scrollTop <= pinEnd
+      const r = Math.round((rotationAmount ? rotationAmount * i * t : 0) * 100) / 100
 
-      if (isPinned) {
-        translateY = scrollTop - cardTop + stackPositionPx + itemStackDistance * i
-      } else if (scrollTop > pinEnd) {
-        translateY = pinEnd - cardTop + stackPositionPx + itemStackDistance * i
-      }
-
-      const newTransform: TransformState = {
-        translateY: Math.round(translateY * 100) / 100,
-        scale: Math.round(scale * 1000) / 1000,
-        rotation: Math.round(rotation * 100) / 100,
-        blur: Math.round(blur * 100) / 100,
-      }
-
-      const lastTransform = lastTransformsRef.current.get(i)
-      const hasChanged =
-        !lastTransform ||
-        Math.abs(lastTransform.translateY - newTransform.translateY) > 0.1 ||
-        Math.abs(lastTransform.scale - newTransform.scale) > 0.001 ||
-        Math.abs(lastTransform.rotation - newTransform.rotation) > 0.1 ||
-        Math.abs(lastTransform.blur - newTransform.blur) > 0.1
-
-      if (hasChanged) {
-        const transform = `translate3d(0, ${newTransform.translateY}px, 0) scale(${newTransform.scale}) rotate(${newTransform.rotation}deg)`
-        const filter = newTransform.blur > 0 ? `blur(${newTransform.blur}px)` : ''
-        card.style.transform = transform
-        card.style.filter = filter
-        lastTransformsRef.current.set(i, newTransform)
-      }
-
-      // 마지막 카드가 뷰포트 내에 핀 상태로 들어오면 onStackComplete 1회 호출
-      if (i === cardsRef.current.length - 1) {
-        const isInView = scrollTop >= pinStart && scrollTop <= pinEnd
-        if (isInView && !stackCompletedRef.current) {
-          stackCompletedRef.current = true
-          onStackComplete?.()
-        } else if (!isInView && stackCompletedRef.current) {
-          stackCompletedRef.current = false
-        }
-      }
+      card.style.transform = `translate3d(0, ${y}px, 0) scale(${s}) rotate(${r}deg)`
     })
+  }, [baseScale, itemScale, rotationAmount, stackGap, step, viewportHeight, lastAssemble])
 
-    isUpdatingRef.current = false
-  }, [
-    baseScale,
-    blurAmount,
-    calculateProgress,
-    itemScale,
-    itemStackDistance,
-    onStackComplete,
-    parsePercentage,
-    rotationAmount,
-    scaleEndPosition,
-    stackPosition,
-  ])
+  // 잠금 모드에서 휠/터치로 가상 진행도만 업데이트
+  const updateVirtual = useCallback((delta: number) => {
+    vLocalRef.current = Math.max(0, Math.min(vLocalRef.current + delta, lastAssemble))
+    applyAt(vLocalRef.current)
 
-  const handleScroll = useCallback(() => {
-    // Lenis의 scroll 이벤트에서 호출됨
-    updateCardTransforms()
-  }, [updateCardTransforms])
-
-  const setupLenis = useCallback(() => {
-    const scroller = scrollerRef.current
-    if (!scroller) return null
-
-    const content = scroller.querySelector('.scroll-stack-inner') as HTMLElement | null
-    if (!content) return null
-
-    const lenis = new Lenis({
-      wrapper: scroller,
-      content,
-      duration: 1.2,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-      smoothTouch: true,
-      wheelMultiplier: 1,
-      touchMultiplier: 2,
-      syncTouch: true,
-    } as any) // lenis 타입 선언이 프로젝트 버전에 따라 달라서 안전하게 any 캐스팅
-
-    lenis.on('scroll', handleScroll)
-
-    const raf = (time: number) => {
-      lenis.raf(time)
-      animationFrameRef.current = requestAnimationFrame(raf)
+    // 조립 완료 → 잠금 해제 + 콜백 1회 호출
+    if (vLocalRef.current >= lastAssemble && delta > 0) {
+      fireCompleteOnce()
+      lockedRef.current = false
+      minLocalRef.current = lastAssemble
+      window.scrollTo({ top: lockYRef.current + 1 })
+      removeLockListeners()
     }
-    animationFrameRef.current = requestAnimationFrame(raf)
+  }, [applyAt, lastAssemble, fireCompleteOnce])
 
-    lenisRef.current = lenis
-    return lenis
-  }, [handleScroll])
+  const onWheelLock = useCallback((e: WheelEvent) => {
+    e.preventDefault()
+    updateVirtual(e.deltaY)
+  }, [updateVirtual])
+
+  const onTouchStartLock = useCallback((e: TouchEvent) => {
+    touchStartYRef.current = e.touches[0]?.clientY ?? 0
+  }, [])
+
+  const onTouchMoveLock = useCallback((e: TouchEvent) => {
+    const y = e.touches[0]?.clientY ?? 0
+    const dy = (touchStartYRef.current || 0) - y
+    if (Math.abs(dy) > 0) {
+      e.preventDefault()
+      updateVirtual(dy)
+    }
+  }, [updateVirtual])
+
+  const addLockListeners = useCallback(() => {
+    window.addEventListener('wheel', onWheelLock, { passive: false } as any)
+    window.addEventListener('touchstart', onTouchStartLock, { passive: true } as any)
+    window.addEventListener('touchmove', onTouchMoveLock, { passive: false } as any)
+  }, [onWheelLock, onTouchStartLock, onTouchMoveLock])
+
+  const removeLockListeners = useCallback(() => {
+    window.removeEventListener('wheel', onWheelLock as any)
+    window.removeEventListener('touchstart', onTouchStartLock as any)
+    window.removeEventListener('touchmove', onTouchMoveLock as any)
+  }, [onWheelLock, onTouchStartLock, onTouchMoveLock])
+
+  const onScroll = useCallback(() => {
+    const section = sectionRef.current
+    const stage = stageRef.current
+    if (!section || !stage) return
+
+    // 잠금 상태면 window 스크롤을 고정 유지 + 가상 진행만 적용
+    if (lockedRef.current) {
+      window.scrollTo({ top: lockYRef.current })
+      applyAt(vLocalRef.current)
+      return
+    }
+
+    // 섹션 내 실제 진행도(local) 계산
+    const sectionTop = section.getBoundingClientRect().top + window.scrollY
+    const local = window.scrollY - sectionTop
+
+    // sticky 진입 여부: stage가 pinTopPx에 달라붙는 순간 잠금 시작
+    const rect = stage.getBoundingClientRect()
+    const isPinned = Math.abs(rect.top - pinTopPx) <= 0.5
+
+    // 아직 조립 완료 전이라면 잠금 모드 진입
+    if (isPinned && minLocalRef.current < lastAssemble) {
+      lockedRef.current = true
+      lockYRef.current = window.scrollY
+      vLocalRef.current = Math.max(minLocalRef.current, Math.max(0, Math.min(local, lastAssemble)))
+      applyAt(vLocalRef.current)
+      addLockListeners()
+      return
+    }
+
+    // 잠금이 아니면 실제 스크롤에 맞춰 적용(단, 조립 완료 후 되돌림 방지)
+    applyAt(local)
+
+    // 잠금 모드가 아니더라도 실제 스크롤로 마지막 지점에 도달했으면 콜백 1회 호출
+    if (local >= lastAssemble) {
+      minLocalRef.current = lastAssemble
+      fireCompleteOnce()
+    }
+  }, [applyAt, pinTopPx, addLockListeners, lastAssemble, fireCompleteOnce])
 
   useLayoutEffect(() => {
-    const scroller = scrollerRef.current
-    if (!scroller) return
+    const stage = stageRef.current
+    if (!stage) return
 
-    // 카드 노드 수집 + 초기 스타일
-    const cards = Array.from(
-      scroller.querySelectorAll<HTMLDivElement>('.scroll-stack-card')
-    )
-    cardsRef.current = cards
-    const transformsCache = lastTransformsRef.current
-
-    cards.forEach((card, i) => {
-      if (i < cards.length - 1) {
-        card.style.marginBottom = `${itemDistance}px`
-      }
-      card.style.willChange = 'transform, filter'
-      card.style.transformOrigin = 'top center'
-      card.style.transform = 'translateZ(0)'
-      card.style.perspective = '1000px'
+    // 카드 수집 + 초기 스타일
+    cardsRef.current = Array.from(stage.querySelectorAll<HTMLDivElement>('.scroll-stack-card'))
+    cardsRef.current.forEach((el, i) => {
+      el.style.position = 'absolute'
+      el.style.top = '0'
+      el.style.left = '0'
+      el.style.right = '0'
+      el.style.height = `${viewportHeight}px`
+      el.style.zIndex = String(1000 + i)
+      el.style.transformOrigin = 'top center'
+      el.style.transform = 'translate3d(0,0,0)'
     })
 
-    const lenis = setupLenis()
-    // 첫 프레임 업데이트
-    updateCardTransforms()
+    const onResize = () => onScroll()
+    // 초기 프레임
+    firedRef.current = false
+    applyAt(0)
+    onScroll()
 
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onResize, { passive: true } as any)
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-        animationFrameRef.current = null
-      }
-      if (lenisRef.current) {
-        // 이벤트 해제 및 파괴
-        try {
-          lenisRef.current.off('scroll', handleScroll as any)
-        } catch {}
-        lenisRef.current.destroy()
-        lenisRef.current = null
-      }
-      stackCompletedRef.current = false
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onResize as any)
+      removeLockListeners()
       cardsRef.current = []
-      transformsCache.clear()
-      isUpdatingRef.current = false
     }
-  }, [
-    itemDistance,
-    itemScale,
-    itemStackDistance,
-    stackPosition,
-    scaleEndPosition,
-    baseScale,
-    rotationAmount,
-    blurAmount,
-    onStackComplete,
-    setupLenis,
-    updateCardTransforms,
-  ])
-
-  // 혹시 Lenis가 실패했을 때 기본 스크롤 이벤트로도 업데이트 (폴백)
-  useEffect(() => {
-    const scroller = scrollerRef.current
-    if (!scroller) return
-    const onScroll = () => updateCardTransforms()
-    scroller.addEventListener('scroll', onScroll, { passive: true })
-    return () => scroller.removeEventListener('scroll', onScroll)
-  }, [updateCardTransforms])
+  }, [viewportHeight, onScroll, applyAt, removeLockListeners])
 
   return (
-    <div
-      className={['relative w-full h-full overflow-y-auto overflow-x-visible', 
-        'scrollbar-none',
-        className,
-    ].join(' ').trim()}
-      ref={scrollerRef}
-      style={{
-        overscrollBehavior: 'contain',
-        WebkitOverflowScrolling: 'touch',
-        scrollBehavior: 'smooth',
-        transform: 'translateZ(0)',
-        willChange: 'scroll-position',
-      }}
+    <section
+      ref={sectionRef}
+      className={['relative w-full', className].join(' ')}
+      style={{ height: `${sectionHeight}px` }}
     >
-      <div className="scroll-stack-inner pt-[20vh] px-20 pb-[50rem] min-h-screen">
-        {children}
-        {/* Spacer so the last pin can release cleanly */}
-        <div className="scroll-stack-end w-full h-px" />
+      {/* 타이틀 아래에 고정되는 sticky 무대 */}
+      <div
+        ref={stageRef}
+        className="sticky overflow-hidden rounded-[32px]"
+        style={{ top: `${pinTopPx}px`, height: `${viewportHeight}px` }}
+      >
+        <div className="relative w-full h-full">
+          {children}
+        </div>
       </div>
-    </div>
+    </section>
   )
 }
 
