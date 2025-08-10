@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@font-face{font-family:'ROKAF Sans';src:url('/fonts/ROKAF Sans Medium.ttf') format('truetype');font-weight:500;font-style:normal;font-display:swap}
+html,body,#root{height:100%}body{@apply bg-[radial-gradient(ellipse_at_top_left,theme(colors.sky.400),_#120e0b)] text-cream font-rokaf}
+.glass{@apply bg-white/10 border border-white/20 backdrop-blur-xl shadow-glass}
+.break-inside-avoid { break-inside: avoid; }
+/* 스크롤바 숨기기 유틸 */
+.scrollbar-none {
+  -ms-overflow-style: none;    /* IE/Edge */
+  scrollbar-width: none;       /* Firefox */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;               /* Chrome/Safari/Edge */
+}
