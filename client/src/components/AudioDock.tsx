@@ -7,7 +7,7 @@ type Track = { title: string; src: string }
 // ✅ Vite 글롭으로 src/media 안 mp3 전부 가져오기
 const MP3_MODULES = import.meta.glob('../assets/media/*.mp3', {
   eager: true,
-  as: 'url',
+  query: '?url', import: 'default'
 }) as Record<string, string>
 
 // 파일명 → 제목 변환
