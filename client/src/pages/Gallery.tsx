@@ -2,7 +2,7 @@ import React from "react";
 
 const Gallery: React.FC = () => {
   // gallery 폴더의 이미지 전부 가져오기
-  const images = import.meta.glob("/public/gallery/*.{jpg,jpeg,png}", {
+  const images = import.meta.glob("../assets/gallery/*.{jpg,jpeg,png}", {
     eager: true,
     import: "default",
   }) as Record<string, string>;
