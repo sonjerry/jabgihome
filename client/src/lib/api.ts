@@ -1,79 +1,113 @@
 // client/src/lib/api.ts
 import type { Post, Attachment } from '../types'
 
-const base = import.meta.env.VITE_API_BASE || '' // proxy to /api
-// 4000 서버로 직접 붙습니다 (프록시 미사용)
-const BASE = 'http://localhost:4000';
+/** ───────────────── 공통 설정 ─────────────────
+ * 프로덕션: VITE_API_URL 사용 (예: https://api.example.com)
+ * 개발:     프록시(/api -> http://localhost:4000) 사용
+ */
+const ENV_BASE = import.meta.env.VITE_API_URL as string | undefined
+const isProd = import.meta.env.PROD
 
-async function handle(r: Response) {
-  if (!r.ok) throw new Error(await r.text().catch(() => r.statusText));
-  return r.json();
+// prod이면 ENV_BASE 필수, dev면 ''로 두고 /api 프록시 사용
+const API_BASE = (isProd ? (ENV_BASE ?? '') : '') || ''
+
+// 모든 경로는 /api 로 시작하도록 강제 (중복 슬래시 제거 포함)
+function joinApi(path: string) {
+  const p = path.startsWith('/api') ? path : `/api${path.startsWith('/') ? path : `/${path}`}`
+  if (!API_BASE) return p // dev 프록시
+  return `${API_BASE.replace(/\/+$/,'')}${p}`
 }
 
-export async function apiGet<T>(url: string): Promise<T> {
-  const r = await fetch(BASE + url, { credentials: 'include' });
-  return handle(r);
+async function handle<T>(r: Response): Promise<T> {
+  if (!r.ok) {
+    let msg = r.statusText
+    try { msg = await r.text() } catch {}
+    throw new Error(msg || `HTTP ${r.status}`)
+  }
+  // 일부 API는 204 No Content일 수 있음
+  if (r.status === 204) return undefined as unknown as T
+  return r.json() as Promise<T>
 }
 
-export async function apiPost<T>(url: string, body?: any): Promise<T> {
-  const r = await fetch(BASE + url, {
+// 공통 옵션: 쿠키 기반 인증 사용 시 credentials: 'include'
+const withCreds: RequestInit = { credentials: 'include' }
+
+/** ─────────── 기본 메서드 ─────────── */
+export async function apiGet<T>(path: string): Promise<T> {
+  const r = await fetch(joinApi(path), { ...withCreds })
+  return handle<T>(r)
+}
+export async function apiPost<T>(path: string, body?: any): Promise<T> {
+  const r = await fetch(joinApi(path), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // ← 쿠키 전송 필수
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  return handle(r);
-}
-
-export const AuthAPI = {
-  me: () => apiGet<{ role: 'admin'|'guest' }>('/api/auth/me'),
-  login: (password: string) => apiPost<{ ok: true }>('/api/auth/login', { password }),
-  logout: () => apiPost<{ ok: true }>('/api/auth/logout'),
-};
-
-// ===== Posts (프록시 경로 유지) =====
-export async function listPosts(): Promise<Post[]> {
-  const r = await fetch(`${base}/api/posts`)
-  if(!r.ok) throw new Error('list failed')
-  return r.json()
-}
-
-export async function getPost(id:string): Promise<Post> {
-  const r = await fetch(`${base}/api/posts/${id}`)
-  if(!r.ok) throw new Error('get failed')
-  return r.json()
-}
-
-export async function savePost(p: Post): Promise<Post> {
-  const r = await fetch(`${base}/api/posts`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(p)
+    ...withCreds,
+    body: body != null ? JSON.stringify(body) : undefined,
   })
-  if(!r.ok) throw new Error('save failed')
-  return r.json()
+  return handle<T>(r)
+}
+export async function apiPut<T>(path: string, body?: any): Promise<T> {
+  const r = await fetch(joinApi(path), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    ...withCreds,
+    body: body != null ? JSON.stringify(body) : undefined,
+  })
+  return handle<T>(r)
+}
+export async function apiDelete<T>(path: string, body?: any): Promise<T> {
+  const init: RequestInit = {
+    method: 'DELETE',
+    headers: undefined,
+    ...withCreds,
+  }
+  if (body != null) {
+    init.headers = { 'Content-Type': 'application/json' }
+    init.body = JSON.stringify(body)
+  }
+  const r = await fetch(joinApi(path), init)
+  return handle<T>(r)
 }
 
-export async function deletePost(id:string): Promise<void> {
-  const r = await fetch(`${base}/api/posts/${id}`, { method:'DELETE' })
-  if(!r.ok) throw new Error('delete failed')
+/** ─────────── Auth ─────────── */
+export const AuthAPI = {
+  me:    () => apiGet<{ role: 'admin' | 'guest' }>('/auth/me'),
+  login: (password: string) => apiPost<{ ok: true }>('/auth/login', { password }),
+  logout: () => apiPost<{ ok: true }>('/auth/logout'),
 }
 
+/** ─────────── Posts ─────────── */
+export async function listPosts(): Promise<Post[]> {
+  return apiGet<Post[]>('/posts')
+}
+export async function getPost(id: string): Promise<Post> {
+  return apiGet<Post>(`/posts/${id}`)
+}
+export async function savePost(p: Post): Promise<Post> {
+  return apiPost<Post>('/posts', p)
+}
+export async function deletePost(id: string): Promise<void> {
+  await apiDelete<void>(`/posts/${id}`)
+}
 export async function uploadFile(file: File): Promise<Attachment> {
-  const fd = new FormData(); fd.append('file', file)
-  const r = await fetch(`${base}/api/upload`, { method:'POST', body: fd })
-  if(!r.ok) throw new Error('upload failed')
-  return r.json()
+  const fd = new FormData()
+  fd.append('file', file)
+  const r = await fetch(joinApi('/upload'), {
+    method: 'POST',
+    body: fd,
+    ...withCreds,
+  })
+  return handle<Attachment>(r)
 }
 
-// ===== Comments (직접 4000 포트로) =====
-// 서버 규약:
-// GET    /api/posts/:postId/comments           -> Comment[]
-// POST   /api/posts/:postId/comments           -> { id }
-// POST   /api/comments/:cid/verify             -> { ok: boolean }
-// PUT    /api/comments/:cid                    -> { ok: boolean }  (body: { content, password })
-// DELETE /api/comments/:cid                    -> { ok: boolean }  (body: { password })
-
+/** ─────────── Comments ───────────
+ * 서버 규약:
+ * GET    /api/posts/:postId/comments           -> CommentItem[]
+ * POST   /api/posts/:postId/comments           -> { id }
+ * POST   /api/comments/:cid/verify             -> { ok: boolean }
+ * PUT    /api/comments/:cid                    -> { ok: boolean }  (body: { content, password })
+ * DELETE /api/comments/:cid                    -> { ok: boolean }  (body: { password })
+ */
 export type CommentItem = {
   id: string
   postId: string
@@ -83,67 +117,35 @@ export type CommentItem = {
 }
 
 export async function listComments(postId: string): Promise<CommentItem[]> {
-  const r = await fetch(`${BASE}/api/posts/${postId}/comments`, {
-    credentials: 'include',
-  })
-  if (!r.ok) throw new Error('comments list failed')
-  return r.json()
+  return apiGet<CommentItem[]>(`/posts/${postId}/comments`)
 }
 
 export async function createComment(
   postId: string,
   body: { nickname: string; password: string; content: string }
 ): Promise<{ id: string }> {
-  const r = await fetch(`${BASE}/api/posts/${postId}/comments`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(body),
-  })
-  if (!r.ok) throw new Error('comment create failed')
-  return r.json()
+  return apiPost<{ id: string }>(`/posts/${postId}/comments`, body)
 }
 
 export async function verifyCommentPassword(
   commentId: string,
   password: string
 ): Promise<boolean> {
-  const r = await fetch(`${BASE}/api/comments/${commentId}/verify`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ password }),
-  })
-  if (!r.ok) return false
-  const data = await r.json() as { ok: boolean }
-  return data.ok
+  const data = await apiPost<{ ok: boolean }>(`/comments/${commentId}/verify`, { password })
+  return !!data.ok
 }
 
 export async function updateComment(
   commentId: string,
   body: { content: string; password: string }
 ): Promise<{ ok: boolean }> {
-  const r = await fetch(`${BASE}/api/comments/${commentId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(body),
-  })
-  if (!r.ok) throw new Error('comment update failed')
-  return r.json()
+  return apiPut<{ ok: boolean }>(`/comments/${commentId}`, body)
 }
 
 export async function deleteComment(
   commentId: string,
   password: string
 ): Promise<boolean> {
-  const r = await fetch(`${BASE}/api/comments/${commentId}`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ password }),
-  })
-  if (!r.ok) return false
-  const data = await r.json() as { ok: boolean }
-  return data.ok
+  const data = await apiDelete<{ ok: boolean }>(`/comments/${commentId}`, { password })
+  return !!data.ok
 }
