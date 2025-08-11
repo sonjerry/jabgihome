@@ -1,10 +1,11 @@
 // client/src/pages/BlogPost.tsx
 import { useEffect, useState, useMemo } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom' // ← navigate 추가
 import GlassCard from '../components/GlassCard'
 import type { Post } from '../types'
 import { getPost } from '../lib/api'
 import CommentSection from '../components/CommentSection'
+import { useAuth } from '../state/auth' // ← 관리자 확인
 
 function formatFullDate(s: string) {
   const d = new Date(s)
@@ -12,9 +13,12 @@ function formatFullDate(s: string) {
 }
 
 export default function BlogPost() {
+  const nav = useNavigate()
+  const { role } = useAuth()
   const { id } = useParams<{ id: string }>()
   const [post, setPost] = useState<Post | null>(null)
   const [loading, setLoading] = useState(true)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -26,6 +30,32 @@ export default function BlogPost() {
 
   const title = useMemo(() => post?.title ?? '', [post])
 
+  // ── 삭제 핸들러 ─────────────────────────────────────────
+  const onDelete = async () => {
+    if (!id) return
+    if (!confirm('정말 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return
+    try {
+      setDeleting(true)
+      // lib/api에 deletePost가 없다면 아래 "lib/api 추가" 참고
+      const API_BASE = import.meta.env.VITE_API_URL || ''
+      const res = await fetch(`${API_BASE}/api/posts/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      if (!res.ok) {
+        const msg = await res.text().catch(() => '')
+        throw new Error(msg || 'delete failed')
+      }
+      nav('/blog')
+    } catch (e) {
+      console.error(e)
+      alert('삭제에 실패했습니다.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+  // ─────────────────────────────────────────────────────
+
   if (loading) {
     return <div className="pt-24 mx-auto max-w-[900px] px-4 md:px-6">불러오는 중…</div>
   }
@@ -35,8 +65,8 @@ export default function BlogPost() {
 
   return (
     <div className="pt-24 mx-auto max-w-[900px] px-4 md:px-6">
-      {/* 상단 Back 화살표 */}
-      <div className="flex items-center gap-3 mb-4">
+      {/* 상단 바: 뒤로 + (관리자용) 삭제 */}
+      <div className="flex items-center justify-between mb-4">
         <Link
           to="/blog"
           className="inline-flex items-center gap-2 text-sm opacity-80 hover:opacity-100"
@@ -47,6 +77,16 @@ export default function BlogPost() {
           </svg>
           뒤로
         </Link>
+
+        {role === 'admin' && (
+          <button
+            onClick={onDelete}
+            disabled={deleting}
+            className="glass px-3 py-1.5 rounded-xl hover:bg-red-500/20 text-red-200 disabled:opacity-60"
+          >
+            {deleting ? '삭제 중…' : '삭제'}
+          </button>
+        )}
       </div>
 
       <GlassCard>
@@ -67,14 +107,12 @@ export default function BlogPost() {
             )}
           </header>
 
-          {/* 본문: 마크다운을 단순 텍스트로 렌더 중이면 필요 시 마크다운 렌더러로 교체 */}
           <div className="prose prose-invert max-w-none leading-relaxed">
             {post.content}
           </div>
         </article>
       </GlassCard>
 
-      {/* 댓글 */}
       <section className="mt-8">
         <CommentSection postId={post.id} />
       </section>
