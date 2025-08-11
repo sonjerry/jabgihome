@@ -51,8 +51,8 @@ if (!ADMIN_HASH) {
 
 /* ───────────────────── Supabase 클라이언트 ───────────────────── */
 const SUPABASE_URL = process.env.SUPABASE_URL
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || 'media'
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY // 반드시 service_role 키여야 함
+const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || 'media' // 존재하는 버킷명으로 맞추기
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error('[FATAL] SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY가 없습니다.')
@@ -63,12 +63,39 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
 
+/** 부팅 시 service_role 키 검증(중요)
+ *  - anon 키가 들어가 있으면 listBuckets가 실패하며, 업로드 시 RLS 에러가 납니다.
+ */
+;(async () => {
+  try {
+    // storage.listBuckets 는 service_role 권한이 필요
+    const { data, error } = await supabase.storage.listBuckets()
+    if (error) {
+      console.error('[WARN] service_role 권한 확인 실패:', error.message)
+      console.error('       SUPABASE_SERVICE_ROLE_KEY에 anon 키가 들어갔을 가능성이 높습니다.')
+    } else {
+      const names = (data || []).map(b => b.name)
+      console.log(`[OK] Supabase 연결. 버킷: ${names.join(', ') || '(none)'}`)
+      if (names.length && !names.includes(SUPABASE_BUCKET)) {
+        console.warn(`[WARN] 환경변수 SUPABASE_BUCKET="${SUPABASE_BUCKET}" 버킷이 존재하지 않습니다. 대시보드에서 생성하세요.`)
+      }
+    }
+  } catch (e) {
+    console.error('[WARN] service_role 검증 중 예외:', e?.message || e)
+  }
+})()
+
 /* ───────────────────── 업로드 설정 (메모리) ───────────────────── */
 const nanoid10 = customAlphabet('1234567890abcdef', 10)
 const nanoid12 = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 12) // 댓글 id
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  fileFilter: (_req, file, cb) => {
+    // 이미지 파일만 허용 (필요시 확장)
+    const ok = /^image\/(png|jpe?g|gif|webp|svg\+xml|svg)$/.test(file.mimetype)
+    cb(ok ? null : new Error('Only image files are allowed'), ok)
+  },
 })
 
 /* ───────────────────── 인증/권한 ───────────────────── */
@@ -97,6 +124,13 @@ function toDateOrNow(v) {
 
 /* ─────────────── 헬스체크 ─────────────── */
 app.get('/api/health', (req, res) => res.json({ ok: true }))
+
+/* (디버그) 현재 버킷 확인용 엔드포인트 — 필요 시만 사용 */
+app.get('/api/_debug/buckets', async (_req, res) => {
+  const { data, error } = await supabase.storage.listBuckets()
+  if (error) return res.status(500).json({ error: error.message })
+  res.json({ buckets: data })
+})
 
 /* ───────────────────── 인증 API ───────────────────── */
 app.get('/api/auth/me', (req, res) => {
@@ -144,17 +178,27 @@ app.post('/api/upload', requireAdmin, upload.single('file'), async (req, res) =>
     const f = req.file
     if (!f) return res.status(400).json({ error: 'no file' })
 
-    const ext = path.extname(f.originalname) || ''
-    const key = `${new Date().toISOString().slice(0, 10)}/${crypto.randomBytes(8).toString('hex')}${ext.toLowerCase()}`
+    const ext = (path.extname(f.originalname) || '').toLowerCase()
+    const base = (f.originalname || 'image').replace(/[^\w.\-]+/g, '_').toLowerCase()
+    const dir = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+    const key = `${dir}/${crypto.randomUUID()}_${base || ('file' + ext)}`
 
     const { error: upErr } = await supabase.storage.from(SUPABASE_BUCKET).upload(key, f.buffer, {
       contentType: f.mimetype,
       upsert: false,
+      cacheControl: '31536000',
     })
-    if (upErr) return res.status(500).json({ error: upErr.message })
+    if (upErr) {
+      // 에러 메시지를 그대로 노출 + 디버그 힌트
+      const msg = upErr.message || 'upload error'
+      const hint = /row-level security/i.test(msg)
+        ? 'Hint: SUPABASE_SERVICE_ROLE_KEY에 anon 키가 들어갔을 가능성이 큽니다. 또는 버킷 정책/이름 확인.'
+        : undefined
+      console.error('Supabase upload error:', msg, { bucket: SUPABASE_BUCKET, mimetype: f.mimetype, size: f.size })
+      return res.status(500).json({ error: msg, hint, bucket: SUPABASE_BUCKET })
+    }
 
     const { data: pub } = supabase.storage.from(SUPABASE_BUCKET).getPublicUrl(key)
-    // 응답 형식 유지: { id, type, url }
     return res.json({ id: key, type: f.mimetype, url: pub.publicUrl })
   } catch (e) {
     console.error('upload error', e)
@@ -164,7 +208,7 @@ app.post('/api/upload', requireAdmin, upload.single('file'), async (req, res) =>
 
 /* ───────────────────── 블로그 글 API (Supabase Postgres) ───────────────────── */
 /** 목록 */
-app.get('/api/posts', async (req, res) => {
+app.get('/api/posts', async (_req, res) => {
   try {
     const { data, error } = await supabase
       .from('posts')
@@ -172,7 +216,6 @@ app.get('/api/posts', async (req, res) => {
       .order('created_at', { ascending: false })
     if (error) return res.status(500).json({ error: error.message })
 
-    // 기존과 동일하게 "포스트 JSON 배열" 반환
     const posts = (data || []).map(r => r.data)
     return res.json(posts)
   } catch (e) {
@@ -264,7 +307,6 @@ app.get('/api/posts/:postId/comments', async (req, res) => {
       .order('created_at', { ascending: true })
     if (error) return res.status(500).json({ error: error.message })
 
-    // 기존 형식으로 매핑
     const list = (data || []).map(c => ({
       id: c.id,
       postId: c.post_id,
