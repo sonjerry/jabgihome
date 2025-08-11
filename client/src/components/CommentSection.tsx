@@ -93,39 +93,6 @@ export default function CommentSection({ postId }: Props) {
   return (
     <div>
       <h3 className="text-xl font-semibold mb-3">댓글</h3>
-
-      {/* 작성 폼 */}
-      <div className="glass rounded-2xl p-4 md:p-5 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <input
-            value={nick}
-            onChange={(e) => setNick(e.target.value)}
-            placeholder="닉네임"
-            className="glass rounded-xl px-3 py-2 w-full"
-          />
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="비밀번호"
-            type="password"
-            className="glass rounded-xl px-3 py-2 w-full"
-          />
-          <button
-            disabled={busy || !nick || !password || !content}
-            onClick={onSubmit}
-            className="rounded-xl px-4 py-2 bg-white/15 hover:bg-white/25 disabled:opacity-50"
-          >
-            등록
-          </button>
-        </div>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="내용을 입력하세요"
-          className="glass rounded-xl px-3 py-2 w-full mt-3 min-h-[90px]"
-        />
-      </div>
-
       {/* 목록 */}
       <ul className="space-y-3">
         {comments.map((c) => (
@@ -142,7 +109,7 @@ export default function CommentSection({ postId }: Props) {
                   title="편집"
                   aria-label="편집"
                 >
-                  ✏️
+                  편집
                 </button>
                 <button
                   onClick={() => onDelete(c)}
@@ -150,7 +117,7 @@ export default function CommentSection({ postId }: Props) {
                   title="삭제"
                   aria-label="삭제"
                 >
-                  🗑️
+                  삭제
                 </button>
               </div>
             </div>
@@ -186,6 +153,40 @@ export default function CommentSection({ postId }: Props) {
           </li>
         ))}
       </ul>
+
+      {/* 작성 폼 */}
+      <div className="glass rounded-2xl p-4 md:p-5 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <input
+            value={nick}
+            onChange={(e) => setNick(e.target.value)}
+            placeholder="닉네임"
+            className="glass rounded-xl px-3 py-2 w-full"
+          />
+          <input
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="비밀번호"
+            type="password"
+            className="glass rounded-xl px-3 py-2 w-full"
+          />
+          <button
+            disabled={busy || !nick || !password || !content}
+            onClick={onSubmit}
+            className="rounded-xl px-4 py-2 bg-white/15 hover:bg-white/25 disabled:opacity-50"
+          >
+            등록
+          </button>
+        </div>
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="내용을 입력하세요"
+          className="glass rounded-xl px-3 py-2 w-full mt-3 min-h-[90px]"
+        />
+      </div>
+
+
     </div>
   )
 }

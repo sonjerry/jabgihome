@@ -1,11 +1,11 @@
 // client/src/pages/BlogPost.tsx
 import { useEffect, useState, useMemo } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom' // ← navigate 추가
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
 import type { Post } from '../types'
 import { getPost } from '../lib/api'
 import CommentSection from '../components/CommentSection'
-import { useAuth } from '../state/auth' // ← 관리자 확인
+import { useAuth } from '../state/auth'   // ✅ 추가
 
 function formatFullDate(s: string) {
   const d = new Date(s)
@@ -14,7 +14,7 @@ function formatFullDate(s: string) {
 
 export default function BlogPost() {
   const nav = useNavigate()
-  const { role } = useAuth()
+  const { role, loading: authLoading } = useAuth()  // ✅ loading까지 받기
   const { id } = useParams<{ id: string }>()
   const [post, setPost] = useState<Post | null>(null)
   const [loading, setLoading] = useState(true)
@@ -23,29 +23,22 @@ export default function BlogPost() {
   useEffect(() => {
     if (!id) return
     setLoading(true)
-    getPost(id)
-      .then(setPost)
-      .finally(() => setLoading(false))
+    getPost(id).then(setPost).finally(() => setLoading(false))
   }, [id])
 
   const title = useMemo(() => post?.title ?? '', [post])
 
-  // ── 삭제 핸들러 ─────────────────────────────────────────
   const onDelete = async () => {
     if (!id) return
-    if (!confirm('정말 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return
+    if (!confirm('정말 삭제할까요? 되돌릴 수 없습니다.')) return
     try {
       setDeleting(true)
-      // lib/api에 deletePost가 없다면 아래 "lib/api 추가" 참고
       const API_BASE = import.meta.env.VITE_API_URL || ''
       const res = await fetch(`${API_BASE}/api/posts/${id}`, {
         method: 'DELETE',
-        credentials: 'include',
+        credentials: 'include',         // ✅ 쿠키 포함
       })
-      if (!res.ok) {
-        const msg = await res.text().catch(() => '')
-        throw new Error(msg || 'delete failed')
-      }
+      if (!res.ok) throw new Error(await res.text().catch(() => 'delete failed'))
       nav('/blog')
     } catch (e) {
       console.error(e)
@@ -54,7 +47,6 @@ export default function BlogPost() {
       setDeleting(false)
     }
   }
-  // ─────────────────────────────────────────────────────
 
   if (loading) {
     return <div className="pt-24 mx-auto max-w-[900px] px-4 md:px-6">불러오는 중…</div>
@@ -78,7 +70,8 @@ export default function BlogPost() {
           뒤로
         </Link>
 
-        {role === 'admin' && (
+        {/* ✅ auth 로딩 끝나고 admin일 때만 버튼 표시 */}
+        {!authLoading && role === 'admin' && (
           <button
             onClick={onDelete}
             disabled={deleting}
@@ -99,9 +92,7 @@ export default function BlogPost() {
             {post.tags?.length > 0 && (
               <div className="flex gap-2 flex-wrap mt-3">
                 {post.tags.map((t, i) => (
-                  <span key={i} className="text-[11px] px-2 py-1 rounded-full bg-white/10">
-                    #{t}
-                  </span>
+                  <span key={i} className="text-[11px] px-2 py-1 rounded-full bg-white/10">#{t}</span>
                 ))}
               </div>
             )}
