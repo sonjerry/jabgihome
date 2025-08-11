@@ -1,15 +1,47 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@font-face{font-family:'ROKAF Sans';src:url('/fonts/ROKAF-Sans-Medium.ttf') format('truetype');font-weight:500;font-style:normal;font-display:swap}
-html,body,#root{height:100%}body{@apply bg-[radial-gradient(ellipse_at_top_left,theme(colors.sky.400),_#120e0b)] text-cream font-rokaf}
-.glass{@apply bg-white/10 border border-white/20 backdrop-blur-xl shadow-glass}
+
+
+@font-face {
+  font-family: 'ROKAF Sans';
+  src:
+    url('/fonts/ROKAF-Sans-Medium.ttf') format('truetype'),
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 루트 높이 고정 */
+html, body, #root { min-height: 100%; }
+
+/* 전역 배경/타이포 (스크롤 시 색 변동 방지: bg-fixed + isolate) */
+body {
+  @apply text-cream font-rokaf
+         bg-fixed bg-no-repeat bg-cover
+         bg-[radial-gradient(ellipse_at_top_left,theme(colors.sky.400),_#120e0b)];
+  isolation: isolate;
+}
+
+/* 유리 카드 */
+.glass { @apply bg-white/10 border border-white/20 backdrop-blur-xl shadow-glass; }
+
+/* 이미지 기본 안정화 */
+img { display: block; max-width: 100%; height: auto; }
+
+/* 멀티 컬럼 깨짐 방지 */
 .break-inside-avoid { break-inside: avoid; }
-/* 스크롤바 숨기기 유틸 */
-.scrollbar-none {
-  -ms-overflow-style: none;    /* IE/Edge */
-  scrollbar-width: none;       /* Firefox */
-}
-.scrollbar-none::-webkit-scrollbar {
-  display: none;               /* Chrome/Safari/Edge */
-}
+
+/* 스크롤바 숨기기 */
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* ─── Tailwind Typography(프로즈) 전역 튜닝 ─── */
+.prose { max-width: none; }
+.prose :where(img) { margin: 1rem auto; border-radius: 0.75rem; }
+.prose :where(h1) { @apply mt-8 mb-4 text-3xl md:text-4xl font-bold; }
+.prose :where(h2) { @apply mt-7 mb-3 text-2xl md:text-3xl font-semibold; }
+.prose :where(h3) { @apply mt-6 mb-2 text-xl md:text-2xl font-semibold; }
+.prose :where(code):not(:where(pre code)) { @apply px-1.5 py-0.5 rounded bg-white/10; }
+.prose :where(pre) { @apply bg-black/40 rounded-xl p-4 overflow-x-auto; }
+.prose a { text-decoration: underline; text-decoration-style: dotted; }

@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { Post, Attachment } from '../types'
 import { useI18n } from '../lib/i18n'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { getPost, savePost, uploadFile } from '../lib/api'
+import PageShell from '../components/PageShell'
 
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
 
@@ -20,7 +21,9 @@ export default function Editor(){
   const [tagInput,setTagInput]=useState('')
   const [tags,setTags]=useState<string[]>([])
   const [attachments,setAttachments]=useState<Attachment[]>([])
-  const [loading, setLoading] = useState(isEdit)     // ✅ 편집 모드에서만 로딩
+  const [loading, setLoading] = useState(isEdit)
+
+  const textareaRef = useRef<HTMLTextAreaElement|null>(null)
 
   useEffect(()=> {
     if (!isEdit) return
@@ -55,6 +58,20 @@ export default function Editor(){
     }
   }
 
+  const insertMarkdown = (md: string) => {
+    const el = textareaRef.current
+    if (!el) { setContent(c => (c ? (c + '\n' + md) : md)); return }
+    const start = el.selectionStart ?? el.value.length
+    const end = el.selectionEnd ?? el.value.length
+    const next = el.value.slice(0, start) + md + el.value.slice(end)
+    setContent(next)
+    // 커서 이동
+    requestAnimationFrame(() => {
+      el.selectionStart = el.selectionEnd = start + md.length
+      el.focus()
+    })
+  }
+
   const onSave = async () => {
     const now = new Date().toISOString()
     const post: Post = {
@@ -77,19 +94,22 @@ export default function Editor(){
   if (loading) return <div className="pt-24 px-6">로딩 중…</div>
 
   return (
-    <div className="pt-24 mx-auto max-w-[1400px] px-3 md:px-6">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-2xl font-semibold">{isEdit ? t('editPost') : t('newPost')}</h2>
+    <PageShell>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl md:text-3xl font-semibold">{isEdit ? t('editPost') : t('newPost')}</h2>
         <div className="flex gap-2">
           <button onClick={onSave} className="glass px-3 py-2 rounded-xl hover:bg-white/10">{t('save')}</button>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-3 md:gap-4">
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* 에디터 */}
         <div className="glass rounded-2xl p-3">
-          <input className="w-full bg-transparent text-xl font-semibold mb-2 outline-none"
-                 placeholder={t('title')} value={title} onChange={e=>setTitle(e.target.value)} />
-          <div className="flex gap-2 mb-2">
+          <input
+            className="w-full bg-transparent text-xl md:text-2xl font-semibold mb-3 outline-none"
+            placeholder={t('title')} value={title} onChange={e=>setTitle(e.target.value)} />
+
+          <div className="flex flex-wrap gap-2 mb-3">
             <input className="glass px-3 py-2 rounded-xl bg-white/5" placeholder={t('category')}
                    value={category} onChange={e=>setCategory(e.target.value)} />
             <div className="flex items-center gap-2">
@@ -98,30 +118,71 @@ export default function Editor(){
                      onKeyDown={e=>e.key==='Enter'&&addTag()} />
               <button className="px-3 py-2 rounded-xl hover:bg-white/10" onClick={addTag}>+</button>
             </div>
-          </div>
-          <div className="flex gap-2 flex-wrap mb-2">
-            {tags.map(t => (
-              <span key={t} className="text-xs px-2 py-1 rounded-full bg-white/10 cursor-pointer"
-                    onClick={()=>removeTag(t)}>#{t} ×</span>
-            ))}
+            <div className="flex gap-2 flex-wrap">
+              {tags.map(t => (
+                <span key={t} className="text-xs px-2 py-1 rounded-full bg-white/10 cursor-pointer"
+                      onClick={()=>removeTag(t)}>#{t} ×</span>
+              ))}
+            </div>
           </div>
 
-          <textarea className="w-full h-[52vh] md:h-[60vh] bg-transparent outline-none resize-none"
-                    placeholder={t('content')} value={content} onChange={e=>setContent(e.target.value)} />
+          <textarea
+            ref={textareaRef}
+            className="w-full h-[52vh] md:h-[60vh] bg-transparent outline-none resize-none leading-relaxed"
+            placeholder={t('content')}
+            value={content}
+            onChange={e=>setContent(e.target.value)}
+          />
 
+          {/* 첨부 */}
           <div className="mt-3">
             <label className="block text-sm mb-1">첨부 이미지/파일</label>
             <input type="file" multiple onChange={e=>onFiles(e.target.files)} />
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              {attachments.map(a => (<img key={a.id} src={a.url} alt={a.name} className="rounded-lg" />))}
+            <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 gap-2">
+              {attachments.map(a => {
+                const isImg = (a.type || '').startsWith('image/')
+                return (
+                  <div key={a.id} className="group relative rounded-lg overflow-hidden">
+                    {isImg ? (
+                      <img src={a.url} alt={a.name || 'attachment'} className="block w-full h-24 object-cover" />
+                    ) : (
+                      <a href={a.url} target="_blank" rel="noreferrer" className="text-xs underline break-all">{a.name || a.url}</a>
+                    )}
+                    {isImg && (
+                      <button
+                        type="button"
+                        onClick={() => insertMarkdown(`\n![${a.name || 'image'}](${a.url})\n`)}
+                        className="absolute right-1.5 bottom-1.5 text-[10px] px-2 py-1 rounded bg-black/60 hover:bg-black/80"
+                        title="본문에 이미지 마크다운 삽입"
+                      >
+                        본문에 추가
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
 
+        {/* 미리보기 */}
         <div className="glass rounded-2xl p-3 prose prose-invert max-w-none">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{preview}</ReactMarkdown>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              img: ({src, alt}) => (
+                <img src={src || ''} alt={alt || ''} loading="lazy"
+                     className="rounded-xl w-full h-auto max-h-[70vh] object-contain my-4" />
+              ),
+              a: ({href, children}) => (
+                <a href={href} target="_blank" rel="noreferrer" className="underline decoration-dotted">{children}</a>
+              ),
+            }}
+          >
+            {preview}
+          </ReactMarkdown>
         </div>
       </div>
-    </div>
+    </PageShell>
   )
 }
