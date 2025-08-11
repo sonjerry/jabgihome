@@ -8,7 +8,7 @@ type ImgItem = {
 
 // ✅ Vite 글롭으로 src/assets/gallery 안의 이미지 자동 수집
 // png, jpg, jpeg, gif, webp, avif 모두 대응
-const IMAGE_MODULES = import.meta.glob('../assets/gallery/*.{png,jpg,jpeg,gif,webp,avif}', {
+const IMAGE_MODULES = import.meta.glob('./src/assets/gallery/*.{png,jpg,jpeg,gif,webp,avif}', {
   eager: true,
   query: '?url',
   import: 'default',
