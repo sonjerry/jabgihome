@@ -1,7 +1,4 @@
-# node_modules는 절대 업로드 금지
 node_modules/
-data/
-# 환경 변수
 .env
 
 
