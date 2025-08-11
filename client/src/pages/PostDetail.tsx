@@ -50,7 +50,7 @@ export default function PostDetail() {
     return <div className="pt-24 mx-auto max-w-[1000px] px-3 md:px-6">게시글을 찾을 수 없습니다.</div>
   }
 
-  // ✅ ReactMarkdown 전용 컴포넌트들을 명시적으로 타이핑
+  // ✅ inline 없이 className으로 블록/인라인 판별
   const mdComponents: Components = {
     img: ({ node, className, ...props }) => (
       <img
@@ -76,16 +76,18 @@ export default function PostDetail() {
     h3: ({ node, className, ...props }) => (
       <h3 {...props} className={clsx('mt-6 mb-2 text-xl md:text-2xl font-semibold', className)} />
     ),
-    code: ({ node, inline, className, children, ...props }) =>
-      inline ? (
-        <code {...props} className={clsx('px-1.5 py-0.5 rounded bg-white/10', className)}>
-          {children}
-        </code>
-      ) : (
+    code: ({ node, className, children, ...props }) => {
+      const isBlock = !!className && className.includes('language-')
+      return isBlock ? (
         <pre className="bg-black/40 rounded-xl p-4 overflow-x-auto">
           <code {...props} className={className}>{children}</code>
         </pre>
-      ),
+      ) : (
+        <code {...props} className={clsx('px-1.5 py-0.5 rounded bg-white/10', className)}>
+          {children}
+        </code>
+      )
+    },
   }
 
   return (
