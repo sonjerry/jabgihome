@@ -26,8 +26,7 @@ function pickCover(post: Post) {
 function BlogHeader() {
   const { role, loading } = useAuth()
   return (
-    <GlassCard className="mb-45 md:mb-6">
-      {/* 패딩 축소 */}
+    <GlassCard className="mb-5 md:mb-6">{/* mb-45 → mb-5 */}
       <div className="flex items-center justify-between px-1 md:px-1 py-1 md:py-1">
         <div>
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">블로그</h1>
@@ -61,7 +60,6 @@ export default function Blog() {
 
           return (
             <GlassCard key={p.id} className="hover:bg-white/10 transition">
-              {/* 헤더 카드와 같은 좌우 패딩으로 라인 맞춤 */}
               <Link to={`/blog/${p.id}`} className="block px-3 md:px-4 py-3 md:py-4">
                 <div className="grid gap-4 md:gap-5 sm:grid-cols-[140px,1fr] items-start">
                   {cover ? (
@@ -81,8 +79,7 @@ export default function Blog() {
                     </header>
 
                     <p className="text-sm md:text-base text-cream/85 leading-relaxed line-clamp-3">
-                      {excerpt}
-                      {p.content.length > 160 ? '…' : ''}
+                      {excerpt}{p.content.length > 160 ? '…' : ''}
                     </p>
 
                     {p.tags?.length > 0 && (

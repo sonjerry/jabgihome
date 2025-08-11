@@ -155,7 +155,7 @@ export default function CommentSection({ postId }: Props) {
       </ul>
 
       {/* 작성 폼 */}
-      <div className="glass rounded-2xl p-4 md:p-5 mb-6">
+      <div className="glass rounded-2xl p-4 md:p-5 mb-6 min-h-[80px]">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <input
             value={nick}
