@@ -77,7 +77,7 @@ export default function FullscreenVideoModal({
 
             <video
               ref={videoRef}
-              src="../media/dj.mp4"
+              src="/media/dj.mp4"
               className="w-full h-full object-cover"
             />
 

@@ -9,7 +9,7 @@ type ImgItem = {
 }
 
 /** 하위 폴더까지 이미지 자동 수집 */
-const IMAGE_MODULES = import.meta.glob('../assets/gallery/**/*.{png,jpg,jpeg,gif,webp,avif}', {
+const IMAGE_MODULES = import.meta.glob('/gallery/**/*.{png,jpg,jpeg,gif,webp,avif}', {
   eager: true,
   query: '?url',
   import: 'default',
