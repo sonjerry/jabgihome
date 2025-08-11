@@ -7,7 +7,7 @@ interface ImportMeta {
 }
 
 // src/assets/gallery 폴더의 jpg/jpeg만 자동 수집
-const modules = import.meta.glob('../assets/gallery/*.{jpg,jpeg}', {
+const modules = import.meta.glob('../assets/gallery/*.{jpg,jpeg,png}', {
   eager: true,
   query: '?url', import: 'default',
 }) as Record<string, string>
