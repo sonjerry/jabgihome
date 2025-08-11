@@ -5,7 +5,7 @@ import clsx from 'clsx'
 type Track = { title: string; src: string }
 
 // ✅ Vite 글롭으로 src/media 안 mp3 전부 가져오기
-const MP3_MODULES = import.meta.glob('/media/*.mp3', {
+const MP3_MODULES = import.meta.glob('../assets/music/*.mp3', {
   eager: true,
   query: '?url', import: 'default'
 }) as Record<string, string>

@@ -16,7 +16,7 @@ export default function AutoStickers() {
 
   // 1) src/assets/sticker/*.png 자동 수집 (빌드타임)
   const urls = useMemo(() => {
-    const mods = import.meta.glob('/sticker/*.png', { eager: true, query: '?url', import: 'default' })
+    const mods = import.meta.glob('../assets/sticker/*.png', { eager: true, query: '?url', import: 'default' })
     return Object.values(mods) as string[]
   }, [])
 
