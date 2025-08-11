@@ -1,127 +1,23 @@
 // client/src/components/AudioDock.tsx
-import { useEffect, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import clsx from 'clsx'
+import { useAudio, type Track } from '../lib/audio/AudioProvider'
 
-type Track = { title: string; src: string }
-
-// ✅ Vite 글롭으로 src/media 안 mp3 전부 가져오기
+// ✅ Vite 글롭으로 src/assets/music 안 mp3 전부 가져오기
 const MP3_MODULES = import.meta.glob('../assets/music/*.mp3', {
   eager: true,
   query: '?url', import: 'default'
 }) as Record<string, string>
 
-// 파일명 → 제목 변환
 function filenameToTitle(path: string) {
   const base = decodeURIComponent(path.split('/').pop() || '')
   const name = base.replace(/\.[^/.]+$/, '')
   return name.replace(/[_-]+/g, ' ').trim()
 }
 
-// 플레이리스트 생성
-const PLAYLIST: Track[] = Object.entries(MP3_MODULES)
+const collectedPlaylist: Track[] = Object.entries(MP3_MODULES)
   .sort(([a], [b]) => a.localeCompare(b))
-  .map(([path, url]) => ({
-    title: filenameToTitle(path),
-    src: url,
-  }))
-
-/** 공통 오디오 로직 */
-function useAudioCore() {
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [idx, setIdx] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [volume, setVolume] = useState<number>(() => {
-    const saved = localStorage.getItem('audioVolume')
-    return saved ? Math.min(1, Math.max(0, Number(saved))) : 0.5
-  })
-  const [duration, setDuration] = useState(0)
-  const [current, setCurrent] = useState(0)
-
-  const hasList = PLAYLIST.length > 0
-  const safeIdx = hasList ? Math.min(idx, PLAYLIST.length - 1) : 0
-
-  useEffect(() => {
-    const a = audioRef.current
-    if (!a) return
-    const onLoaded = () => setDuration(a.duration || 0)
-    const onTime = () => setCurrent(a.currentTime || 0)
-    const onEnd = () => next()
-    a.addEventListener('loadedmetadata', onLoaded)
-    a.addEventListener('timeupdate', onTime)
-    a.addEventListener('ended', onEnd)
-    return () => {
-      a.removeEventListener('loadedmetadata', onLoaded)
-      a.removeEventListener('timeupdate', onTime)
-      a.removeEventListener('ended', onEnd)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [safeIdx])
-
-  useEffect(() => {
-    const a = audioRef.current
-    if (a) {
-      a.volume = volume
-      localStorage.setItem('audioVolume', String(volume))
-    }
-  }, [volume])
-
-  const toggle = async () => {
-    const a = audioRef.current
-    if (!a) return
-    if (playing) {
-      a.pause()
-      setPlaying(false)
-    } else {
-      try {
-        await a.play()
-        setPlaying(true)
-      } catch {}
-    }
-  }
-
-  const playIdx = async (i: number) => {
-    if (!hasList) return
-    const a = audioRef.current
-    if (!a) return
-    const nextIdx = ((i % PLAYLIST.length) + PLAYLIST.length) % PLAYLIST.length
-    setIdx(nextIdx)
-    a.src = PLAYLIST[nextIdx].src
-    a.currentTime = 0
-    try {
-      await a.play()
-      setPlaying(true)
-    } catch {
-      setPlaying(false)
-    }
-  }
-
-  const next = () => hasList && playIdx((safeIdx + 1) % PLAYLIST.length)
-  const prev = () => hasList && playIdx((safeIdx - 1 + PLAYLIST.length) % PLAYLIST.length)
-
-  const seekAtPercent = (p: number) => {
-    const a = audioRef.current
-    if (!a || !duration) return
-    a.currentTime = Math.max(0, Math.min(duration, duration * p))
-    setCurrent(a.currentTime)
-  }
-
-  return {
-    audioRef,
-    idx: safeIdx,
-    playing,
-    volume,
-    setVolume,
-    duration,
-    current,
-    toggle,
-    playIdx,
-    next,
-    prev,
-    seekAtPercent,
-    track: hasList ? PLAYLIST[safeIdx] : { title: 'No tracks', src: '' },
-    hasList,
-  }
-}
+  .map(([path, url]) => ({ title: filenameToTitle(path), src: url }))
 
 /** 공용 바(시크/볼륨) - 색상 props 지원 */
 function Bar({
@@ -190,26 +86,32 @@ function Bar({
   )
 }
 
-/** 사이드바 오디오 플레이어 */
-export default function SidebarAudio() {
-  const {
-    audioRef,
-    track,
-    idx,
-    playing,
-    volume,
-    setVolume,
-    duration,
-    current,
-    toggle,
-    next,
-    prev,
-    playIdx,
-    seekAtPercent,
-    hasList,
-  } = useAudioCore()
+/** 사이드바 오디오 플레이어 (컨트롤러 UI) */
+export default function AudioDock() {
+  const a = useAudio()
+  const hasList = a.playlist.length > 0
+  const progress = a.duration ? a.currentTime / a.duration : 0
 
-  const progress = duration ? current / duration : 0
+  // 최초 마운트 시 플레이리스트 주입 (없을 때만)
+  useEffect(() => {
+    if (a.playlist.length === 0 && collectedPlaylist.length > 0) {
+      a.setPlaylist(collectedPlaylist, 0)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 볼륨 로컬 저장/복구
+  useEffect(() => {
+    const saved = localStorage.getItem('audioVolume')
+    if (saved != null) {
+      const v = Math.max(0, Math.min(1, Number(saved)))
+      a.setVolume(v)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  useEffect(() => {
+    localStorage.setItem('audioVolume', String(a.volume))
+  }, [a.volume])
 
   return (
     <div className="w-full">
@@ -223,7 +125,7 @@ export default function SidebarAudio() {
         {/* 제목 */}
         <div className="min-w-0">
           <h3 className="text-cream/90 text-base font-semibold break-words">
-            {track.title}
+            {a.playlist[a.idx]?.title ?? 'No tracks'}
           </h3>
           <p className="text-brown-900 text-xs mt-0.5">레전드 명곡 플레이리스트</p>
         </div>
@@ -232,7 +134,7 @@ export default function SidebarAudio() {
         <div className="mt-3 flex items-center justify-center gap-3">
           <button
             className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-40"
-            onClick={prev}
+            onClick={a.prev}
             aria-label="Previous"
             disabled={!hasList}
           >
@@ -240,15 +142,15 @@ export default function SidebarAudio() {
           </button>
           <button
             className="w-12 h-12 rounded-2xl bg-amber-400/90 hover:bg-amber-400 text-brown-900 font-bold text-xl disabled:opacity-40"
-            onClick={toggle}
-            aria-label={playing ? 'Pause' : 'Play'}
+            onClick={a.toggle}
+            aria-label={a.playing ? 'Pause' : 'Play'}
             disabled={!hasList}
           >
-            {playing ? '❚❚' : '▶'}
+            {a.playing ? '❚❚' : '▶'}
           </button>
           <button
             className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-40"
-            onClick={next}
+            onClick={a.next}
             aria-label="Next"
             disabled={!hasList}
           >
@@ -260,7 +162,7 @@ export default function SidebarAudio() {
         <div className="mt-4">
           <Bar
             value={progress}
-            onChange={seekAtPercent}
+            onChange={(p) => a.seek((a.duration || 0) * p)}
             thickness={8}
             knob={14}
             ariaLabel="Seek"
@@ -275,12 +177,12 @@ export default function SidebarAudio() {
           <div className="rounded-xl bg-white/5 p-3">
             <div className="grid grid-cols-[auto,1fr] items-center gap-5 min-w-0">
               <span className=" text-lg w-2 text-right select-none -ml-1">
-                {volume === 0 ? '🔇' : '🔊'}
+                {a.volume === 0 ? '🔇' : '🔊'}
               </span>
               <div className="min-w-0">
                 <Bar
-                  value={volume}
-                  onChange={setVolume}
+                  value={a.volume}
+                  onChange={a.setVolume}
                   thickness={6}
                   knob={12}
                   ariaLabel="Volume"
@@ -292,11 +194,13 @@ export default function SidebarAudio() {
             </div>
           </div>
 
-          <PlaylistPopover currentIdx={idx} onSelect={playIdx} />
+          <PlaylistPopover
+            currentIdx={a.idx}
+            onSelect={(i) => a.play(i)}
+            list={a.playlist.length ? a.playlist : collectedPlaylist}
+          />
         </div>
       </div>
-
-      <audio ref={audioRef} src={track.src} preload="auto" />
     </div>
   )
 }
@@ -305,9 +209,11 @@ export default function SidebarAudio() {
 function PlaylistPopover({
   currentIdx,
   onSelect,
+  list,
 }: {
   currentIdx: number
   onSelect: (i: number) => void
+  list: Track[]
 }) {
   const [open, setOpen] = useState(false)
   const btnRef = useRef<HTMLButtonElement | null>(null)
@@ -342,11 +248,8 @@ function PlaylistPopover({
         aria-controls="playlist-popover"
         title="Playlist"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" className="opacity-90">
-          <path
-            fill="currentColor"
-            d="M4 6h16v2H4V6m0 5h10v2H4v-2m0 5h7v2H4v-2Z"
-          />
+        <svg width="16" height="16" viewBox="0 0 24 24" className="opacity-90" aria-hidden="true">
+          <path fill="currentColor" d="M4 6h16v2H4V6m0 5h10v2H4v-2m0 5h7v2H4v-2Z" />
         </svg>
         <span className="text-sm">Playlist</span>
       </button>
@@ -365,10 +268,10 @@ function PlaylistPopover({
         )}
       >
         <ul className="py-1">
-          {PLAYLIST.length === 0 && (
+          {list.length === 0 && (
             <li className="px-3 py-2 text-cream/70 text-sm">No mp3 files</li>
           )}
-          {PLAYLIST.map((t, i) => (
+          {list.map((t, i) => (
             <li key={t.src}>
               <button
                 onClick={() => {
