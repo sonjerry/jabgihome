@@ -31,8 +31,8 @@ export default function Home() {
       {/* 글로벌 헤더(6rem=top-24) 아래부터 바닥까지. 데스크톱은 사이드바 폭 만큼 비움 */}
       <section
         className="
-          absolute inset-x-0 bottom-0 top-24
-          lg:left-[280px]
+          absolute inset-x-0 bottom-0 top-16
+          
           px-3 md:px-16
           z-0
         "

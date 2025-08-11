@@ -110,7 +110,7 @@ export default function Gallery() {
       <section
         className="
           absolute inset-x-0 bottom-0 top-6
-          lg:left-[280px]
+          
           px-3 md:px-8 lg:px-12
           z-0 overflow-y-auto
         "

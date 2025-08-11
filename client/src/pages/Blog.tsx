@@ -15,7 +15,7 @@ function BlogHeader() {
   const { role, loading } = useAuth()
   return (
     <div className="flex items-center justify-between mb-6">
-      <h1 className="text-3xl font-bold tracking-tight">블로그</h1>
+      <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-none">블로그</h1>
       {!loading && role === 'admin' && (
         <Link
           to="/blog/new"
@@ -42,7 +42,7 @@ export default function Blog() {
   )
 
   return (
-    <div className="pt-24 mx-auto max-w-[900px] px-4 md:px-6">
+    <div className="pt-16 mx-12 max-w-[900px] px-2 md:px-4">
       <BlogHeader />
 
       {ordered.length === 0 && (

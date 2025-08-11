@@ -20,7 +20,7 @@ export default function Chatbot() {
     <main
       // 사이드바가 fixed로 떠 있다면, 그 폭만큼만 밀어냅니다.
       // 전역 CSS 불필요. 필요 시 300px을 실제 사이드바 폭으로 바꾸세요.
-      className="pt-24 ml-0 lg:ml-[300px]"
+      className="pt-24 ml-0 lg:ml-[30px]"
     >
       <div className="mx-auto w-full max-w-[2000px] px-3 md:px-6">
        
