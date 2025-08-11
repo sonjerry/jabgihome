@@ -2,41 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
-
+/* 폰트 (public/fonts 에 존재해야 함) */
 @font-face {
   font-family: 'ROKAF Sans';
-  src:
-    url('/fonts/ROKAF-Sans-Medium.ttf') format('truetype'),
+  src: url('/fonts/ROKAF-Sans-Medium.ttf') format('truetype');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 
-/* 루트 높이 고정 */
+@font-face {
+  font-family: 'ROKAF Sans';
+  src: url('/fonts/ROKAF Sans Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 루트 높이 */
 html, body, #root { min-height: 100%; }
 
-/* 전역 배경/타이포 (스크롤 시 색 변동 방지: bg-fixed + isolate) */
+/* 전역 배경/타이포 */
 body {
-  @apply text-cream font-rokaf
-         bg-fixed bg-no-repeat bg-cover
-         bg-[radial-gradient(ellipse_at_top_left,theme(colors.sky.400),_#120e0b)];
+  @apply text-cream font-rokaf;
+  /* ⬇️ 임의값 유틸 대신 CSS로 직접 지정 */
+  background-image: radial-gradient(ellipse at top left, #38bdf8, #120e0b); /* sky-400 ≈ #38bdf8 */
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
   isolation: isolate;
 }
 
 /* 유리 카드 */
 .glass { @apply bg-white/10 border border-white/20 backdrop-blur-xl shadow-glass; }
 
-/* 이미지 기본 안정화 */
-img { display: block; max-width: 100%; height: auto; }
-
 /* 멀티 컬럼 깨짐 방지 */
 .break-inside-avoid { break-inside: avoid; }
 
-/* 스크롤바 숨기기 */
+/* 스크롤바 숨김 */
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
 
-/* ─── Tailwind Typography(프로즈) 전역 튜닝 ─── */
+/* Typography 튜닝 */
 .prose { max-width: none; }
 .prose :where(img) { margin: 1rem auto; border-radius: 0.75rem; }
 .prose :where(h1) { @apply mt-8 mb-4 text-3xl md:text-4xl font-bold; }
