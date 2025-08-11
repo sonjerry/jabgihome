@@ -3,14 +3,15 @@ import 'dotenv/config'
 import express from 'express'
 import cookieParser from 'cookie-parser'
 import multer from 'multer'
-import fs from 'fs'
-import fsp from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { customAlphabet } from 'nanoid'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
+/* ───────────────────── 공통 경로 ───────────────────── */
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
@@ -48,30 +49,27 @@ if (!ADMIN_HASH) {
   process.exit(1)
 }
 
-/* ───────────────────── 경로/디렉터리 ───────────────────── */
-const DATA_DIR = path.join(__dirname, 'data')
-const POSTS_DIR = path.join(DATA_DIR, 'posts')
-const COMMENTS_DIR = path.join(DATA_DIR, 'comments')
-const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads')
+/* ───────────────────── Supabase 클라이언트 ───────────────────── */
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || 'media'
 
-for (const d of [DATA_DIR, POSTS_DIR, COMMENTS_DIR, UPLOADS_DIR]) {
-  if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true })
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('[FATAL] SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY가 없습니다.')
+  process.exit(1)
 }
 
-// 정적 제공(업로드 파일 접근용)
-app.use('/uploads', express.static(UPLOADS_DIR))
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false },
+})
 
-/* ───────────────────── 업로드 설정 ───────────────────── */
+/* ───────────────────── 업로드 설정 (메모리) ───────────────────── */
 const nanoid10 = customAlphabet('1234567890abcdef', 10)
 const nanoid12 = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 12) // 댓글 id
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || ''
-    cb(null, nanoid10() + ext.toLowerCase())
-  },
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 },
 })
-const upload = multer({ storage })
 
 /* ───────────────────── 인증/권한 ───────────────────── */
 function signAdmin() {
@@ -91,11 +89,16 @@ function requireAdmin(req, res, next) {
   }
 }
 
+/* ─────────────── 유틸 ─────────────── */
+function toDateOrNow(v) {
+  const d = v ? new Date(v) : null
+  return isNaN(d?.getTime?.() ?? NaN) ? new Date() : d
+}
+
 /* ─────────────── 헬스체크 ─────────────── */
 app.get('/api/health', (req, res) => res.json({ ok: true }))
 
 /* ───────────────────── 인증 API ───────────────────── */
-// 현재 로그인 상태
 app.get('/api/auth/me', (req, res) => {
   try {
     const token = req.cookies?.token
@@ -107,7 +110,6 @@ app.get('/api/auth/me', (req, res) => {
   }
 })
 
-// 로그인
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { password } = req.body || {}
@@ -120,7 +122,7 @@ app.post('/api/auth/login', async (req, res) => {
     res.cookie('token', token, {
       httpOnly: true,
       sameSite: isProd ? 'none' : 'lax',
-      secure: isProd, // HTTPS에서만
+      secure: isProd,
       maxAge: 1000 * 60 * 60 * 2,
     })
     res.json({ ok: true })
@@ -130,105 +132,146 @@ app.post('/api/auth/login', async (req, res) => {
   }
 })
 
-// 로그아웃
 app.post('/api/auth/logout', (req, res) => {
   const isProd = process.env.NODE_ENV === 'production'
   res.clearCookie('token', { httpOnly: true, sameSite: isProd ? 'none' : 'lax', secure: isProd })
   res.json({ ok: true })
 })
 
-/* ───────────────────── 업로드 API ───────────────────── */
-app.post('/api/upload', requireAdmin, upload.single('file'), (req, res) => {
-  const f = req.file
-  if (!f) return res.status(400).json({ error: 'no file' })
-  const url = `/uploads/${f.filename}`
-  res.json({ id: f.filename, type: f.mimetype, url })
-})
+/* ───────────────────── 업로드 API (Supabase Storage) ───────────────────── */
+app.post('/api/upload', requireAdmin, upload.single('file'), async (req, res) => {
+  try {
+    const f = req.file
+    if (!f) return res.status(400).json({ error: 'no file' })
 
-/* ───────────────────── 블로그 글 API ───────────────────── */
-app.get('/api/posts', async (req, res) => {
-  const files = await fsp.readdir(POSTS_DIR)
-  const posts = []
-  for (const file of files) {
-    if (!file.endsWith('.json')) continue
-    try {
-      const raw = await fsp.readFile(path.join(POSTS_DIR, file), 'utf-8')
-      posts.push(JSON.parse(raw))
-    } catch {}
+    const ext = path.extname(f.originalname) || ''
+    const key = `${new Date().toISOString().slice(0, 10)}/${crypto.randomBytes(8).toString('hex')}${ext.toLowerCase()}`
+
+    const { error: upErr } = await supabase.storage.from(SUPABASE_BUCKET).upload(key, f.buffer, {
+      contentType: f.mimetype,
+      upsert: false,
+    })
+    if (upErr) return res.status(500).json({ error: upErr.message })
+
+    const { data: pub } = supabase.storage.from(SUPABASE_BUCKET).getPublicUrl(key)
+    // 응답 형식 유지: { id, type, url }
+    return res.json({ id: key, type: f.mimetype, url: pub.publicUrl })
+  } catch (e) {
+    console.error('upload error', e)
+    res.status(500).json({ error: 'upload failed' })
   }
-  posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-  res.json(posts)
 })
 
+/* ───────────────────── 블로그 글 API (Supabase Postgres) ───────────────────── */
+/** 목록 */
+app.get('/api/posts', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('data, created_at')
+      .order('created_at', { ascending: false })
+    if (error) return res.status(500).json({ error: error.message })
+
+    // 기존과 동일하게 "포스트 JSON 배열" 반환
+    const posts = (data || []).map(r => r.data)
+    return res.json(posts)
+  } catch (e) {
+    console.error('list posts error', e)
+    res.status(500).json({ error: 'posts list failed' })
+  }
+})
+
+/** 단건 */
 app.get('/api/posts/:id', async (req, res) => {
-  const fp = path.join(POSTS_DIR, `${req.params.id}.json`)
-  if (!fs.existsSync(fp)) return res.status(404).json({ error: 'not found' })
-  const raw = await fsp.readFile(fp, 'utf-8')
-  res.json(JSON.parse(raw))
+  try {
+    const id = req.params.id
+    const { data, error } = await supabase.from('posts').select('data').eq('id', id).single()
+    if (error) {
+      if (error.code === 'PGRST116') return res.status(404).json({ error: 'not found' })
+      return res.status(500).json({ error: error.message })
+    }
+    return res.json(data.data)
+  } catch (e) {
+    console.error('get post error', e)
+    res.status(500).json({ error: 'post get failed' })
+  }
 })
 
+/** 생성 (body: 기존 post JSON, 반드시 post.id 포함) */
 app.post('/api/posts', requireAdmin, async (req, res) => {
-  const post = req.body
-  if (!post || !post.id) return res.status(400).json({ error: 'invalid post' })
-  const fp = path.join(POSTS_DIR, `${post.id}.json`)
-  await fsp.writeFile(fp, JSON.stringify(post, null, 2), 'utf-8')
-  res.json({ ok: true, id: post.id })
+  try {
+    const post = req.body
+    if (!post || !post.id) return res.status(400).json({ error: 'invalid post' })
+
+    const createdAt = toDateOrNow(post.createdAt)
+    const { data, error } = await supabase
+      .from('posts')
+      .insert([{ id: post.id, data: post, created_at: createdAt.toISOString() }])
+      .select('id')
+      .single()
+    if (error) return res.status(500).json({ error: error.message })
+
+    res.json({ ok: true, id: data.id })
+  } catch (e) {
+    console.error('create post error', e)
+    res.status(500).json({ error: 'post create failed' })
+  }
 })
 
+/** 수정 (body: 수정된 post JSON) */
 app.put('/api/posts/:id', requireAdmin, async (req, res) => {
-  const post = req.body
-  post.id = req.params.id
-  const fp = path.join(POSTS_DIR, `${post.id}.json`)
-  await fsp.writeFile(fp, JSON.stringify(post, null, 2), 'utf-8')
-  res.json({ ok: true, id: post.id })
+  try {
+    const id = req.params.id
+    const post = { ...req.body, id }
+    const { data, error } = await supabase
+      .from('posts')
+      .update({ data: post })
+      .eq('id', id)
+      .select('id')
+      .single()
+    if (error) {
+      if (error.code === 'PGRST116') return res.status(404).json({ error: 'not found' })
+      return res.status(500).json({ error: error.message })
+    }
+    res.json({ ok: true, id: data.id })
+  } catch (e) {
+    console.error('update post error', e)
+    res.status(500).json({ error: 'post update failed' })
+  }
 })
 
+/** 삭제 */
 app.delete('/api/posts/:id', requireAdmin, async (req, res) => {
-  const fp = path.join(POSTS_DIR, `${req.params.id}.json`)
-  if (fs.existsSync(fp)) await fsp.unlink(fp)
-  res.json({ ok: true })
+  try {
+    const id = req.params.id
+    const { error } = await supabase.from('posts').delete().eq('id', id)
+    if (error) return res.status(500).json({ error: error.message })
+    res.json({ ok: true })
+  } catch (e) {
+    console.error('delete post error', e)
+    res.status(500).json({ error: 'post delete failed' })
+  }
 })
 
-/* ───────────────────── 댓글 API ───────────────────── */
-const commentPath = (cid) => path.join(COMMENTS_DIR, `${cid}.json`)
-
-async function readComment(cid) {
-  const fp = commentPath(cid)
-  if (!fs.existsSync(fp)) return null
-  const raw = await fsp.readFile(fp, 'utf-8')
-  return JSON.parse(raw)
-}
-async function writeComment(obj) {
-  const fp = commentPath(obj.id)
-  await fsp.writeFile(fp, JSON.stringify(obj, null, 2), 'utf-8')
-}
-async function deleteCommentFile(cid) {
-  const fp = commentPath(cid)
-  if (fs.existsSync(fp)) await fsp.unlink(fp)
-}
-
+/* ───────────────────── 댓글 API (Supabase Postgres) ───────────────────── */
 app.get('/api/posts/:postId/comments', async (req, res) => {
   try {
     const postId = req.params.postId
-    const files = await fsp.readdir(COMMENTS_DIR)
-    const list = []
-    for (const file of files) {
-      if (!file.endsWith('.json')) continue
-      try {
-        const raw = await fsp.readFile(path.join(COMMENTS_DIR, file), 'utf-8')
-        const obj = JSON.parse(raw)
-        if (obj.postId === postId) {
-          list.push({
-            id: obj.id,
-            postId: obj.postId,
-            nickname: obj.nickname,
-            content: obj.content,
-            createdAt: obj.createdAt,
-          })
-        }
-      } catch {}
-    }
-    list.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    const { data, error } = await supabase
+      .from('comments')
+      .select('id, post_id, nickname, content, created_at')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true })
+    if (error) return res.status(500).json({ error: error.message })
+
+    // 기존 형식으로 매핑
+    const list = (data || []).map(c => ({
+      id: c.id,
+      postId: c.post_id,
+      nickname: c.nickname,
+      content: c.content,
+      createdAt: new Date(c.created_at).toISOString(),
+    }))
     res.json(list)
   } catch (e) {
     console.error('list comments error', e)
@@ -243,14 +286,23 @@ app.post('/api/posts/:postId/comments', async (req, res) => {
     if (!nickname || !password || !content) {
       return res.status(400).json({ error: 'invalid body' })
     }
-    const postFile = path.join(POSTS_DIR, `${postId}.json`)
-    if (!fs.existsSync(postFile)) return res.status(404).json({ error: 'post not found' })
+
+    // posts 존재 확인 (없으면 404)
+    const { error: chkErr } = await supabase.from('posts').select('id').eq('id', postId).single()
+    if (chkErr) {
+      if (chkErr.code === 'PGRST116') return res.status(404).json({ error: 'post not found' })
+      return res.status(500).json({ error: chkErr.message })
+    }
 
     const id = nanoid12()
-    const now = new Date().toISOString()
     const passwordHash = await bcrypt.hash(password, 10)
-    const obj = { id, postId, nickname, content, createdAt: now, passwordHash }
-    await writeComment(obj)
+    const nowIso = new Date().toISOString()
+
+    const { error } = await supabase.from('comments').insert([
+      { id, post_id: postId, nickname, content, password_hash: passwordHash, created_at: nowIso },
+    ])
+    if (error) return res.status(500).json({ error: error.message })
+
     res.json({ id })
   } catch (e) {
     console.error('create comment error', e)
@@ -262,9 +314,16 @@ app.post('/api/comments/:cid/verify', async (req, res) => {
   try {
     const { password } = req.body || {}
     const cid = req.params.cid
-    const obj = await readComment(cid)
-    if (!obj) return res.status(404).json({ ok: false })
-    const ok = await bcrypt.compare(password || '', obj.passwordHash || '')
+    const { data, error } = await supabase
+      .from('comments')
+      .select('password_hash')
+      .eq('id', cid)
+      .single()
+    if (error) {
+      if (error.code === 'PGRST116') return res.status(404).json({ ok: false })
+      return res.status(500).json({ ok: false })
+    }
+    const ok = await bcrypt.compare(password || '', data.password_hash || '')
     res.json({ ok })
   } catch (e) {
     console.error('verify comment error', e)
@@ -277,13 +336,22 @@ app.put('/api/comments/:cid', async (req, res) => {
     const cid = req.params.cid
     const { content, password } = req.body || {}
     if (!content || !password) return res.status(400).json({ ok: false, msg: 'invalid body' })
-    const obj = await readComment(cid)
-    if (!obj) return res.status(404).json({ ok: false })
-    const ok = await bcrypt.compare(password, obj.passwordHash || '')
+
+    const { data: row, error: gErr } = await supabase
+      .from('comments')
+      .select('password_hash')
+      .eq('id', cid)
+      .single()
+    if (gErr) {
+      if (gErr.code === 'PGRST116') return res.status(404).json({ ok: false })
+      return res.status(500).json({ ok: false })
+    }
+    const ok = await bcrypt.compare(password, row.password_hash || '')
     if (!ok) return res.status(401).json({ ok: false })
-    obj.content = content
-    obj.updatedAt = new Date().toISOString()
-    await writeComment(obj)
+
+    const { error } = await supabase.from('comments').update({ content }).eq('id', cid)
+    if (error) return res.status(500).json({ ok: false })
+
     res.json({ ok: true })
   } catch (e) {
     console.error('update comment error', e)
@@ -295,11 +363,22 @@ app.delete('/api/comments/:cid', async (req, res) => {
   try {
     const cid = req.params.cid
     const { password } = req.body || {}
-    const obj = await readComment(cid)
-    if (!obj) return res.status(404).json({ ok: false })
-    const ok = await bcrypt.compare(password || '', obj.passwordHash || '')
+
+    const { data: row, error: gErr } = await supabase
+      .from('comments')
+      .select('password_hash')
+      .eq('id', cid)
+      .single()
+    if (gErr) {
+      if (gErr.code === 'PGRST116') return res.status(404).json({ ok: false })
+      return res.status(500).json({ ok: false })
+    }
+    const ok = await bcrypt.compare(password || '', row.password_hash || '')
     if (!ok) return res.status(401).json({ ok: false })
-    await deleteCommentFile(cid)
+
+    const { error } = await supabase.from('comments').delete().eq('id', cid)
+    if (error) return res.status(500).json({ ok: false })
+
     res.json({ ok: true })
   } catch (e) {
     console.error('delete comment error', e)
@@ -307,7 +386,7 @@ app.delete('/api/comments/:cid', async (req, res) => {
   }
 })
 
-/* ───────────────────── 서버 시작 (딱 한 번, 맨 마지막) ───────────────────── */
+/* ───────────────────── 서버 시작 ───────────────────── */
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API on http://0.0.0.0:${PORT}`)
 })
