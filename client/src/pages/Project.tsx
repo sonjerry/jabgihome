@@ -72,7 +72,7 @@ export default function Projects() {
               itemClassName="
                 h-[22rem] md:h-[28rem]
                 p-6 sm:p-8 md:p-12
-                bg-white/10 sm:backdrop-blur
+                bg-white/10 backdrop-blur
                 border border-white/10
                 shadow-sm md:shadow-xl
                 text-white text-[15px] md:text-lg
