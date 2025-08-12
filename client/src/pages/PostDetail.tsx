@@ -9,7 +9,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Components } from 'react-markdown'
 import clsx from 'clsx'
-import { useAuth } from '../state/auth'   // ✅ 관리자 체크
+import { useAuth } from '../state/auth'
 
 function formatFullDate(s: string) {
   const d = new Date(s)
@@ -28,7 +28,7 @@ function firstImageFromMarkdown(md: string) {
 export default function PostDetail() {
   const { id } = useParams<{ id: string }>()
   const nav = useNavigate()
-  const { role, loading: authLoading } = useAuth()   // ✅
+  const { role, loading: authLoading } = useAuth()
   const [post, setPost] = useState<Post | null>(null)
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
@@ -36,9 +36,7 @@ export default function PostDetail() {
   useEffect(() => {
     if (!id) return
     setLoading(true)
-    getPost(id)
-      .then(setPost)
-      .finally(() => setLoading(false))
+    getPost(id).then(setPost).finally(() => setLoading(false))
   }, [id])
 
   const title = useMemo(() => post?.title ?? '', [post])
@@ -55,7 +53,7 @@ export default function PostDetail() {
       const API_BASE = import.meta.env.VITE_API_URL || ''
       const res = await fetch(`${API_BASE}/api/posts/${id}`, {
         method: 'DELETE',
-        credentials: 'include',          // ✅ 쿠키 포함
+        credentials: 'include',
       })
       if (!res.ok) throw new Error(await res.text().catch(() => 'delete failed'))
       nav('/blog')
@@ -67,14 +65,9 @@ export default function PostDetail() {
     }
   }
 
-  if (loading) {
-    return <div className="pt-24 mx-auto max-w-[1000px] px-3 md:px-6">불러오는 중…</div>
-  }
-  if (!post) {
-    return <div className="pt-24 mx-auto max-w-[1000px] px-3 md:px-6">게시글을 찾을 수 없습니다.</div>
-  }
+  if (loading) return <div className="pt-24 mx-auto max-w-[1000px] px-3 md:px-6">불러오는 중…</div>
+  if (!post) return <div className="pt-24 mx-auto max-w-[1000px] px-3 md:px-6">게시글을 찾을 수 없습니다.</div>
 
-  // ✅ ReactMarkdown 커스텀
   const mdComponents: Components = {
     img: ({ node, className, ...props }) => (
       <img {...props} loading="lazy" className={clsx('rounded-xl w-full h-auto max-h-[70vh] object-contain my-4', className)} />
@@ -105,13 +98,8 @@ export default function PostDetail() {
 
   return (
     <div className="pt-24 mx-auto max-w-[1000px] px-3 md:px-6">
-      {/* 상단 바: 뒤로 / 삭제(관리자만) */}
       <div className="flex items-center justify-between mb-4">
-        <Link
-          to="/blog"
-          className="inline-flex items-center gap-2 text-sm opacity-80 hover:opacity-100"
-          aria-label="뒤로가기"
-        >
+        <Link to="/blog" className="inline-flex items-center gap-2 text-sm opacity-80 hover:opacity-100" aria-label="뒤로가기">
           <svg width="18" height="18" viewBox="0 0 24 24" className="-ml-1">
             <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
@@ -119,17 +107,12 @@ export default function PostDetail() {
         </Link>
 
         {!authLoading && role === 'admin' && (
-          <button
-            onClick={onDelete}
-            disabled={deleting}
-            className="glass px-3 py-1.5 rounded-xl text-red-200 hover:bg-red-500/20 disabled:opacity-60"
-          >
+          <button onClick={onDelete} disabled={deleting} className="glass px-3 py-1.5 rounded-xl text-red-200 hover:bg-red-500/20 disabled:opacity-60">
             {deleting ? '삭제 중…' : '삭제'}
           </button>
         )}
       </div>
 
-      {/* 히어로 이미지 */}
       {hero && (
         <div className="mb-4 overflow-hidden rounded-2xl">
           <img src={hero} alt={title} className="w-full h-auto object-cover max-h-[55vh]" />
@@ -153,23 +136,11 @@ export default function PostDetail() {
           </header>
 
           {/* 본문 */}
-          <div className="prose prose-invert max-w-none leading-relaxed">
+          <div className="prose prose-invert max-w-none leading-relaxed post-content">
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
               {post.content}
             </ReactMarkdown>
           </div>
-
-          {/* 첨부 갤러리 */}
-          {!!post.attachments?.length && (
-            <section className="mt-8">
-              <h3 className="text-sm font-semibold mb-3 opacity-80">첨부 이미지</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {post.attachments!.filter(a => (a.type || '').startsWith('image/')).map(a => (
-                  <img key={a.id} src={a.url} alt={a.name || 'attachment'} className="w-full h-36 object-cover rounded-lg" loading="lazy" />
-                ))}
-              </div>
-            </section>
-          )}
         </article>
       </GlassCard>
 

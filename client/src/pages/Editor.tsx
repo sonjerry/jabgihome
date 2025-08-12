@@ -1,3 +1,4 @@
+// client/src/pages/Editor.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { Post, Attachment } from '../types'
@@ -47,17 +48,6 @@ export default function Editor(){
   const addTag = ()=>{ const tt = tagInput.trim(); if(tt && !tags.includes(tt)) setTags(v=>[...v,tt]); setTagInput('') }
   const removeTag = (tt:string)=> setTags(v=>v.filter(x=>x!==tt))
 
-  const onFiles = async (files: FileList | null) => {
-    if(!files) return
-    try{
-      const uploaded: Attachment[] = []
-      for(const f of Array.from(files)){ uploaded.push(await uploadFile(f)) }
-      setAttachments(prev=>[...prev,...uploaded])
-    }catch(e){
-      console.error(e); alert('파일 업로드에 실패했습니다.')
-    }
-  }
-
   const insertMarkdown = (md: string) => {
     const el = textareaRef.current
     if (!el) { setContent(c => (c ? (c + '\n' + md) : md)); return }
@@ -65,11 +55,29 @@ export default function Editor(){
     const end = el.selectionEnd ?? el.value.length
     const next = el.value.slice(0, start) + md + el.value.slice(end)
     setContent(next)
-    // 커서 이동
     requestAnimationFrame(() => {
       el.selectionStart = el.selectionEnd = start + md.length
       el.focus()
     })
+  }
+
+  const onFiles = async (files: FileList | null) => {
+    if(!files) return
+    try{
+      const uploaded: Attachment[] = []
+      for (const f of Array.from(files)) {
+        const att = await uploadFile(f)
+        uploaded.push(att)
+        // 이미지라면 즉시 본문에 삽입
+        if ((att.type || '').startsWith('image/')) {
+          const alt = att.name || 'image'
+          insertMarkdown(`\n\n![${alt}](${att.url})\n\n`)
+        }
+      }
+      setAttachments(prev=>[...prev,...uploaded])
+    }catch(e){
+      console.error(e); alert('파일 업로드에 실패했습니다.')
+    }
   }
 
   const onSave = async () => {
@@ -77,7 +85,7 @@ export default function Editor(){
     const post: Post = {
       id: isEdit ? (id as string) : uid(),
       title, content, category, tags,
-      createdAt: isEdit ? now : now,
+      createdAt: now,
       updatedAt: isEdit ? now : undefined,
       comments: [],
       attachments
@@ -151,7 +159,7 @@ export default function Editor(){
                     {isImg && (
                       <button
                         type="button"
-                        onClick={() => insertMarkdown(`\n![${a.name || 'image'}](${a.url})\n`)}
+                        onClick={() => insertMarkdown(`\n\n![${a.name || 'image'}](${a.url})\n\n`)}
                         className="absolute right-1.5 bottom-1.5 text-[10px] px-2 py-1 rounded bg-black/60 hover:bg-black/80"
                         title="본문에 이미지 마크다운 삽입"
                       >
@@ -166,7 +174,7 @@ export default function Editor(){
         </div>
 
         {/* 미리보기 */}
-        <div className="glass rounded-2xl p-3 prose prose-invert max-w-none">
+        <div className="glass rounded-2xl p-3 prose prose-invert max-w-none post-content">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{

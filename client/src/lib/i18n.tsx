@@ -13,8 +13,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLang] = useState<Lang>('ko')
 
   const dict = useMemo(() => ({
-    ko: { home: '홈', blog: '블로그', gallery: '갤러리', chat: '채팅봇' },
-    en: { home: 'Home', blog: 'Blog', gallery: 'Gallery', chat: 'Chatbot' },
+    ko: { home: '홈', blog: '블로그', gallery: '갤러리', chat: '프로젝트' },
+    en: { home: 'Home', blog: 'Blog', gallery: 'Gallery', chat: 'Project' },
   }), [])
 
   const value = useMemo<I18nValue>(() => ({

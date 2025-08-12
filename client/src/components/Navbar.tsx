@@ -8,7 +8,7 @@ import AudioDock from './AudioDock'
 const tabs = [
   { path: '/', key: 'home' },
   { path: '/blog', key: 'blog' },
-  { path: '/chat', key: 'chatbot' },
+  { path: '/project', key: 'project' },
   { path: '/gallery', key: 'gallery' },
 ] as const
 

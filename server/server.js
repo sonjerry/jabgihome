@@ -198,8 +198,10 @@ app.post('/api/upload', requireAdmin, upload.single('file'), async (req, res) =>
       return res.status(500).json({ error: msg, hint, bucket: SUPABASE_BUCKET })
     }
 
-    const { data: pub } = supabase.storage.from(SUPABASE_BUCKET).getPublicUrl(key)
-    return res.json({ id: key, type: f.mimetype, url: pub.publicUrl })
+    const { data: signed, error: sErr } =
+      await supabase.storage.from(SUPABASE_BUCKET).createSignedUrl(key, 60 * 60 * 24 * 365)
+    if (sErr) return res.status(500).json({ error: sErr.message })
+    return res.json({ id: key, type: f.mimetype, url: signed.signedUrl })
   } catch (e) {
     console.error('upload error', e)
     res.status(500).json({ error: 'upload failed' })

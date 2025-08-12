@@ -51,7 +51,7 @@ export default function Blog() {
     <PageShell className="pt-16 md:pt-8">
       <BlogHeader />
 
-      {ordered.length === 0 && <p className="text-cream/70">아직 게시글이 없습니다.</p>}
+      {ordered.length === 0 && <p className="text-cream/70">로딩중... (무료 서버 써서 오랜만에 접속하면 부팅해야함)</p>}
 
       <div className="space-y-4">
         {ordered.map((p) => {

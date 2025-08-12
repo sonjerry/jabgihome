@@ -6,7 +6,7 @@ import Blog from './pages/Blog'
 import Editor from './pages/Editor'
 import PostDetail from './pages/PostDetail'
 import Gallery from './pages/Gallery'
-import Chatbot from './pages/Chatbot'
+import Project from './pages/Project'
 import NotFound from './pages/NotFound'
 import RequireAdmin from './routes/RequireAdmin'
 import AudioProvider from './lib/audio/AudioProvider'
@@ -40,7 +40,7 @@ export default function App() {
           />
           <Route path="/blog/:id" element={<PostDetail />} />
           <Route path="/gallery" element={<Gallery />} />
-          <Route path="/chat" element={<Chatbot />} />
+          <Route path="/project" element={<Project />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>

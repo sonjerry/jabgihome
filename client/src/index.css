@@ -12,11 +12,16 @@
 }
 
 @font-face {
-  font-family: 'ROKAF Sans';
-  src: url('/fonts/ROKAF Sans Medium.ttf') format('truetype');
+  font-family: 'Moneygraphy-Rounded';
+  src: url('/fonts/Moneygraphy-Rounded.ttf') format('truetype');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+}
+/* 본문 전용 글꼴 */
+.post-content {
+  font-family: 'Moneygraphy-Rounded', ui-sans-serif, system-ui, -apple-system,
+    'Noto Sans KR', 'Apple SD Gothic Neo', 'Helvetica Neue', Arial, 'Malgun Gothic', '맑은 고딕', sans-serif;
 }
 
 /* 루트 높이 */
