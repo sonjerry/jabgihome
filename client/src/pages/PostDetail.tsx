@@ -13,9 +13,15 @@ import { useAuth } from '../state/auth'
 
 function formatFullDate(s: string) {
   const d = new Date(s)
-  return d.toLocaleString()
+  let dateStr = d.toLocaleDateString(undefined, { 
+    year: 'numeric', 
+    month: 'numeric', 
+    day: 'numeric' 
+  })
+  // 끝에 마침표 제거
+  dateStr = dateStr.replace(/\.$/, '')
+  return dateStr
 }
-
 function firstImageFromAttachments(atts?: Attachment[]) {
   const img = (atts || []).find(a => (a.type || '').startsWith('image/') && a.url)
   return img?.url || null
@@ -69,22 +75,22 @@ export default function PostDetail() {
   if (!post) return <div className="pt-24 mx-auto max-w-[1000px] px-3 md:px-6">게시글을 찾을 수 없습니다.</div>
 
   const mdComponents: Components = {
-    img: ({ node, className, ...props }) => (
+    img: ({ className, ...props }) => (
       <img {...props} loading="lazy" className={clsx('rounded-xl w-full h-auto max-h-[70vh] object-contain my-4', className)} />
     ),
-    a: ({ node, className, ...props }) => (
+    a: ({ className, ...props }) => (
       <a {...props} target="_blank" rel="noreferrer" className={clsx('underline decoration-dotted', className)} />
     ),
-    h1: ({ node, className, ...props }) => (
+    h1: ({ className, ...props }) => (
       <h1 {...props} className={clsx('mt-8 mb-4 text-3xl md:text-4xl font-bold', className)} />
     ),
-    h2: ({ node, className, ...props }) => (
+    h2: ({ className, ...props }) => (
       <h2 {...props} className={clsx('mt-7 mb-3 text-2xl md:text-3xl font-semibold', className)} />
     ),
-    h3: ({ node, className, ...props }) => (
+    h3: ({ className, ...props }) => (
       <h3 {...props} className={clsx('mt-6 mb-2 text-xl md:text-2xl font-semibold', className)} />
     ),
-    code: ({ node, className, children, ...props }) => {
+    code: ({ className, children, ...props }) => {
       const isBlock = !!className && className.includes('language-')
       return isBlock ? (
         <pre className="bg-black/40 rounded-xl p-4 overflow-x-auto">
@@ -107,17 +113,17 @@ export default function PostDetail() {
         </Link>
 
         {!authLoading && role === 'admin' && (
-          <button onClick={onDelete} disabled={deleting} className="glass px-3 py-1.5 rounded-xl text-red-200 hover:bg-red-500/20 disabled:opacity-60">
+          <button
+            onClick={onDelete}
+            disabled={deleting}
+            className="glass px-3 py-1.5 rounded-xl text-red-200 hover:bg-red-500/20 disabled:opacity-60"
+          >
             {deleting ? '삭제 중…' : '삭제'}
           </button>
         )}
       </div>
 
-      {hero && (
-        <div className="mb-4 overflow-hidden rounded-2xl">
-          <img src={hero} alt={title} className="w-full h-auto object-cover max-h-[55vh]" />
-        </div>
-      )}
+    
 
       <GlassCard>
         <article className="p-5 md:p-8">
@@ -129,13 +135,18 @@ export default function PostDetail() {
             {post.tags?.length > 0 && (
               <div className="flex gap-2 flex-wrap mt-3">
                 {post.tags.map((t, i) => (
-                  <span key={i} className="text-[11px] px-2 py-1 rounded-full bg-white/10">#{t}</span>
+                  <Link
+                    key={i}
+                    to={`/blog?tag=${encodeURIComponent(t)}`}
+                    className="text-[11px] px-2 py-1 rounded-full bg-white/10 hover:bg-white/20"
+                  >
+                    #{t}
+                  </Link>
                 ))}
               </div>
             )}
           </header>
 
-          {/* 본문 */}
           <div className="prose prose-invert max-w-none leading-relaxed post-content">
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
               {post.content}
@@ -144,7 +155,8 @@ export default function PostDetail() {
         </article>
       </GlassCard>
 
-      <section className="mt-8">
+      {/* 댓글 섹션 - 여백 확보 */}
+      <section className="mt-12 space-y-6">
         <CommentSection postId={post.id} />
       </section>
     </div>

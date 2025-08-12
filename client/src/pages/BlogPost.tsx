@@ -5,16 +5,21 @@ import GlassCard from '../components/GlassCard'
 import type { Post } from '../types'
 import { getPost } from '../lib/api'
 import CommentSection from '../components/CommentSection'
-import { useAuth } from '../state/auth'   // ✅ 추가
+import { useAuth } from '../state/auth'
 
 function formatFullDate(s: string) {
   const d = new Date(s)
-  return d.toLocaleString()
+  // 날짜만 표시 (시간 제거)
+  return d.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric'
+  })
 }
 
 export default function BlogPost() {
   const nav = useNavigate()
-  const { role, loading: authLoading } = useAuth()  // ✅ loading까지 받기
+  const { role, loading: authLoading } = useAuth()
   const { id } = useParams<{ id: string }>()
   const [post, setPost] = useState<Post | null>(null)
   const [loading, setLoading] = useState(true)
@@ -36,7 +41,7 @@ export default function BlogPost() {
       const API_BASE = import.meta.env.VITE_API_URL || ''
       const res = await fetch(`${API_BASE}/api/posts/${id}`, {
         method: 'DELETE',
-        credentials: 'include',         // ✅ 쿠키 포함
+        credentials: 'include',
       })
       if (!res.ok) throw new Error(await res.text().catch(() => 'delete failed'))
       nav('/blog')
@@ -70,7 +75,6 @@ export default function BlogPost() {
           뒤로
         </Link>
 
-        {/* ✅ auth 로딩 끝나고 admin일 때만 버튼 표시 */}
         {!authLoading && role === 'admin' && (
           <button
             onClick={onDelete}
