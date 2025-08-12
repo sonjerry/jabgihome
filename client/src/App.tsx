@@ -1,5 +1,6 @@
 // client/src/App.tsx
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Blog from './pages/Blog'
@@ -11,39 +12,62 @@ import NotFound from './pages/NotFound'
 import RequireAdmin from './routes/RequireAdmin'
 import AudioProvider from './lib/audio/AudioProvider'
 
+const transition = { duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }
+const variants = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -10 },
+}
+
+function Page({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      variants={variants}
+      transition={transition}
+      className="min-h-screen"
+    >
+      {children}
+    </motion.div>
+  )
+}
+
 export default function App() {
+  const location = useLocation()
+
   return (
     <AudioProvider>
-      {/* 고정 사이드바(모바일 오버레이)는 Navbar 내부에서 처리 */}
       <Navbar />
-
-      {/* 본문: 데스크탑(md↑)에서만 사이드바 폭(16rem) 만큼 왼쪽 패딩 */}
       <main className="max-w-[100vw] min-h-screen pl-0 md:pl-64">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route
-            path="/blog/new"
-            element={
-              <RequireAdmin>
-                <Editor />
-              </RequireAdmin>
-            }
-          />
-          <Route
-            path="/blog/edit/:id"
-            element={
-              <RequireAdmin>
-                <Editor />
-              </RequireAdmin>
-            }
-          />
-          <Route path="/blog/:id" element={<PostDetail />} />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/project" element={<Project />} />
-          <Route path="/404" element={<NotFound />} />
-          <Route path="*" element={<Navigate to="/404" replace />} />
-        </Routes>
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<Page><Home /></Page>} />
+            <Route path="/blog" element={<Page><Blog /></Page>} />
+            <Route
+              path="/blog/new"
+              element={
+                <RequireAdmin>
+                  <Page><Editor /></Page>
+                </RequireAdmin>
+              }
+            />
+            <Route
+              path="/blog/edit/:id"
+              element={
+                <RequireAdmin>
+                  <Page><Editor /></Page>
+                </RequireAdmin>
+              }
+            />
+            <Route path="/blog/:id" element={<Page><PostDetail /></Page>} />
+            <Route path="/gallery" element={<Page><Gallery /></Page>} />
+            <Route path="/project" element={<Page><Project /></Page>} />
+            <Route path="/404" element={<Page><NotFound /></Page>} />
+            <Route path="*" element={<Navigate to="/404" replace />} />
+          </Routes>
+        </AnimatePresence>
       </main>
     </AudioProvider>
   )

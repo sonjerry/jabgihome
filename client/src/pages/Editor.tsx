@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { Post, Attachment } from '../types'
-import { useI18n } from '../lib/i18n'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { getPost, savePost, uploadFile } from '../lib/api'
@@ -11,7 +10,6 @@ import PageShell from '../components/PageShell'
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
 
 export default function Editor(){
-  const { t } = useI18n()
   const nav = useNavigate()
   const { id } = useParams()
   const isEdit = Boolean(id)
@@ -68,7 +66,6 @@ export default function Editor(){
       for (const f of Array.from(files)) {
         const att = await uploadFile(f)
         uploaded.push(att)
-        // 이미지라면 즉시 본문에 삽입
         if ((att.type || '').startsWith('image/')) {
           const alt = att.name || 'image'
           insertMarkdown(`\n\n![${alt}](${att.url})\n\n`)
@@ -104,9 +101,9 @@ export default function Editor(){
   return (
     <PageShell>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl md:text-3xl font-semibold">{isEdit ? t('editPost') : t('newPost')}</h2>
+        <h2 className="text-2xl md:text-3xl font-semibold">{isEdit ? '글 수정' : '새 글 작성'}</h2>
         <div className="flex gap-2">
-          <button onClick={onSave} className="glass px-3 py-2 rounded-xl hover:bg-white/10">{t('save')}</button>
+          <button onClick={onSave} className="glass px-3 py-2 rounded-xl hover:bg-white/10">저장</button>
         </div>
       </div>
 
@@ -115,13 +112,13 @@ export default function Editor(){
         <div className="glass rounded-2xl p-3">
           <input
             className="w-full bg-transparent text-xl md:text-2xl font-semibold mb-3 outline-none"
-            placeholder={t('title')} value={title} onChange={e=>setTitle(e.target.value)} />
+            placeholder="제목" value={title} onChange={e=>setTitle(e.target.value)} />
 
           <div className="flex flex-wrap gap-2 mb-3">
-            <input className="glass px-3 py-2 rounded-xl bg-white/5" placeholder={t('category')}
+            <input className="glass px-3 py-2 rounded-xl bg-white/5" placeholder="카테고리"
                    value={category} onChange={e=>setCategory(e.target.value)} />
             <div className="flex items-center gap-2">
-              <input className="glass px-3 py-2 rounded-xl bg-white/5" placeholder={t('tags')}
+              <input className="glass px-3 py-2 rounded-xl bg-white/5" placeholder="태그"
                      value={tagInput} onChange={e=>setTagInput(e.target.value)}
                      onKeyDown={e=>e.key==='Enter'&&addTag()} />
               <button className="px-3 py-2 rounded-xl hover:bg-white/10" onClick={addTag}>+</button>
@@ -137,7 +134,7 @@ export default function Editor(){
           <textarea
             ref={textareaRef}
             className="w-full h-[52vh] md:h-[60vh] bg-transparent outline-none resize-none leading-relaxed"
-            placeholder={t('content')}
+            placeholder="본문 내용을 입력하세요"
             value={content}
             onChange={e=>setContent(e.target.value)}
           />

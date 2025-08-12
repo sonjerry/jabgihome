@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import FullscreenVideoModal from '../components/FullscreenVideoModal'
-import AutoStickers from '../components/AutoStickers'
-import ScrollStack, { ScrollStackItem } from '../components/ScrollStack'
+import Stickers from '../components/StickerPeel'
 
 export default function Home() {
   const [showVideo, setShowVideo] = useState(false)
@@ -48,7 +47,7 @@ export default function Home() {
 
         </div>
         {/* 모달 열리면 스티커 숨김(기존 동작) */}
-        {!showVideo && <AutoStickers />}
+        {!showVideo && <Stickers />}
       </section>
     </main>
   )
