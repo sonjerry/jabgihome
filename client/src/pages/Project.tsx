@@ -1,47 +1,31 @@
-import { useLayoutEffect, useRef, useState } from 'react'
-import PageShell from '../components/PageShell'
+// client/src/pages/Projects.tsx
+import { useRef, useLayoutEffect, useState } from 'react'
+import GlassCard from '../components/GlassCard'
 import ScrollStack, { ScrollStackItem } from '../components/ScrollStack'
 
 type Project = {
   title: string
-  desc: string
-  href?: string
-  tags?: string[]
-  image?: string
+  subtitle?: string
+  body?: string
 }
 
-const PROJECTS: Project[] = [
-  {
-    title: '심레이싱 조종 RC카',
-    desc: '라즈베리파이 기반,',
-    href: 'https://leegaeulblog.onrender.com',
-    
-  },
-  {
-    title: 'openapi 튜링 테스트',
-    desc: '사람과 ai를 구별할 수 있을까요',
-   
-  },
-  {
-    title: '3',
-    desc: '3번',
-    
-  },
+const PROJECT_CARDS: Project[] = [
+  { title: 'React 블로그', subtitle: 'Vite · React · Render', body: '본 홈페이지를 만드는 프로젝트' },
+  { title: 'Openai 튜링 테스트', subtitle: 'Openapi · js', body: 'gpt5를 이용하여 사람과 구별할 수 없는 채팅봇' },
+  { title: '심레이싱 RC카', subtitle: 'Raspberry pi · Embedded · WebRTC ', body: '심레이싱 장비로 조종하는 RC카 (알리에서 부품 공수)' },
+  { title: 'ScrollStack 실험', subtitle: 'Lenis', body: '카드 스택 스크롤 인터랙션.' },
+  { title: 'ScrollStack 실험', subtitle: 'Lenis', body: '카드 스택 스크롤 인터랙션.' },
+  { title: 'ScrollStack 실험', subtitle: 'Lenis', body: '카드 스택 스크롤 인터랙션.' },
 ]
 
 export default function Projects() {
   const headerRef = useRef<HTMLDivElement | null>(null)
-  const [pinTopPx, setPinTopPx] = useState(112)      // 타이틀 바로 아래 고정점
-  const [vh, setVh] = useState(640)                  // 카드 높이(=뷰포트 내 가용 높이)
+  const [headerHeight, setHeaderHeight] = useState(0)
 
   useLayoutEffect(() => {
     const measure = () => {
-      const topPad = 96 /* pt-24 */
       const h = headerRef.current?.getBoundingClientRect().height ?? 0
-      const pin = Math.round(topPad + h + 16)         // 타이틀과 약간 간격
-      const usable = Math.max(360, window.innerHeight - pin - 16)
-      setPinTopPx(pin)
-      setVh(usable)
+      setHeaderHeight(h)
     }
     measure()
     window.addEventListener('resize', measure)
@@ -49,113 +33,53 @@ export default function Projects() {
   }, [])
 
   return (
-    <PageShell>
-      <main className="pt-24 mx-auto w-full max-w-[1400px] px-3 md:px-6">
-        {/* 타이틀 */}
-        <div ref={headerRef} className="mb-4 md:mb-6">
-          <h1 className="text-2xl md:text-3xl font-semibold">프로젝트</h1>
-          <p className="text-sm text-cream/70 mt-1">개인 토이 프로젝트들</p>
+    <main className="relative min-h-screen overflow-x-hidden">
+      {/* 스크롤 영역 */}
+      <section
+        className="
+          absolute inset-x-0 bottom-0 top-6
+          px-3 md:px-8 lg:px-12
+          z-0 overflow-y-auto
+        "
+      >
+        {/* 헤더 카드 */}
+        <div ref={headerRef}>
+          <GlassCard className="mb-6">
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">프로젝트</h1>
+            <p className="text-sm md:text-base text-white/70 mt-4">요즘 내가 하고있는 것들</p>
+          </GlassCard>
         </div>
 
-        {/* 모바일: 단순 리스트 */}
-        <section className="md:hidden space-y-3">
-          {PROJECTS.map((p, i) => (
-            <article key={i} className="glass rounded-2xl p-4">
-              <h2 className="text-lg font-semibold">{p.title}</h2>
-              <p className="text-sm text-cream/80 mt-1">{p.desc}</p>
-              {p.tags?.length ? (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {p.tags.map((t) => (
-                    <span key={t} className="text-[11px] px-2 py-0.5 rounded-full bg-white/10">#{t}</span>
-                  ))}
-                </div>
-              ) : null}
-              {p.href ? (
-                <a
-                  href={p.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex items-center gap-2 text-sm underline decoration-dotted"
-                >
-                  열기
-                  <svg width="14" height="14" viewBox="0 0 24 24">
-                    <path d="M7 17L17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </a>
-              ) : (
-                <span className="mt-3 inline-block text-xs opacity-60">링크 준비 중</span>
-              )}
-            </article>
+        {/* 헤더 높이만큼 여백을 살짝 추가해 스택이 겹치지 않게 함 */}
+        <div style={{ height: Math.max(8, Math.floor(headerHeight * 0.05)) }} />
+
+        {/* ScrollStack */}
+        <ScrollStack className="max-w-10xl mx-auto">
+          {PROJECT_CARDS.map((p, i) => (
+            <ScrollStackItem
+              key={i}
+                itemClassName="
+                  w-[95%] sm:w-[95%] md:w-[95%]  /* 화면 크기에 따라 가로폭 확장 */
+                  h-96 md:h-[28rem]
+                  p-10 md:p-16
+                  bg-white/10 backdrop-blur
+                  border border-white/10
+                  text-white text-lg md:text-xl
+                  mx-auto                         /* 가운데 정렬 */
+                  hover:scale-[1.01] transition-transform
+                "
+
+            >
+              <h2 className="text-4xl md:text-4xl font-bold">{p.title}</h2>
+              {p.subtitle && <p className="mt-2 text-white/60">{p.subtitle}</p>}
+              {p.body && <p className="mt-4 text-white/80 leading-relaxed">{p.body}</p>}
+            </ScrollStackItem>
           ))}
-        </section>
+        </ScrollStack>
 
-        {/* 데스크톱: ScrollStack */}
-        <section className="hidden md:block">
-          <ScrollStack
-            pinTopPx={pinTopPx}
-            viewportHeight={vh}
-            stackGap={24}
-            perCardScroll={Math.max(0.6 * vh, 360)}
-            baseScale={0.92}
-            itemScale={0.04}
-            rotationAmount={0.4}
-          >
-            {PROJECTS.map((p, i) => (
-              <ScrollStackItem key={i} itemClassName="glass">
-                <div className="h-full w-full grid grid-cols-1 lg:grid-cols-5 gap-4">
-                  {/* 텍스트 */}
-                  <div className="lg:col-span-3 flex flex-col h-full">
-                    <h2 className="text-xl md:text-2xl font-semibold">{p.title}</h2>
-                    <p className="text-sm md:text-base text-cream/80 mt-2 flex-1">{p.desc}</p>
-                    {p.tags?.length ? (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {p.tags.map((t) => (
-                          <span key={t} className="text-[11px] px-2 py-0.5 rounded-full bg-white/10">#{t}</span>
-                        ))}
-                      </div>
-                    ) : null}
-                    <div className="mt-4">
-                      {p.href ? (
-                        <a
-                          href={p.href}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-2 text-sm underline decoration-dotted"
-                        >
-                          열기
-                          <svg width="14" height="14" viewBox="0 0 24 24">
-                            <path d="M7 17L17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </a>
-                      ) : (
-                        <span className="text-xs opacity-60">링크 준비 중</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 이미지/프리뷰 */}
-                  <div className="lg:col-span-2">
-                    <div className="h-full w-full rounded-2xl overflow-hidden bg-white/5">
-                      {p.image ? (
-                        <img
-                          src={p.image}
-                          alt={`${p.title} preview`}
-                          className="block w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="h-full w-full grid place-items-center">
-                          <span className="text-6xl">🧩</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </ScrollStackItem>
-            ))}
-          </ScrollStack>
-        </section>
-      </main>
-    </PageShell>
+        {/* 바닥 여백 */}
+        <div className="h-20" />
+      </section>
+    </main>
   )
 }

@@ -30,7 +30,7 @@ function BlogHeader() {
       <div className="flex items-center justify-between px-1 md:px-1 py-1 md:py-1">
         <div>
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">블로그</h1>
-          <p className="text-sm md:text-base text-white/70 mt-4">일기같은거</p>
+          <p className="text-sm md:text-base text-white/70 mt-4">일기같은</p>
         </div>
         {!loading && role === 'admin' && (
           <Link to="/blog/new" className="glass px-3 py-2 rounded-xl hover:bg-white/20 text-sm">
