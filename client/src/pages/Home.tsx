@@ -8,10 +8,10 @@ import GlassCard from '../components/GlassCard'
 
 /**
  * 목표
- * - 스크롤 완전 제거(모바일 포함): 모든 콘텐츠 1스크린에 수납
- * - 3D 모델 카드 비중 축소
- * - Now/Tech Stack/About/허브(열어보기) 카드 전부 삭제
- * - 글래스모피즘 톤 통일, 모바일 우선 배치
+ * - 스크롤 완전 제거(모바일 포함)
+ * - 시각적 계층 구조 명확화
+ * - 중앙 집중형 레이아웃으로 시선 집중
+ * - 글래스모피즘 톤 통일
  */
 export default function Home() {
   const [showVideo, setShowVideo] = useState(false)
@@ -39,162 +39,107 @@ export default function Home() {
   }, [])
 
   return (
-    <main className="relative min-h-screen overflow-hidden">
+    <main className="relative min-h-screen overflow-hidden bg-black text-white">
+      {/* 배경 그라데이션과 블러 효과를 위한 레이어 */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#1E293B] via-[#0F172A] to-[#0A121E] backdrop-blur-3xl"></div>
+
+      {/* 비디오 모달은 배경 위에 띄움 */}
       <FullscreenVideoModal open={showVideo} onClose={closeVideo} />
 
-      {/* 상단 네비게이션 높이를 top-16 으로 가정. 내부는 절대 스크롤 금지 */}
-      <section className="absolute inset-x-0 top-16 bottom-0 z-0 overflow-hidden">
-        {/* 높이를 고정: calc(100vh - 64px). 모든 콘텐츠는 이 안에 수납 */}
-        <div className="h-full px-3 md:px-6 lg:px-10">
-          {/* 상단 헤더 + 알림 배지 */}
-          <header className="h-[12%] min-h-[64px] max-h-[96px] flex flex-col justify-center gap-1 md:gap-2">
-            <div className="flex items-center gap-2">
-              <span className="rounded-full border border-white/15 bg-white/10 backdrop-blur px-2.5 py-1 text-[10px] md:text-xs text-white/90">
-                {today}
-              </span>
-              <span className="rounded-full border border-emerald-300/30 bg-emerald-300/10 backdrop-blur px-2.5 py-1 text-[10px] md:text-xs text-emerald-200">
-                Glass v3
-              </span>
-            </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
-              이가을 블로그
-            </h1>
-            <p className="text-xs md:text-sm text-white/70">
-              AI 친화적인 소프트웨어 전공생의 블로그
-            </p>
-          </header>
+      {/* 모든 콘텐츠를 수직 중앙으로 정렬 */}
+      <section className="relative z-10 w-full h-screen p-4 md:p-8 flex flex-col items-center justify-center">
 
-          {/* 본문: 좌우 2단(모바일 1단). 높이 엄격 배분으로 스크롤 차단 */}
-          <div
-            className="
-              grid gap-3 md:gap-4
-              grid-cols-1 lg:grid-cols-12
-              h-[88%]  /* 헤더 제외 전체 */
-            "
-          >
-            {/* 좌측: 소개 + CTA (메인 정보) */}
-            <div
-              className="
-                order-2 lg:order-1
-                lg:col-span-6
-                flex flex-col
-                h-full
-              "
-            >
-              {/* 소개 카드: 고정 높이 */}
-              <GlassCard
-                className="
-                  bg-white/10 backdrop-blur border border-white/15 text-white
-                  px-5 py-4 md:px-6 md:py-6
-                  flex-1
-                  min-h-0
-                "
-              >
-                <div className="flex h-full flex-col justify-between">
-                  <div>
-                    <h2 className="text-lg md:text-2xl text-amber-300 font-semibold">홈페이지 소개</h2>
-                    <p className="mt-2 text-[12px] md:text-sm leading-relaxed text-white/90">
-                      인스타 싫어서 홈페이지 만듬
-                    </p>
-                  </div>
-
-                  {/* 핵심 링크 3개: 화면 하나에 딱 맞게 */}
-                  <nav className="mt-4 grid grid-cols-3 gap-2 md:gap-3">
-                    <CTA to="/blog" title="블로그" />
-                    <CTA to="/gallery" title="갤러리" />
-                    <CTA to="/chat" title="챗봇" />
-                  </nav>
-
-                  {/* 태그 칩: 1줄로만, 넘치면 숨김 */}
-                  <div className="mt-3 flex items-center gap-2 overflow-hidden">
-                    {['TypeScript', 'React', 'Vite', 'Tailwind', 'Node', 'Supabase', 'Render', '3D'].map((s) => (
-                      <span
-                        key={s}
-                        className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] md:text-xs text-white/80"
-                      >
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </GlassCard>
-
-              {/* 하단 작은 카드: 공지/상태 요약(1줄 제한) */}
-              <div className="mt-3 md:mt-4 grid grid-cols-3 gap-2 md:gap-3">
-                <MiniStat label="업데이트" value="주 3~5회" />
-                <MiniStat label="실험" value="UI·LLM" />
-                <MiniStat label="선호" value="미니멀" />
-              </div>
-            </div>
-
-            {/* 우측: 3D 모델 (비중 축소, 고정 높이/폭) */}
-            <div
-              className="
-                order-1 lg:order-2
-                lg:col-span-6
-                h-full
-                flex items-center
-              "
-            >
-              <GlassCard
-                className="
-                  relative w-full
-                  bg-white/10 backdrop-blur border border-white/15
-                  shadow-[0_0_30px_rgba(0,0,0,0.25)]
-                  overflow-hidden
-                  px-0 py-0
-                  h-[28vh] md:h-[32vh] lg:h-[40vh]  /* 비중 축소 */
-                  mx-auto
-                "
-              >
-                <ModelViewer
-                  url="/models/aira.glb"
-                  width="100%"
-                  height="100%"
-                  environmentPreset="studio"
-                  autoFrame
-                  autoRotate
-                  autoRotateSpeed={0.25}
-                  enableManualRotation
-                  enableManualZoom
-                  enableHoverRotation
-                  placeholderSrc="/icons/model-placeholder.png"
-                  showScreenshotButton={false}
-                  ambientIntensity={0.4}
-                  keyLightIntensity={1}
-                  fillLightIntensity={0.6}
-                  rimLightIntensity={0.8}
-                  defaultZoom={1.22}
-                  minZoomDistance={0.6}
-                  maxZoomDistance={6}
-                />
-
-                {/* 우하단 캡션(작게) */}
-                <div className="absolute right-2 bottom-2">
-                  <div className="rounded-full border border-white/15 bg-black/30 backdrop-blur px-2.5 py-0.5 text-[10px] md:text-[11px] text-white/90">
-                    AI로 만든 모델
-                  </div>
-                </div>
-              </GlassCard>
-            </div>
+        {/* 상단 헤더: 중앙 정렬 */}
+        <header className="text-center mb-6 md:mb-8">
+          <div className="flex justify-center items-center gap-2 mb-2">
+            <Badge text={today} color="white" />
+            <Badge text="Glass v4" color="emerald" />
           </div>
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg">
+            이가을 블로그
+          </h1>
+          <p className="mt-2 text-md md:text-lg text-white/70">
+            AI 친화적인 소프트웨어 전공생의 블로그
+          </p>
+        </header>
 
-          {/* 스티커는 장식용: 화면 밖으로 넘치지 않게, 포인터 막기, md 이상에서만 */}
-          {!showVideo && (
-            <div className="pointer-events-none hidden md:block">
-              <div className="absolute right-1 bottom-1 w-[180px] opacity-80">
-                <Stickers />
-              </div>
+        {/* 메인 컨텐츠 영역: 모바일 1단, 데스크톱 2단 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full max-w-6xl h-auto">
+          {/* 좌측: 소개 및 핵심 링크 */}
+          <GlassCard className="p-6 md:p-8 flex flex-col justify-between">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-semibold text-amber-300">
+                홈페이지 소개
+              </h2>
+              <p className="mt-4 text-sm md:text-base text-white/90 leading-relaxed">
+                인스타 싫어서 홈페이지 만듬
+              </p>
             </div>
-          )}
+            <nav className="mt-6 grid grid-cols-3 gap-3">
+              <CTA to="/blog" title="블로그" />
+              <CTA to="/gallery" title="갤러리" />
+              <CTA to="/chat" title="챗봇" />
+            </nav>
+            <div className="mt-4 flex flex-wrap gap-2 overflow-hidden">
+              {['TypeScript', 'React', 'Vite', 'Tailwind', 'Node', 'Supabase', 'Render', '3D'].map((s) => (
+                <TagChip key={s} text={s} />
+              ))}
+            </div>
+          </GlassCard>
+
+          {/* 우측: 3D 모델 뷰어 */}
+          <GlassCard className="relative p-0 overflow-hidden h-[30vh] md:h-[40vh] lg:h-[50vh] flex items-center justify-center">
+            <ModelViewer
+              url="/models/aira.glb"
+              width="100%"
+              height="100%"
+              environmentPreset="studio"
+              autoFrame
+              autoRotate
+              autoRotateSpeed={0.25}
+              enableManualRotation
+              enableManualZoom
+              enableHoverRotation
+              placeholderSrc="/icons/model-placeholder.png"
+              showScreenshotButton={false}
+              ambientIntensity={0.4}
+              keyLightIntensity={1}
+              fillLightIntensity={0.6}
+              rimLightIntensity={0.8}
+              defaultZoom={1.22}
+              minZoomDistance={0.6}
+              maxZoomDistance={6}
+            />
+            {/* 3D 모델 캡션 */}
+            <div className="absolute right-4 bottom-4">
+              <Badge text="AI로 만든 모델" color="black" />
+            </div>
+          </GlassCard>
+        </div>
+
+        {/* 하단 미니 통계 카드 (Footer 역할) */}
+        <div className="mt-6 md:mt-8 grid grid-cols-3 gap-3 w-full max-w-6xl">
+          <MiniStat label="업데이트" value="주 3~5회" />
+          <MiniStat label="실험" value="UI·LLM" />
+          <MiniStat label="선호" value="미니멀" />
         </div>
       </section>
+
+      {/* 스티커 컴포넌트: 데스크톱 환경에서만 표시 */}
+      {!showVideo && (
+        <div className="pointer-events-none hidden md:block">
+          <div className="absolute right-1 bottom-1 w-[180px] opacity-80">
+            <Stickers />
+          </div>
+        </div>
+      )}
     </main>
   )
 }
 
 /* ───────────────────── 보조 컴포넌트 ───────────────────── */
 
+// CTA 컴포넌트
 function CTA({ to, title }: { to: string; title: string }) {
   return (
     <Link
@@ -211,6 +156,7 @@ function CTA({ to, title }: { to: string; title: string }) {
   )
 }
 
+// MiniStat 컴포넌트
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur px-3 py-2">
@@ -218,4 +164,28 @@ function MiniStat({ label, value }: { label: string; value: string }) {
       <div className="text-sm md:text-base font-semibold">{value}</div>
     </div>
   )
+}
+
+// Badge 컴포넌트 (재사용성 높임)
+function Badge({ text, color }: { text: string; color: "white" | "emerald" | "black" }) {
+  const colorClass = {
+    white: "border-white/15 bg-white/10 text-white/90",
+    emerald: "border-emerald-300/30 bg-emerald-300/10 text-emerald-200",
+    black: "border-white/15 bg-black/30 text-white/90",
+  }[color];
+
+  return (
+    <span className={`rounded-full border backdrop-blur px-2.5 py-1 text-[10px] md:text-xs ${colorClass}`}>
+      {text}
+    </span>
+  );
+}
+
+// TagChip 컴포넌트 (재사용성 높임)
+function TagChip({ text }: { text: string }) {
+  return (
+    <span className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] md:text-xs text-white/80">
+      {text}
+    </span>
+  );
 }
