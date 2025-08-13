@@ -170,23 +170,7 @@ export default function Editor(){
           </div>
         </div>
 
-        {/* 미리보기 */}
-        <div className="glass rounded-2xl p-3 prose prose-invert max-w-none post-content">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              img: ({src, alt}) => (
-                <img src={src || ''} alt={alt || ''} loading="lazy"
-                     className="rounded-xl w-full h-auto max-h-[70vh] object-contain my-4" />
-              ),
-              a: ({href, children}) => (
-                <a href={href} target="_blank" rel="noreferrer" className="underline decoration-dotted">{children}</a>
-              ),
-            }}
-          >
-            {preview}
-          </ReactMarkdown>
-        </div>
+        
       </div>
     </PageShell>
   )

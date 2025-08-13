@@ -23,21 +23,62 @@ const ALLOW_ORIGINS = (process.env.ALLOW_ORIGINS || '')
   .map(s => s.trim())
   .filter(Boolean)
 
+// 견고한 CORS: 요청의 Access-Control-Request-Headers 에코
 app.use((req, res, next) => {
   const origin = req.headers.origin
-  if (origin && ALLOW_ORIGINS.includes(origin)) {
+  const isAllowed = origin && ALLOW_ORIGINS.includes(origin)
+
+  if (isAllowed) {
     res.header('Vary', 'Origin')
     res.header('Access-Control-Allow-Origin', origin)
     res.header('Access-Control-Allow-Credentials', 'true')
-    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
-    if (req.method === 'OPTIONS') return res.sendStatus(204)
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
+
+    // 브라우저가 보낸 헤더 목록을 그대로 허용(소문자/대문자 혼재 대응)
+    const reqAllowHeaders = req.headers['access-control-request-headers']
+    if (reqAllowHeaders && typeof reqAllowHeaders === 'string') {
+      res.header('Access-Control-Allow-Headers', reqAllowHeaders)
+    } else {
+      // 요청에 명시가 없으면 보수적으로 넓게
+      res.header(
+        'Access-Control-Allow-Headers',
+        'Content-Type, Authorization, X-Requested-With, Accept, Accept-Language, Cache-Control, Pragma'
+      )
+    }
+    // 프리플라이트 캐시
+    res.header('Access-Control-Max-Age', '86400')
+  }
+
+  // 허용 origin에서 온 OPTIONS는 즉시 204
+  if (req.method === 'OPTIONS' && isAllowed) {
+    return res.sendStatus(204)
   }
   next()
 })
 
-app.use(express.json({ limit: '10mb' }))
+/* ───────────────────── 바디 파서 ───────────────────── */
+// JSON (모바일 환경 대비 용량 여유)
+app.use(express.json({ limit: '25mb' }))
+// 폼-urlencoded
+app.use(express.urlencoded({ extended: true, limit: '25mb' }))
+// 텍스트(일부 모바일/라이브러리가 text/plain으로 JSON 문자열을 전송하는 경우 대비)
+app.use(express.text({ type: ['text/plain', 'application/x-ndjson'], limit: '25mb' }))
+
 app.use(cookieParser())
+
+/* (선택) 요청 디버그 — 필요 시 주석 해제
+app.use((req, _res, next) => {
+  if (req.method !== 'GET') {
+    console.log('[REQ]', req.method, req.url, {
+      origin: req.headers.origin,
+      contentType: req.headers['content-type'],
+      acrh: req.headers['access-control-request-headers'],
+      hasCookie: Boolean(req.headers.cookie),
+    })
+  }
+  next()
+})
+*/
 
 /* ───────────────────── 환경 변수 ───────────────────── */
 const PORT = Number((process.env.PORT || 4000).toString().trim())
@@ -51,8 +92,8 @@ if (!ADMIN_HASH) {
 
 /* ───────────────────── Supabase 클라이언트 ───────────────────── */
 const SUPABASE_URL = process.env.SUPABASE_URL
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY // 반드시 service_role 키여야 함
-const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || 'media' // 존재하는 버킷명으로 맞추기
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY // 반드시 service_role 키
+const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || 'media'
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error('[FATAL] SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY가 없습니다.')
@@ -63,12 +104,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
 
-/** 부팅 시 service_role 키 검증(중요)
- *  - anon 키가 들어가 있으면 listBuckets가 실패하며, 업로드 시 RLS 에러가 납니다.
- */
 ;(async () => {
   try {
-    // storage.listBuckets 는 service_role 권한이 필요
     const { data, error } = await supabase.storage.listBuckets()
     if (error) {
       console.error('[WARN] service_role 권한 확인 실패:', error.message)
@@ -77,7 +114,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       const names = (data || []).map(b => b.name)
       console.log(`[OK] Supabase 연결. 버킷: ${names.join(', ') || '(none)'}`)
       if (names.length && !names.includes(SUPABASE_BUCKET)) {
-        console.warn(`[WARN] 환경변수 SUPABASE_BUCKET="${SUPABASE_BUCKET}" 버킷이 존재하지 않습니다. 대시보드에서 생성하세요.`)
+        console.warn(`[WARN] SUPABASE_BUCKET="${SUPABASE_BUCKET}" 버킷이 존재하지 않습니다. 대시보드에서 생성하세요.`)
       }
     }
   } catch (e) {
@@ -92,8 +129,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
   fileFilter: (_req, file, cb) => {
-    // 이미지 파일만 허용 (필요시 확장)
-    const ok = /^image\/(png|jpe?g|gif|webp|svg\+xml|svg)$/.test(file.mimetype)
+    const ok = /^image\/(png|jpe?g|gif|webp|svg\+xml|svg|heic|heif)$/.test(file.mimetype)
     cb(ok ? null : new Error('Only image files are allowed'), ok)
   },
 })
@@ -122,10 +158,22 @@ function toDateOrNow(v) {
   return isNaN(d?.getTime?.() ?? NaN) ? new Date() : d
 }
 
-/* ─────────────── 헬스체크 ─────────────── */
+// 텍스트 바디일 경우 JSON 파싱 헬퍼
+function ensureObjectBody(body) {
+  if (!body) return null
+  if (typeof body === 'string') {
+    try {
+      return JSON.parse(body)
+    } catch {
+      return null
+    }
+  }
+  return body
+}
+
+/* ─────────────── 헬스체크/디버그 ─────────────── */
 app.get('/api/health', (req, res) => res.json({ ok: true }))
 
-/* (디버그) 현재 버킷 확인용 엔드포인트 — 필요 시만 사용 */
 app.get('/api/_debug/buckets', async (_req, res) => {
   const { data, error } = await supabase.storage.listBuckets()
   if (error) return res.status(500).json({ error: error.message })
@@ -146,8 +194,10 @@ app.get('/api/auth/me', (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { password } = req.body || {}
+    const parsed = ensureObjectBody(req.body)
+    const { password } = parsed || {}
     if (!password) return res.status(400).json({ ok: false, msg: 'no password' })
+
     const ok = await bcrypt.compare(password, ADMIN_HASH)
     if (!ok) return res.status(401).json({ ok: false })
 
@@ -158,6 +208,7 @@ app.post('/api/auth/login', async (req, res) => {
       sameSite: isProd ? 'none' : 'lax',
       secure: isProd,
       maxAge: 1000 * 60 * 60 * 2,
+      path: '/', // 전역 경로
     })
     res.json({ ok: true })
   } catch (e) {
@@ -168,7 +219,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.post('/api/auth/logout', (req, res) => {
   const isProd = process.env.NODE_ENV === 'production'
-  res.clearCookie('token', { httpOnly: true, sameSite: isProd ? 'none' : 'lax', secure: isProd })
+  res.clearCookie('token', { httpOnly: true, sameSite: isProd ? 'none' : 'lax', secure: isProd, path: '/' })
   res.json({ ok: true })
 })
 
@@ -189,7 +240,6 @@ app.post('/api/upload', requireAdmin, upload.single('file'), async (req, res) =>
       cacheControl: '31536000',
     })
     if (upErr) {
-      // 에러 메시지를 그대로 노출 + 디버그 힌트
       const msg = upErr.message || 'upload error'
       const hint = /row-level security/i.test(msg)
         ? 'Hint: SUPABASE_SERVICE_ROLE_KEY에 anon 키가 들어갔을 가능성이 큽니다. 또는 버킷 정책/이름 확인.'
@@ -209,7 +259,6 @@ app.post('/api/upload', requireAdmin, upload.single('file'), async (req, res) =>
 })
 
 /* ───────────────────── 블로그 글 API (Supabase Postgres) ───────────────────── */
-/** 목록 */
 app.get('/api/posts', async (_req, res) => {
   try {
     const { data, error } = await supabase
@@ -226,7 +275,6 @@ app.get('/api/posts', async (_req, res) => {
   }
 })
 
-/** 단건 */
 app.get('/api/posts/:id', async (req, res) => {
   try {
     const id = req.params.id
@@ -245,7 +293,8 @@ app.get('/api/posts/:id', async (req, res) => {
 /** 생성 (body: 기존 post JSON, 반드시 post.id 포함) */
 app.post('/api/posts', requireAdmin, async (req, res) => {
   try {
-    const post = req.body
+    const parsed = ensureObjectBody(req.body)
+    const post = parsed
     if (!post || !post.id) return res.status(400).json({ error: 'invalid post' })
 
     const createdAt = toDateOrNow(post.createdAt)
@@ -267,7 +316,9 @@ app.post('/api/posts', requireAdmin, async (req, res) => {
 app.put('/api/posts/:id', requireAdmin, async (req, res) => {
   try {
     const id = req.params.id
-    const post = { ...req.body, id }
+    const parsed = ensureObjectBody(req.body)
+    const post = { ...(parsed || {}), id }
+
     const { data, error } = await supabase
       .from('posts')
       .update({ data: post })
@@ -298,7 +349,7 @@ app.delete('/api/posts/:id', requireAdmin, async (req, res) => {
   }
 })
 
-/* ───────────────────── 댓글 API (Supabase Postgres) ───────────────────── */
+/* ───────────────────── 댓글 API ───────────────────── */
 app.get('/api/posts/:postId/comments', async (req, res) => {
   try {
     const postId = req.params.postId
@@ -325,13 +376,13 @@ app.get('/api/posts/:postId/comments', async (req, res) => {
 
 app.post('/api/posts/:postId/comments', async (req, res) => {
   try {
+    const parsed = ensureObjectBody(req.body)
     const postId = req.params.postId
-    const { nickname, password, content } = req.body || {}
+    const { nickname, password, content } = parsed || {}
     if (!nickname || !password || !content) {
       return res.status(400).json({ error: 'invalid body' })
     }
 
-    // posts 존재 확인 (없으면 404)
     const { error: chkErr } = await supabase.from('posts').select('id').eq('id', postId).single()
     if (chkErr) {
       if (chkErr.code === 'PGRST116') return res.status(404).json({ error: 'post not found' })
@@ -356,7 +407,8 @@ app.post('/api/posts/:postId/comments', async (req, res) => {
 
 app.post('/api/comments/:cid/verify', async (req, res) => {
   try {
-    const { password } = req.body || {}
+    const parsed = ensureObjectBody(req.body)
+    const { password } = parsed || {}
     const cid = req.params.cid
     const { data, error } = await supabase
       .from('comments')
@@ -377,8 +429,9 @@ app.post('/api/comments/:cid/verify', async (req, res) => {
 
 app.put('/api/comments/:cid', async (req, res) => {
   try {
+    const parsed = ensureObjectBody(req.body)
     const cid = req.params.cid
-    const { content, password } = req.body || {}
+    const { content, password } = parsed || {}
     if (!content || !password) return res.status(400).json({ ok: false, msg: 'invalid body' })
 
     const { data: row, error: gErr } = await supabase
@@ -405,8 +458,9 @@ app.put('/api/comments/:cid', async (req, res) => {
 
 app.delete('/api/comments/:cid', async (req, res) => {
   try {
+    const parsed = ensureObjectBody(req.body)
     const cid = req.params.cid
-    const { password } = req.body || {}
+    const { password } = parsed || {}
 
     const { data: row, error: gErr } = await supabase
       .from('comments')
