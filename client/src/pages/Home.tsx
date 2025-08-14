@@ -100,7 +100,7 @@ export default function Home() {
 
       {/* 스티커: 화면 전체 오버레이 (모달이 떠있을 땐 렌더 안함) */}
       {!showVideo && (
-        <div className="fixed inset-0 z-[2000] pointer-events-none">
+        <div className="fixed inset-0 z-[2000] pointer-events-none scale-50 sm:scale-100">
           <Stickers />
         </div>
       )}

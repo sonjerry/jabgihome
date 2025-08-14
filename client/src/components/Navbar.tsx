@@ -12,6 +12,7 @@ const isGroup = (i: Item): i is Group => (i as Group).children !== undefined
 const navItems: Item[] = [
   { path: '/', label: '홈' },
   { path: '/blog', label: '블로그' },
+  { path: '/projects', label: '프로젝트' },
   { label: '갤러리', children: [
     { path: '/gallery', label: 'AI 그림 갤러리' },
     { path: '/modelgallery', label: '3D 모델 갤러리' },
