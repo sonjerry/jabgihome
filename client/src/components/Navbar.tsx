@@ -63,15 +63,11 @@ export default function Navbar() {
   }: { active?: boolean; children: React.ReactNode; className?: string }) => (
     <div
       className={[
-        'relative select-none',
-        // 기본은 투명. hover에서만 강조
+        'relative select-none pointer-events-auto', // 🔒 클릭 보장
         active ? 'bg-white/15 text-white font-semibold' : 'text-cream/90 hover:bg-white/10 hover:text-white',
-        // 좌측 인디케이터 (hover/active에서만 보이게)
         'before:absolute before:inset-y-1 before:left-0 before:w-[3px]',
         active ? 'before:bg-white/70' : 'hover:before:bg-white/50',
-        // 패딩/간격
         'px-3 md:px-5 py-2 md:py-2.5',
-        // 라운드 제거 (요청)
         'rounded-none',
         className,
       ].join(' ')}
@@ -81,7 +77,7 @@ export default function Navbar() {
   )
 
   const SidebarContent = () => (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col pointer-events-auto"> {/* 🔒 전체 클릭 보장 */}
       {/* 헤더 */}
       <Link to="/" className="px-3 md:px-5 py-4 border-b border-white/10 flex items-center">
         <span className="font-bold text-amber-400 text-lg md:text-xl">
@@ -93,20 +89,18 @@ export default function Navbar() {
       <nav className="flex-1 overflow-y-auto py-4 space-y-1">
         {navItems.map((item) => {
           if (!isGroup(item)) {
-            // 단일 링크
             return (
               <NavLink
                 key={item.path}
                 to={item.path}
                 end={item.path === '/'}
-                className={({ isActive }) => 'block'}
+                className="block"
               >
                 {({ isActive }) => <ListItemBase active={isActive}>{item.label}</ListItemBase>}
               </NavLink>
             )
           }
 
-          // 그룹(갤러리)
           const label = item.label
           const opened = !!groupOpen[label]
 
@@ -121,7 +115,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setOpenOf(label, !opened)}
-                className="w-full text-left"
+                className="w-full text-left pointer-events-auto"  // 🔒
                 aria-expanded={opened}
                 aria-controls={`submenu-${label}`}
               >
@@ -150,7 +144,7 @@ export default function Navbar() {
                   >
                     <ul className="py-1 space-y-[2px]">
                       {item.children.map((child) => (
-                        <li key={child.path}>
+                        <li key={child.path} className="pointer-events-auto"> {/* 🔒 */}
                           <NavLink to={child.path} className="block">
                             {({ isActive }) => (
                               <ListItemBase
@@ -191,7 +185,7 @@ export default function Navbar() {
         type="button"
         aria-label="Open sidebar"
         onClick={() => setOpen(true)}
-        className="fixed top-3 left-3 z-[60] md:hidden rounded-full border border-white/15 bg-white/10 backdrop-blur px-2.5 py-2 hover:bg-white/15 active:scale-95 transition"
+        className="fixed top-3 left-3 z-[90] md:hidden rounded-full border border-white/15 bg-white/10 backdrop-blur px-2.5 py-2 hover:bg-white/15 active:scale-95 transition"
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -204,19 +198,19 @@ export default function Navbar() {
           <>
             <motion.div
               key="overlay"
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] md:hidden"
+              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px] md:hidden" // 모바일 오버레이
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
             />
             <motion.aside
               key="mobile-sidebar"
-              className="fixed left-0 top-0 h-screen z-50 md:hidden glass border-r border-white/10 w-[33vw] min-w-[260px] max-w-[360px]"
+              className="fixed left-0 top-0 h-screen z-[100] md:hidden glass border-r border-white/10 w-[33vw] min-w-[260px] max-w-[360px] pointer-events-auto"
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 280, damping: 30 }}
             >
               <button
                 type="button" aria-label="Close sidebar" onClick={() => setOpen(false)}
-                className="absolute right-[-14px] top-1/2 -translate-y-1/2 z-[55] rounded-full border border-white/25 bg-white/20 hover:bg-white/30 shadow px-2.5 py-2"
+                className="absolute right-[-14px] top-1/2 -translate-y-1/2 z-[105] rounded-full border border-white/25 bg-white/20 hover:bg-white/30 shadow px-2.5 py-2"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -228,9 +222,9 @@ export default function Navbar() {
         )}
       </AnimatePresence>
 
-      {/* 데스크탑 사이드바 */}
+      {/* 데스크탑 사이드바 (항상 최상위) */}
       <motion.aside
-        className="hidden md:block fixed left-0 top-0 h-screen w-64 z-50 glass border-r border-white/10"
+        className="hidden md:block fixed left-0 top-0 h-screen w-64 z-[120] glass border-r border-white/10 pointer-events-auto"
         initial={{ x: -40, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 120, damping: 20 }}
       >
