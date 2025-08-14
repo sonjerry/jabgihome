@@ -1,7 +1,7 @@
 // client/src/App.tsx
 import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import React, { Suspense, useState, lazy } from 'react'
+import React, { Suspense, useState, useEffect, lazy } from 'react'
 
 import Navbar from './components/Navbar'
 import NotFound from './pages/NotFound'
@@ -13,9 +13,9 @@ const Home = lazy(() => import('./pages/Home'))
 const Blog = lazy(() => import('./pages/Blog'))
 const PostDetail = lazy(() => import('./pages/PostDetail'))
 const Gallery = lazy(() => import('./pages/Gallery'))
-const ModelGallery = lazy(() => import('./pages/ModelGallery'))
+const ModelGallery = lazy(() => import('./pages/ModelGallery')) // A안: lazy 유지 + 아래 useEffect로 프리페치
 const Editor = lazy(() => import('./pages/Editor'))
-const Projects = lazy(() => import('./pages/Projects')) // ✅ 추가: 프로젝트 페이지
+const Projects = lazy(() => import('./pages/Projects'))
 
 const transition = { duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }
 
@@ -50,6 +50,12 @@ function LegacyProjectsRedirect() {
 
 export default function App() {
   const location = useLocation()
+
+  // ✅ A안: 첫 마운트 시 3D 모델 갤러리 모듈을 사전 프리페치(캐시에 올려둠)
+  useEffect(() => {
+    import('./pages/ModelGallery').catch(() => {})
+  }, [])
+
   return (
     <AudioProvider>
       {/* Navbar는 포털로 body에 그려지므로 여기선 그냥 사용 */}
@@ -66,10 +72,10 @@ export default function App() {
               {/* 블로그 목록 */}
               <Route path="/blog" element={<Page><Blog /></Page>} />
 
-              {/* ✅ 블로그 상세: /blog/:id (목록과 일치) */}
+              {/* 블로그 상세: /blog/:id */}
               <Route path="/blog/:id" element={<Page><PostDetail /></Page>} />
 
-              {/* ✅ 새 글: /blog/new (에디터를 여기로 매핑) */}
+              {/* 새 글: /blog/new (에디터 매핑) */}
               <Route
                 path="/blog/new"
                 element={
@@ -82,7 +88,7 @@ export default function App() {
               {/* 구 링크 호환: /post/:id → /blog/:id */}
               <Route path="/post/:id" element={<LegacyPostRedirect />} />
 
-              {/* (선택) 에디터 직링크도 유지하고 싶으면 아래 라우트도 둡니다 */}
+              {/* 에디터 직링크 유지 */}
               <Route
                 path="/editor"
                 element={
@@ -96,10 +102,8 @@ export default function App() {
               <Route path="/gallery" element={<Page><Gallery /></Page>} />
               <Route path="/modelgallery" element={<Page><ModelGallery /></Page>} />
 
-              {/* ✅ 프로젝트 탭 */}
+              {/* 프로젝트 탭 */}
               <Route path="/projects" element={<Page><Projects /></Page>} />
-
-              {/* 구 주소 호환 */}
               <Route path="/project" element={<LegacyProjectsRedirect />} />
 
               {/* 리다이렉트/404 */}
