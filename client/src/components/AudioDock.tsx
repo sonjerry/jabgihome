@@ -92,10 +92,12 @@ export default function AudioDock() {
   const hasList = a.playlist.length > 0
   const progress = a.duration ? a.currentTime / a.duration : 0
 
-  // 최초 마운트 시 플레이리스트 주입 (없을 때만)
+  // 최초 마운트 시 플레이리스트 주입 (자동재생 없음)
   useEffect(() => {
     if (a.playlist.length === 0 && collectedPlaylist.length > 0) {
       a.setPlaylist(collectedPlaylist, 0)
+      // 자동 재생은 하지 않음 (브라우저 정책 및 UX)
+      // 첫 클릭 시 즉시 재생되도록 버튼 핸들러에서 보장
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -112,6 +114,18 @@ export default function AudioDock() {
   useEffect(() => {
     localStorage.setItem('audioVolume', String(a.volume))
   }, [a.volume])
+
+  // ▶ 버튼: 초기 상태(소스 미로딩)에서는 현재 인덱스로 play(), 그 외에는 toggle()
+  const handlePlayClick = useCallback(() => {
+    if (!hasList) return
+    // duration 이 0(또는 falsy)이면 아직 소스/메타데이터가 로딩 안 된 상태로 판단
+    if (!a.playing && (!a.duration || Number.isNaN(a.duration))) {
+      const idx = Number.isFinite(a.idx) ? a.idx : 0
+      a.play(idx) // 사용자의 클릭 제스처이므로 정책에 막히지 않음
+    } else {
+      a.toggle()
+    }
+  }, [a, hasList])
 
   return (
     <div className="w-full">
@@ -142,7 +156,7 @@ export default function AudioDock() {
           </button>
           <button
             className="w-12 h-12 rounded-2xl bg-amber-400/90 hover:bg-amber-400 text-brown-900 font-bold text-xl disabled:opacity-40"
-            onClick={a.toggle}
+            onClick={handlePlayClick}
             aria-label={a.playing ? 'Pause' : 'Play'}
             disabled={!hasList}
           >

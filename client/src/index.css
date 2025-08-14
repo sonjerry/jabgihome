@@ -70,3 +70,9 @@ html, body, * {
   height: 0 !important;
   background: transparent !important;
 }
+
+/* 장식성 before/after, 이펙트 레이어는 전부 클릭 비활성화 */
+.glass::before, .glass::after { pointer-events: none; }
+[aria-hidden="true"], [data-decor], .fx, .noise, .grain { pointer-events: none; }
+/* index.css 혹은 globals.css 맨 아래 */
+[aria-hidden="true"], [data-decor], .noise, .grain, .glare, .fx, .glass::before, .glass::after { pointer-events: none !important; }

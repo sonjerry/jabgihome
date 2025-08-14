@@ -1,33 +1,34 @@
 // client/src/App.tsx
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import React, { Suspense, useState, lazy } from 'react'
+
 import Navbar from './components/Navbar'
-import Home from './pages/Home'
-import Blog from './pages/Blog'
-import Editor from './pages/Editor'
-import PostDetail from './pages/PostDetail'
-import Gallery from './pages/Gallery'
 import NotFound from './pages/NotFound'
-import ModelGallery from './pages/ModelGallery'
 import RequireAdmin from './routes/RequireAdmin'
 import AudioProvider from './lib/audio/AudioProvider'
-import { useEffect } from 'react'
+
+// 지연 로딩(무거운 페이지 우선 분리)
+const Home = lazy(() => import('./pages/Home'))
+const Blog = lazy(() => import('./pages/Blog'))
+const PostDetail = lazy(() => import('./pages/PostDetail'))
+const Gallery = lazy(() => import('./pages/Gallery'))
+const ModelGallery = lazy(() => import('./pages/ModelGallery'))
+const Editor = lazy(() => import('./pages/Editor'))
 
 const transition = { duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }
-const variants = {
-  initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -10 },
-}
 
 function Page({ children }: { children: React.ReactNode }) {
+  const [pe, setPe] = useState<'none' | 'auto'>('none')
   return (
     <motion.div
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      variants={variants}
+      style={{ pointerEvents: pe, contain: 'content' }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
       transition={transition}
+      onAnimationStart={() => setPe('none')}
+      onAnimationComplete={() => setPe('auto')}
       className="min-h-screen"
     >
       {children}
@@ -37,45 +38,28 @@ function Page({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const location = useLocation()
-
-  // (안전) 홈 진입 직후에도 갤러리 라우트가 즉시 반응하도록 사전 워밍업
-  useEffect(() => {
-    // 정적 import라 번들은 이미 포함되어 있지만, 초기 진입 시 파싱 워밍업 겸 한 번 접근
-    void Promise.all([import('./pages/Gallery'), import('./pages/ModelGallery')])
-  }, [])
-
   return (
     <AudioProvider>
+      {/* Navbar는 포털로 body에 그려지므로 여기선 그냥 사용 */}
       <Navbar />
-      <main className="max-w-[100vw] min-h-screen pl-0 md:pl-64">
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<Page><Home /></Page>} />
-            <Route path="/blog" element={<Page><Blog /></Page>} />
-            <Route
-              path="/blog/new"
-              element={
-                <RequireAdmin>
-                  <Page><Editor /></Page>
-                </RequireAdmin>
-              }
-            />
-            <Route
-              path="/blog/edit/:id"
-              element={
-                <RequireAdmin>
-                  <Page><Editor /></Page>
-                </RequireAdmin>
-              }
-            />
-            <Route path="/blog/:id" element={<Page><PostDetail /></Page>} />
-            <Route path="/gallery" element={<Page><Gallery /></Page>} />
-            <Route path="/modelgallery" element={<Page><ModelGallery /></Page>} />
-            <Route path="/404" element={<Page><NotFound /></Page>} />
-            <Route path="*" element={<Navigate to="/404" replace />} />
-          </Routes>
-        </AnimatePresence>
-      </main>
+
+      {/* 본문: 사이드바 폭만큼 여백 + 보이는 영역만 페인트 */}
+      <div className="md:pl-64" style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 800px' }}>
+        <Suspense fallback={<div className="p-6 text-sm text-white/70">로딩중…</div>}>
+          <AnimatePresence mode="wait" initial={false}>
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<Page><Home /></Page>} />
+              <Route path="/blog" element={<Page><Blog /></Page>} />
+              <Route path="/post/:id" element={<Page><PostDetail /></Page>} />
+              <Route path="/gallery" element={<Page><Gallery /></Page>} />
+              <Route path="/modelgallery" element={<Page><ModelGallery /></Page>} />
+              <Route path="/editor" element={<RequireAdmin><Page><Editor /></Page></RequireAdmin>} />
+              <Route path="/home" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<Page><NotFound /></Page>} />
+            </Routes>
+          </AnimatePresence>
+        </Suspense>
+      </div>
     </AudioProvider>
   )
 }

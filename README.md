@@ -1,6 +1,6 @@
 # 블로그
 
-##링크
+링크
 https://leegaeulblog.onrender.com
 
 ## 구조
