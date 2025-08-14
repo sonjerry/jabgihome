@@ -6,8 +6,8 @@ type Project = {
   id: string
   title: string
   summary: string
-  stack: string[]
-  liveUrl?: string
+
+  linkUrl?: string
   repoUrl?: string
   status?: 'active' | 'paused' | 'done'
   thumbnail?: string
@@ -24,9 +24,9 @@ const MOCK_PROJECTS: Project[] = [
     id: 'p1',
     title: '프로젝트 1',
     summary:
-      'Render.com에 배포 예정. 간단한 데모와 문서를 통해 바로 체험 가능하도록 구성합니다.',
-    stack: ['React', 'Vite', 'Tailwind', 'Render'],
-    liveUrl: 'https://example-project1.onrender.com', // 실제 배포 URL로 교체
+      '프로젝트 1',
+    
+    linkUrl: 'https://example-project1.onrender.com', // 실제 배포 URL로 교체
     repoUrl: 'https://github.com/yourname/project1',   // 실제 레포로 교체
     status: 'active',
   },
@@ -34,9 +34,9 @@ const MOCK_PROJECTS: Project[] = [
     id: 'p2',
     title: '프로젝트 2',
     summary:
-      '블로그/갤러리 디자인 규칙을 공유하는 카드형 UI. 퍼포먼스와 접근성 고려.',
-    stack: ['TypeScript', 'Express', 'Supabase'],
-    liveUrl: 'https://example-project2.onrender.com',
+      '프로젝트 2',
+    
+    linkUrl: 'https://example-project2.onrender.com',
     repoUrl: 'https://github.com/yourname/project2',
     status: 'paused',
   },
@@ -44,9 +44,9 @@ const MOCK_PROJECTS: Project[] = [
     id: 'p3',
     title: '프로젝트 3',
     summary:
-      '간단한 체험 페이지 포함. 데모 링크를 통해 바로 확인하고 피드백 반영.',
-    stack: ['Three.js', 'GLTF', 'Render'],
-    liveUrl: 'https://example-project3.onrender.com',
+      '프로젝트 3',
+    
+    linkUrl: 'https://example-project3.onrender.com',
     repoUrl: 'https://github.com/yourname/project3',
     status: 'done',
   },
@@ -144,19 +144,12 @@ function ProjectCard({ p }: { p: Project }) {
         {p.summary}
       </p>
 
-      {/* 기술 스택 */}
-      {p.stack?.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {p.stack.map((s) => (
-            <Pill key={s}>{s}</Pill>
-          ))}
-        </div>
-      )}
+      
 
       {/* 버튼들 */}
       <div className="mt-5 flex flex-wrap gap-2">
-        <ButtonLink href={p.liveUrl} variant="primary">
-          라이브 데모
+        <ButtonLink href={p.linkUrl} variant="primary">
+          소개 링크
         </ButtonLink>
         <ButtonLink href={p.repoUrl} variant="ghost">
           깃허브
@@ -189,15 +182,14 @@ export default function Projects() {
         overflow-x-hidden
       "
     >
-      {/* 헤더 */}
-      <header className="mb-6 md:mb-8">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-none">
-          프로젝트
-        </h1>
-        <p className="mt-2 text-white/70 text-sm md:text-base">
-          Render 데모 링크로 바로 체험해보고, 코드 저장소에서 변경 이력을 추적하세요.
-        </p>
-      </header>
+     
+       {/* 🔧 여백 수정: mb-45 (오타) → mb-6 md:mb-8 */}
+              <GlassCard className="mb-6 md:mb-8">
+                <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">AI 그림 갤러리</h1>
+                <p className="text-sm md:text-base text-white/70 mt-4">
+                  텍스트로 생성한 그림
+                </p>
+              </GlassCard>
 
       {/* 그리드(가벼움 유지: ScrollStack 같은 스크립트 없이) */}
       <section
