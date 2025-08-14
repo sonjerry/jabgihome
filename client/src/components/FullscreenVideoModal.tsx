@@ -1,98 +1,101 @@
-import { useEffect, useRef, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React from 'react'
+import { createPortal } from 'react-dom'
 
-export default function FullscreenVideoModal({
-  open,
-  onClose,
-}: {
+type Props = {
   open: boolean
   onClose: () => void
-}) {
-  const videoRef = useRef<HTMLVideoElement | null>(null)
-  const [playing, setPlaying] = useState(false)
-  const [blocked, setBlocked] = useState(false)
-  const [muted, setMuted] = useState(true)
+  /** 비디오 소스 (필요 시 교체) */
+  src?: string
+}
 
-  useEffect(() => {
-    if (!open) return
-    const v = videoRef.current
-    if (!v) return
-    v.muted = true // 처음엔 무음
-    v.playsInline = true
-    v.autoplay = true
-    v.loop = true
-    v.play()
-      .then(() => {
-        setPlaying(true)
-        setBlocked(false)
-      })
-      .catch(() => setBlocked(true))
-  }, [open])
+export default function FullscreenVideoModal({ open, onClose, src }: Props) {
+  if (!open) return null
 
-  const togglePlay = async () => {
-    const v = videoRef.current
-    if (!v) return
+  // 포털 대상
+  const portalTarget = typeof document !== 'undefined' ? document.body : null
+  if (!portalTarget) return null
 
-    try {
-      // 재생 중일 때는 일시정지
-      if (!v.paused) {
-        v.pause()
-        setPlaying(false)
-        return
-      }
-
-      // 재생 버튼 클릭 → 소리 켜고 재생
-      v.muted = false
-      setMuted(false)
-      await v.play()
-      setPlaying(true)
-      setBlocked(false)
-    } catch {
-      setBlocked(true)
-    }
+  const handleClose = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    onClose()
   }
 
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-[999] bg-black/70 backdrop-blur-lg flex items-center justify-center"
-          initial={{ y: '-100%' }}
-          animate={{ y: 0 }}
-          exit={{ y: '-100%' }}
-          transition={{ type: 'spring', stiffness: 120, damping: 16 }}
-          onClick={onClose}
+  return createPortal(
+    <div
+      className="
+        fixed inset-0 z-[4000]
+        flex items-center justify-center
+        pointer-events-auto
+      "
+      role="dialog"
+      aria-modal="true"
+    >
+      {/* 백드롭 (탭/클릭 시 닫힘) */}
+      <button
+        onClick={handleClose}
+        onTouchEnd={handleClose}
+        aria-label="닫기"
+        className="
+          absolute inset-0
+          bg-black/70 backdrop-blur-sm
+          cursor-default
+        "
+        // 버튼이지만 시각적으로는 오버레이처럼 동작
+      />
+
+      {/* 컨텐츠 */}
+      <div
+        className="
+          relative z-10
+          w-[min(92vw,1000px)]
+          aspect-video
+          bg-black rounded-2xl overflow-hidden
+          shadow-2xl
+        "
+        // 컨텐츠 영역 클릭은 닫히지 않도록
+        onClick={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
+      >
+        {/* 닫기 버튼: 터치 타겟 크게 */}
+        <button
+          onClick={handleClose}
+          onTouchEnd={handleClose}
+          aria-label="닫기"
+          type="button"
+          className="
+            absolute top-3 right-3
+            h-12 w-12 md:h-10 md:w-10
+            rounded-full
+            bg-white/90 hover:bg-white
+            text-black
+            flex items-center justify-center
+            shadow-lg
+            active:scale-[0.98]
+          "
         >
-          <div
-            className="relative w-[96vw] h-[86vh] max-w-[1400px] glass rounded-3xl overflow-hidden shadow-[0_0_60px_rgba(233,178,77,0.35)]"
-            onClick={(e) => e.stopPropagation()}
+          <svg
+            width="22" height="22" viewBox="0 0 24 24" fill="none"
+            xmlns="http://www.w3.org/2000/svg" aria-hidden
           >
-            <button
-              onClick={onClose}
-              className="absolute right-3 top-3 z-10 bg-black/60 hover:bg-black/80 text-white rounded-full w-9 h-9 flex items-center justify-center"
-              aria-label="close video"
-            >
-              ✕
-            </button>
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
 
-            <video
-              ref={videoRef}
-              src="/media/dj.mp4"
-              className="w-full h-full object-cover"
-            />
-
-            {/* 중앙 재생 버튼 (자동재생 차단시/일시정지시/음소거 상태에서 노출) */}
-            {(!playing || blocked || muted) && (
-              <button
-                onClick={togglePlay}
-                className="absolute inset-0 m-auto w-20 h-20 rounded-full bg-black/50 hover:bg-black/70 text-white text-2xl flex items-center justify-center"
-              >
-                ▶
-              </button>
-            )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        {/* 비디오 (예시) */}
+        <video
+          src={src || '/intro.mp4'}
+          autoPlay
+          controls
+          playsInline
+          // iOS
+          // @ts-ignore
+          webkit-playsinline="true"
+          disablePictureInPicture
+          className="h-full w-full object-cover"
+        />
+      </div>
+    </div>,
+    portalTarget
   )
 }

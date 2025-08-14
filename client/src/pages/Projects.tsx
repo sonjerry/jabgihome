@@ -185,9 +185,9 @@ export default function Projects() {
      
        {/* 🔧 여백 수정: mb-45 (오타) → mb-6 md:mb-8 */}
               <GlassCard className="mb-6 md:mb-8">
-                <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">AI 그림 갤러리</h1>
+                <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">프로젝트</h1>
                 <p className="text-sm md:text-base text-white/70 mt-4">
-                  텍스트로 생성한 그림
+                  개인 토이 프로젝트 모음
                 </p>
               </GlassCard>
 
