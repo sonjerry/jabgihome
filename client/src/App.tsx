@@ -7,8 +7,8 @@ import Blog from './pages/Blog'
 import Editor from './pages/Editor'
 import PostDetail from './pages/PostDetail'
 import Gallery from './pages/Gallery'
-import Project from './pages/Project'
 import NotFound from './pages/NotFound'
+import ModelGallery from './pages/ModelGallery'
 import RequireAdmin from './routes/RequireAdmin'
 import AudioProvider from './lib/audio/AudioProvider'
 
@@ -63,7 +63,7 @@ export default function App() {
             />
             <Route path="/blog/:id" element={<Page><PostDetail /></Page>} />
             <Route path="/gallery" element={<Page><Gallery /></Page>} />
-            <Route path="/project" element={<Page><Project /></Page>} />
+            <Route path="/modelgallery" element={<Page><ModelGallery /></Page>} />=
             <Route path="/404" element={<Page><NotFound /></Page>} />
             <Route path="*" element={<Navigate to="/404" replace />} />
           </Routes>

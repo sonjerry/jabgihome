@@ -210,7 +210,7 @@ export default function Blog() {
               </GlassCard>
             )
           })}
-          {filtered.length === 0 && <p className="text-cream/70">조건에 맞는 글이 없습니다.</p>}
+          {filtered.length === 0 && <p className="text-cream/70">로딩중... (무료 서버라 오랜만에 접속하면 부팅해야함)</p>}
         </div>
 
         {/* 사이드바: 데스크탑 전용 */}

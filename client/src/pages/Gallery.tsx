@@ -104,14 +104,16 @@ export default function Gallery() {
           z-0 overflow-y-auto
         "
       >
-        <GlassCard className="mb-45 md:mb-6">
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">갤러리</h1>
+        {/* 🔧 여백 수정: mb-45 (오타) → mb-6 md:mb-8 */}
+        <GlassCard className="mb-6 md:mb-8">
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">AI 그림 갤러리</h1>
           <p className="text-sm md:text-base text-white/70 mt-4">
-            AI를 이용하여 만든 사진들입니다.
+            텍스트로 생성한 그림
           </p>
         </GlassCard>
 
-        <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-4 md:mb-6">
+        {/* 🔧 태그 바 위 여백 추가 (모바일에서 답답했던 간격 개선) */}
+        <div className="mt-2 sm:mt-3 flex flex-wrap items-center gap-2 md:gap-3 mb-4 md:mb-6">
           {categories.map(c => {
             const count = byCategory.get(c)?.length ?? 0
             const active = c === cat
@@ -120,7 +122,8 @@ export default function Gallery() {
                 <button
                   onClick={() => setCat(c)}
                   className={[
-                    'rounded-full px-1.5 py-[1px] text-[15px] leading-none whitespace-nowrap',
+                    // 🔧 모바일 터치 영역 살짝 키움
+                    'rounded-full px-2 py-1 text-[15px] leading-none whitespace-nowrap',
                     active
                       ? 'bg-white/10 text-white'
                       : 'bg-transparent text-white/90 hover:bg-white/10'

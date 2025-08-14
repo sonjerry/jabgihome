@@ -1,132 +1,102 @@
 // client/src/pages/Home.tsx
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import FullscreenVideoModal from '../components/FullscreenVideoModal'
-import Stickers from '../components/StickerPeel'
-import ModelViewer from '../components/ModelViewer'
-import GlassCard from '../components/GlassCard'
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import FullscreenVideoModal from '../components/FullscreenVideoModal';
+import Stickers from '../components/StickerPeel';
+import GlassCard from '../components/GlassCard';
 
 export default function Home() {
-  const [showVideo, setShowVideo] = useState(false)
+  const [showVideo, setShowVideo] = useState(false);
 
-  // 최초 1회 비디오 모달
   useEffect(() => {
-    const seen = sessionStorage.getItem('videoShown')
-    if (!seen) setShowVideo(true)
-  }, [])
+    const seen = sessionStorage.getItem('videoShown');
+    if (!seen) setShowVideo(true);
+  }, []);
+
   const closeVideo = () => {
-    sessionStorage.setItem('videoShown', '1')
-    setShowVideo(false)
-  }
+    sessionStorage.setItem('videoShown', '1');
+    setShowVideo(false);
+  };
 
-  // 페이지 체류 동안만 바디 스크롤 잠금
   useEffect(() => {
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = prev
-    }
-  }, [])
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   const today = useMemo(() => {
-    const d = new Date()
+    const d = new Date();
     return d.toLocaleDateString(undefined, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    })
-  }, [])
+    });
+  }, []);
 
   return (
     <main className="relative min-h-screen overflow-hidden text-white">
-      {/* 배경 그라데이션 레이어 제거됨 */}
-
-      {/* 비디오 모달 */}
       <FullscreenVideoModal open={showVideo} onClose={closeVideo} />
 
-      {/* 콘텐츠 */}
-      <section className="relative z-10 w-full h-screen p-4 md:p-8 flex flex-col items-center justify-center">
-        {/* 상단 헤더 */}
-        <header className="text-center mb-6 md:mb-8">
-          <div className="flex justify-center items-center gap-2 mb-2">
-            <Badge text={today} color="white" />
-            <Badge text="Glass v4" color="emerald" />
-          </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg">
-            이가을 블로그
-          </h1>
-          <p className="mt-2 text-md md:text-lg text-white/70">
-            AI 친화적인 소프트웨어 전공생의 블로그
-          </p>
-        </header>
-
-        {/* 메인 컨텐츠 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full max-w-6xl h-auto">
-          {/* 좌측 카드 */}
-          <GlassCard className="p-6 md:p-8 flex flex-col justify-between">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-semibold text-amber-300">
-                홈페이지 소개
-              </h2>
-              <p className="mt-4 text-sm md:text-base text-white/90 leading-relaxed">
-                인스타 싫어서 홈페이지 만듬
+      <section className="relative z-10 w-full h-screen p-4 md:p-8 flex flex-col justify-center items-center">
+        <div className="w-full max-w-6xl">
+          {/* 상단 헤더 및 소개 섹션 */}
+          <header className="flex flex-col md:flex-row md:items-end md:justify-between mb-6 md:mb-10">
+            <div className="text-left md:text-left mb-4 md:mb-0">
+              <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg">
+                이가을 블로그
+              </h1>
+              <p className="mt-2 text-md md:text-lg text-amber-300">
+                인스타 싫어서 홈페이지 직접 만듬
               </p>
             </div>
-            <nav className="mt-6 grid grid-cols-3 gap-3">
-              <CTA to="/blog" title="블로그" />
-              <CTA to="/gallery" title="갤러리" />
-              <CTA to="/chat" title="챗봇" />
-            </nav>
-            <div className="mt-4 flex flex-wrap gap-2 overflow-hidden">
-              {[
-                'TypeScript',
-                'React',
-                'Vite',
-                'Tailwind',
-                'Node',
-                'Supabase',
-                'Render',
-                '3D',
-              ].map((s) => (
-                <TagChip key={s} text={s} />
-              ))}
+            <div className="flex flex-row items-center justify-start md:justify-end gap-2">
+              <Badge text={today} color="white" />
+              <Badge text="Glass v4" color="emerald" />
             </div>
-          </GlassCard>
+          </header>
 
-          {/* 우측 3D 모델 */}
-          <GlassCard className="relative p-0 overflow-hidden h-[30vh] md:h-[40vh] lg:h-[50vh] flex items-center justify-center">
-            <ModelViewer
-              url="/models/aira.glb"
-              width="100%"
-              height="100%"
-              environmentPreset="studio"
-              autoFrame
-              autoRotate
-              autoRotateSpeed={0.25}
-              enableManualRotation
-              enableManualZoom
-              enableHoverRotation
-              placeholderSrc="/icons/model-placeholder.png"
-              showScreenshotButton={false}
-              ambientIntensity={0.4}
-              keyLightIntensity={1}
-              fillLightIntensity={0.6}
-              rimLightIntensity={0.8}
-              defaultZoom={1.22}
-              minZoomDistance={0.6}
-              maxZoomDistance={6}
-            />
-            <div className="absolute right-4 bottom-4">
-              <Badge text="AI로 만든 모델" color="black" />
-            </div>
-          </GlassCard>
-        </div>
+          {/* 메인 컨텐츠 그리드 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
+            {/* 좌측 카드: 소개 및 내비게이션 */}
+            <GlassCard className="p-6 md:p-8 flex flex-col justify-between order-2 lg:order-1">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-semibold text-amber-300">
+                  홈페이지 소개
+                </h2>
+                <p className="mt-4 text-sm md:text-base text-white/90 leading-relaxed">
+                  인스타 싫어서 홈페이지 만듬
+                </p>
+              </div>
+              <nav className="mt-6 grid grid-cols-3 gap-3">
+                <CTA to="/blog" title="블로그" />
+                <CTA to="/gallery" title="갤러리" />
+                <CTA to="#" title="준비중" />
+              </nav>
+            </GlassCard>
 
-        {/* 하단 미니 통계 */}
-        <div className="mt-6 md:mt-8 grid grid-cols-3 gap-3 w-full max-w-6xl">
-          <MiniStat label="업데이트" value="주 3~5회" />
-          <MiniStat label="실험" value="UI·LLM" />
-          <MiniStat label="선호" value="미니멀" />
+            {/* 우측 카드: 연락처 정보 */}
+            <GlassCard className="p-6 md:p-8 flex flex-col justify-end order-1 lg:order-2">
+              <div className="mt-auto">
+                <h2 className="text-lg md:text-xl font-semibold text-white/80 mb-3">
+                  Contact Me
+                </h2>
+                <div className="flex flex-col gap-2">
+                  <MiniStat
+                    label="GitHub"
+                    value="sonjerry"
+                    link="https://github.com/sonjerry"
+                  />
+                  <MiniStat
+                    label="Email"
+                    value="qh.e.720@icloud.com"
+                    link="mailto:qh.e.720@icloud.com"
+                  />
+                </div>
+              </div>
+            </GlassCard>
+          </div>
         </div>
       </section>
 
@@ -139,7 +109,7 @@ export default function Home() {
         </div>
       )}
     </main>
-  )
+  );
 }
 
 /* ───────────────────── 보조 컴포넌트 ───────────────────── */
@@ -158,17 +128,30 @@ function CTA({ to, title }: { to: string; title: string }) {
     >
       {title}
     </Link>
-  )
+  );
 }
 
 // MiniStat
-function MiniStat({ label, value }: { label: string; value: string }) {
+function MiniStat({
+  label,
+  value,
+  link,
+}: {
+  label: string;
+  value: string;
+  link: string;
+}) {
   return (
-    <div className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur px-3 py-2">
+    <a
+      href={link}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block rounded-2xl border border-white/15 bg-white/10 hover:bg-white/20 backdrop-blur px-3 py-2 transition"
+    >
       <div className="text-[10px] md:text-xs text-white/70">{label}</div>
       <div className="text-sm md:text-base font-semibold">{value}</div>
-    </div>
-  )
+    </a>
+  );
 }
 
 // Badge
@@ -176,14 +159,14 @@ function Badge({
   text,
   color,
 }: {
-  text: string
-  color: 'white' | 'emerald' | 'black'
+  text: string;
+  color: 'white' | 'emerald' | 'black';
 }) {
   const colorClass = {
     white: 'border-white/15 bg-white/10 text-white/90',
     emerald: 'border-emerald-300/30 bg-emerald-300/10 text-emerald-200',
     black: 'border-white/15 bg-black/30 text-white/90',
-  }[color]
+  }[color];
 
   return (
     <span
@@ -191,7 +174,7 @@ function Badge({
     >
       {text}
     </span>
-  )
+  );
 }
 
 // TagChip
@@ -200,5 +183,5 @@ function TagChip({ text }: { text: string }) {
     <span className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] md:text-xs text-white/80">
       {text}
     </span>
-  )
+  );
 }
