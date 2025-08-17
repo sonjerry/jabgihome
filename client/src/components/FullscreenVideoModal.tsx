@@ -84,7 +84,7 @@ export default function FullscreenVideoModal({ open, onClose, src }: Props) {
 
         {/* 비디오 (예시) */}
         <video
-          src={src || '/intro.mp4'}
+          src={src || '/media/dj.mp4'}
           autoPlay
           controls
           playsInline

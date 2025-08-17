@@ -16,6 +16,7 @@ const Gallery = lazy(() => import('./pages/Gallery'))
 const ModelGallery = lazy(() => import('./pages/ModelGallery')) // A안: lazy 유지 + 아래 useEffect로 프리페치
 const Editor = lazy(() => import('./pages/Editor'))
 const Projects = lazy(() => import('./pages/Projects'))
+const Stream = lazy(() => import('./pages/Stream'))
 
 const transition = { duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }
 
@@ -105,6 +106,10 @@ export default function App() {
               {/* 프로젝트 탭 */}
               <Route path="/projects" element={<Page><Projects /></Page>} />
               <Route path="/project" element={<LegacyProjectsRedirect />} />
+
+
+              {/* 스트리밍 */}
+              <Route path="/stream" element={<Page><Stream /></Page>} />
 
               {/* 리다이렉트/404 */}
               <Route path="/home" element={<Navigate to="/" replace />} />

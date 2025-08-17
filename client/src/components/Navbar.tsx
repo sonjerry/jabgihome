@@ -16,7 +16,9 @@ const navItems: Item[] = [
   { label: '갤러리', children: [
     { path: '/gallery', label: 'AI 그림 갤러리' },
     { path: '/modelgallery', label: '3D 모델 갤러리' },
+    
   ]},
+  { path: '/stream', label: '영상 테스트' }
 ] as const
 
 export default function Navbar() {
