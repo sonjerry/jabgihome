@@ -18,7 +18,7 @@ const navItems: Item[] = [
     { path: '/modelgallery', label: '3D 모델 갤러리' },
     
   ]},
-  { path: '/stream', label: '영상 테스트' }
+  
 ] as const
 
 export default function Navbar() {

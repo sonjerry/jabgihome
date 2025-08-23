@@ -22,19 +22,19 @@ type Project = {
 const MOCK_PROJECTS: Project[] = [
   {
     id: 'p1',
-    title: '프로젝트 1',
+    title: '와카와카',
     summary:
-      '프로젝트 1',
+      'WI-FI 라즈베리파이 기반 심레이싱 조종 자동차 (와이파이 카)',
     
-    linkUrl: 'https://example-project1.onrender.com', // 실제 배포 URL로 교체
-    repoUrl: 'https://github.com/yourname/project1',   // 실제 레포로 교체
+    linkUrl: 'http://http://100.84.162.124:8000/', // 실제 배포 URL로 교체
+    repoUrl: 'https://github.com/sonjerry/WakaWaka',   // 실제 레포로 교체
     status: 'active',
   },
   {
     id: 'p2',
-    title: '프로젝트 2',
+    title: 'Openai 튜링 테스트',
     summary:
-      '프로젝트 2',
+      '채팅창 상대가 ai인지 사람인지 구별 못할 퀄리티의 프롬프트 작성 실험',
     
     linkUrl: 'https://example-project2.onrender.com',
     repoUrl: 'https://github.com/yourname/project2',
@@ -42,12 +42,12 @@ const MOCK_PROJECTS: Project[] = [
   },
   {
     id: 'p3',
-    title: '프로젝트 3',
+    title: '이가을 블로그',
     summary:
-      '프로젝트 3',
+      '프론트/백엔드 처음부터 작성한 블로그',
     
-    linkUrl: 'https://example-project3.onrender.com',
-    repoUrl: 'https://github.com/yourname/project3',
+    linkUrl: 'https://leegaeulblog.onrender.com',
+    repoUrl: 'https://github.com/sonjerry/LeeGaeulBlog',
     status: 'done',
   },
 ]
