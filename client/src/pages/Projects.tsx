@@ -1,5 +1,6 @@
 // client/src/pages/Projects.tsx
 import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
 
 type Project = {
@@ -25,7 +26,6 @@ const MOCK_PROJECTS: Project[] = [
     title: '와카와카',
     summary:
       'WI-FI 라즈베리파이 기반 심레이싱 조종 자동차 (와이파이 카)',
-    
     linkUrl: 'http://http://100.84.162.124:8000/', // 실제 배포 URL로 교체
     repoUrl: 'https://github.com/sonjerry/WakaWaka',   // 실제 레포로 교체
     status: 'active',
@@ -35,7 +35,6 @@ const MOCK_PROJECTS: Project[] = [
     title: 'Openai 튜링 테스트',
     summary:
       '채팅창 상대가 ai인지 사람인지 구별 못할 퀄리티의 프롬프트 작성 실험',
-    
     linkUrl: 'https://example-project2.onrender.com',
     repoUrl: 'https://github.com/yourname/project2',
     status: 'paused',
@@ -45,7 +44,6 @@ const MOCK_PROJECTS: Project[] = [
     title: '이가을 블로그',
     summary:
       '프론트/백엔드 처음부터 작성한 블로그',
-    
     linkUrl: 'https://leegaeulblog.onrender.com',
     repoUrl: 'https://github.com/sonjerry/LeeGaeulBlog',
     status: 'done',
@@ -55,8 +53,7 @@ const MOCK_PROJECTS: Project[] = [
 function StatusBadge({ status }: { status?: Project['status'] }) {
   if (!status) return null
   const map = {
-    active:
-      'bg-emerald-500/20 text-emerald-200 border border-emerald-400/30',
+    active: 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/30',
     paused: 'bg-amber-500/20 text-amber-200 border border-amber-400/30',
     done: 'bg-sky-500/20 text-sky-200 border border-sky-400/30',
   } as const
@@ -71,14 +68,6 @@ function StatusBadge({ status }: { status?: Project['status'] }) {
       title={`상태: ${label}`}
     >
       {label}
-    </span>
-  )
-}
-
-function Pill({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-white/10 border border-white/10 text-white/90">
-      {children}
     </span>
   )
 }
@@ -144,8 +133,6 @@ function ProjectCard({ p }: { p: Project }) {
         {p.summary}
       </p>
 
-      
-
       {/* 버튼들 */}
       <div className="mt-5 flex flex-wrap gap-2">
         <ButtonLink href={p.linkUrl} variant="primary">
@@ -154,6 +141,15 @@ function ProjectCard({ p }: { p: Project }) {
         <ButtonLink href={p.repoUrl} variant="ghost">
           깃허브
         </ButtonLink>
+
+        {/* ✅ 진행사항: 내부 라우팅 */}
+        <Link
+          to={`/blog?progress=${encodeURIComponent(p.id)}`}
+          className="inline-flex items-center justify-center h-9 px-3 rounded-xl text-sm bg-white/10 text-white hover:bg-white/15 border border-white/15 transition-transform active:scale-[0.98]"
+          aria-label={`${p.title} 진행사항 보기`}
+        >
+          진행사항
+        </Link>
       </div>
 
       {/* 배경 장식(가벼운 강조) */}
@@ -182,16 +178,14 @@ export default function Projects() {
         overflow-x-hidden
       "
     >
-     
-       {/* 🔧 여백 수정: mb-45 (오타) → mb-6 md:mb-8 */}
-              <GlassCard className="mb-6 md:mb-8">
-                <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">프로젝트</h1>
-                <p className="text-sm md:text-base text-white/70 mt-4">
-                  개인 토이 프로젝트 모음
-                </p>
-              </GlassCard>
+      <GlassCard className="mb-6 md:mb-8">
+        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">프로젝트</h1>
+        <p className="text-sm md:text-base text-white/70 mt-4">
+          개인 토이 프로젝트 모음
+        </p>
+      </GlassCard>
 
-      {/* 그리드(가벼움 유지: ScrollStack 같은 스크립트 없이) */}
+      {/* 그리드 */}
       <section
         className="
           grid gap-4 md:gap-6
