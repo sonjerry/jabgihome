@@ -1,40 +1,56 @@
 // client/src/pages/Projects.tsx
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
 
+/** ====== 타입 ====== */
 type Project = {
   id: string
   title: string
   summary: string
-
   linkUrl?: string
   repoUrl?: string
   status?: 'active' | 'paused' | 'done'
   thumbnail?: string
 }
 
-/**
- * 유지보수 편한 구조
- * - 데이터는 아래 MOCK_PROJECTS만 교체하면 됨(나중에 API로 교체도 쉬움)
- * - 카드 컴포넌트는 단일 책임(썸네일/텍/버튼/배지)
- * - 반응형: 모바일 1열, md 2열, xl 3열
- */
-const MOCK_PROJECTS: Project[] = [
+type PostBrief = {
+  id: string
+  title: string
+  tags?: string[]            // ['p1','devlog'] 등
+  createdAt?: string         // ISO 문자열 가정
+  slug?: string              // 있으면 우선 사용
+}
+
+/** ====== 환경 & 유틸 ====== */
+const API_BASE = (import.meta as any).env?.VITE_API_BASE || 'https://leegaeulblog-server.onrender.com'
+
+function byDateDesc(a?: string, b?: string) {
+  const ta = a ? Date.parse(a) : 0
+  const tb = b ? Date.parse(b) : 0
+  return tb - ta
+}
+
+function postLink(p: PostBrief) {
+  // slug 우선, 없으면 id로 상세 라우팅 가정
+  if (p.slug) return `/blog/${encodeURIComponent(p.slug)}`
+  return `/blog/${encodeURIComponent(p.id)}`
+}
+
+/** ====== 프로젝트 정의 ====== */
+const PROJECTS: Project[] = [
   {
     id: 'p1',
     title: '와카와카',
-    summary:
-      'WI-FI 라즈베리파이 기반 심레이싱 조종 자동차 (와이파이 카)',
-    linkUrl: 'http://http://100.84.162.124:8000/', // 실제 배포 URL로 교체
-    repoUrl: 'https://github.com/sonjerry/WakaWaka',   // 실제 레포로 교체
+    summary: 'WI-FI 라즈베리파이 기반 심레이싱 조종 자동차 (와이파이 카)',
+    linkUrl: 'http://100.84.162.124:8000/',
+    repoUrl: 'https://github.com/sonjerry/WakaWaka',
     status: 'active',
   },
   {
     id: 'p2',
-    title: 'Openai 튜링 테스트',
-    summary:
-      '채팅창 상대가 ai인지 사람인지 구별 못할 퀄리티의 프롬프트 작성 실험',
+    title: 'OpenAI 튜링 테스트',
+    summary: '채팅 상대가 사람/AI 구분 불가를 목표로 프롬프트 실험',
     linkUrl: 'https://example-project2.onrender.com',
     repoUrl: 'https://github.com/yourname/project2',
     status: 'paused',
@@ -42,36 +58,30 @@ const MOCK_PROJECTS: Project[] = [
   {
     id: 'p3',
     title: '이가을 블로그',
-    summary:
-      '프론트/백엔드 처음부터 작성한 블로그',
+    summary: '프론트/백엔드 본 블로그',
     linkUrl: 'https://leegaeulblog.onrender.com',
     repoUrl: 'https://github.com/sonjerry/LeeGaeulBlog',
     status: 'done',
   },
 ]
 
+/** ====== 뱃지 ====== */
 function StatusBadge({ status }: { status?: Project['status'] }) {
   if (!status) return null
   const map = {
-    active: 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/30',
-    paused: 'bg-amber-500/20 text-amber-200 border border-amber-400/30',
-    done: 'bg-sky-500/20 text-sky-200 border border-sky-400/30',
+    active: 'bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-400/30',
+    paused: 'bg-amber-500/15 text-amber-200 ring-1 ring-amber-400/30',
+    done: 'bg-sky-500/15 text-sky-200 ring-1 ring-sky-400/30',
   } as const
   const label = { active: '진행중', paused: '보류', done: '완료' }[status]
   return (
-    <span
-      className={
-        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' +
-        map[status]
-      }
-      aria-label={`상태: ${label}`}
-      title={`상태: ${label}`}
-    >
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${map[status]}`}>
       {label}
     </span>
   )
 }
 
+/** ====== 외부 링크 버튼 ====== */
 function ButtonLink({
   href,
   children,
@@ -89,19 +99,9 @@ function ButtonLink({
       ? 'bg-white/90 text-black hover:bg-white'
       : 'bg-white/10 text-white hover:bg-white/15 border border-white/15'
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`${base} ${styles}`}
-    >
+    <a href={href} target="_blank" rel="noopener noreferrer" className={`${base} ${styles}`}>
       {children}
-      <svg
-        className="ml-1 w-3.5 h-3.5"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-        aria-hidden
-      >
+      <svg className="ml-1 w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
         <path d="M11 3a1 1 0 100 2h2.586L7.293 11.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
         <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
       </svg>
@@ -109,56 +109,108 @@ function ButtonLink({
   )
 }
 
-function ProjectCard({ p }: { p: Project }) {
+/** ====== 프로젝트 카드 (세로 롱 + 타임라인) ====== */
+function ProjectCard({
+  project,
+  posts,
+}: {
+  project: Project
+  posts: PostBrief[]
+}) {
+  const top = posts
+    .filter(p => (p.tags || []).map(t => (t || '').toLowerCase()).includes(project.id.toLowerCase()))
+    .sort((a, b) => byDateDesc(a.createdAt, b.createdAt))
+    .slice(0, 10) // 더 길게
+
   return (
     <GlassCard
       className="
-        group relative overflow-hidden
-        p-5 md:p-6
+        relative overflow-hidden
+        p-6 md:p-8
         rounded-3xl
-        transition-transform
-        hover:scale-[1.01]
+        min-h-[560px] md:min-h-[620px]
+        grid grid-rows-[auto_1fr_auto]
       "
     >
-      {/* 상단: 제목/상태 */}
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="text-lg md:text-xl font-bold tracking-tight">
-          {p.title}
-        </h3>
-        <StatusBadge status={p.status} />
-      </div>
+      {/* 헤더: 제목/상태/요약/액션 */}
+      <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-3">
+            <h3 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-none">
+              {project.title}
+            </h3>
+            <StatusBadge status={project.status} />
+          </div>
+          <p className="mt-2 text-sm md:text-base text-white/80">{project.summary}</p>
+        </div>
 
-      {/* 요약 */}
-      <p className="mt-2 text-sm md:text-base text-white/80 leading-relaxed">
-        {p.summary}
-      </p>
+        <div className="flex gap-2 shrink-0">
+          <ButtonLink href={project.linkUrl} variant="primary">소개 링크</ButtonLink>
+          <ButtonLink href={project.repoUrl} variant="ghost">깃허브</ButtonLink>
+        </div>
+      </header>
 
-      {/* 버튼들 */}
-      <div className="mt-5 flex flex-wrap gap-2">
-        <ButtonLink href={p.linkUrl} variant="primary">
-          소개 링크
-        </ButtonLink>
-        <ButtonLink href={p.repoUrl} variant="ghost">
-          깃허브
-        </ButtonLink>
+      {/* 타임라인 */}
+      <section className="mt-6 relative">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-base md:text-lg font-semibold tracking-tight">최근 업데이트</h4>
+      
+        </div>
 
-        {/* ✅ 진행사항: 내부 라우팅 */}
+        {top.length === 0 ? (
+          <p className="mt-3 text-white/50 text-sm">아직 표시할 업데이트가 없습니다.</p>
+        ) : (
+          <ol className="relative pl-6 space-y-3">
+            {/* 세로 라인 */}
+            <div className="absolute left-2 top-1 bottom-1 w-px bg-white/10 pointer-events-none" />
+            {top.map((post) => (
+              <li key={post.id} className="group">
+                <div className="flex items-start gap-3">
+                  {/* 도트 */}
+                  <span className="mt-1.5 inline-block w-2.5 h-2.5 rounded-full bg-white/35 ring-4 ring-white/5 group-hover:bg-white/70 transition-colors" />
+                  <div className="min-w-0">
+                    <Link
+                      to={postLink(post)}
+                      className="block text-sm md:text-[15px] leading-snug text-white/90 hover:text-white truncate"
+                      title={post.title}
+                    >
+                      {post.title}
+                    </Link>
+                    {post.createdAt && (
+                      <time className="block text-[11px] text-white/50 mt-0.5">
+                        {new Date(post.createdAt).toLocaleDateString(undefined, {
+                          year: 'numeric', month: '2-digit', day: '2-digit'
+                        })}
+                      </time>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
+
+      {/* 하단 액션: 진행사항 보기 */}
+      <footer className="mt-6">
         <Link
-          to={`/blog?progress=${encodeURIComponent(p.id)}`}
-          className="inline-flex items-center justify-center h-9 px-3 rounded-xl text-sm bg-white/10 text-white hover:bg-white/15 border border-white/15 transition-transform active:scale-[0.98]"
-          aria-label={`${p.title} 진행사항 보기`}
+          to={`/blog?progress=${encodeURIComponent(project.id)}`}
+          className="inline-flex items-center justify-center h-10 px-4 rounded-xl text-sm bg-white/10 text-white hover:bg-white/15 border border-white/15 transition-transform active:scale-[0.98]"
+          aria-label={`${project.title} 진행사항 보기`}
         >
-          진행사항
+          진행사항 보기
+          <svg className="ml-1 w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+            <path d="M7 4a1 1 0 000 2h5.586L6.293 12.293a1 1 0 001.414 1.414L14 7.414V13a1 1 0 102 0V5a1 1 0 00-1-1H7z" />
+          </svg>
         </Link>
-      </div>
+      </footer>
 
-      {/* 배경 장식(가벼운 강조) */}
+      {/* 은은한 배경 하이라이트 */}
       <div
         className="
-          pointer-events-none absolute -right-16 -top-16 size-40 md:size-56
-          rounded-full blur-3xl opacity-20 group-hover:opacity-30
+          pointer-events-none absolute -right-24 -top-24 size-56 md:size-72
+          rounded-full blur-3xl opacity-15
           bg-gradient-to-tr from-white/40 to-white/10
-          transition-opacity
         "
         aria-hidden
       />
@@ -166,8 +218,52 @@ function ProjectCard({ p }: { p: Project }) {
   )
 }
 
+/** ====== 페이지 ====== */
 export default function Projects() {
-  const projects = useMemo(() => MOCK_PROJECTS, [])
+  const [posts, setPosts] = useState<PostBrief[]>([])
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
+
+  const projects = useMemo(() => PROJECTS, [])
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      setLoading(true)
+      setErr(null)
+      try {
+        // 1) 정적 프리로드 우선
+        const r1 = await fetch('/posts-brief.json', { cache: 'no-store' })
+        if (r1.ok) {
+          const d = (await r1.json()) as PostBrief[]
+          if (mounted) {
+            setPosts(Array.isArray(d) ? d : [])
+            setLoading(false)
+          }
+          // 2) 백그라운드 최신화(선택): API 한 번 더
+          try {
+            const r2 = await fetch(`${API_BASE}/api/posts-brief`, { cache: 'no-store' })
+            if (r2.ok) {
+              const d2 = (await r2.json()) as PostBrief[]
+              if (mounted && Array.isArray(d2) && d2.length) setPosts(d2)
+            }
+          } catch {}
+          return
+        }
+
+        // 3) 정적이 없으면 API 사용
+        const r2 = await fetch(`${API_BASE}/api/posts-brief`, { cache: 'no-store' })
+        if (!r2.ok) throw new Error(`API ${r2.status}`)
+        const d2 = (await r2.json()) as PostBrief[]
+        if (mounted) setPosts(Array.isArray(d2) ? d2 : [])
+      } catch (e: any) {
+        if (mounted) setErr(e?.message || '불러오기 오류')
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
 
   return (
     <main
@@ -179,22 +275,27 @@ export default function Projects() {
       "
     >
       <GlassCard className="mb-6 md:mb-8">
-        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">프로젝트</h1>
+        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">
+          프로젝트
+        </h1>
         <p className="text-sm md:text-base text-white/70 mt-4">
-          개인 토이 프로젝트 모음
+          토이 프로젝트 모음
         </p>
       </GlassCard>
 
-      {/* 그리드 */}
-      <section
-        className="
-          grid gap-4 md:gap-6
-          grid-cols-1 md:grid-cols-2 xl:grid-cols-3
-        "
-      >
+      {/* 세로 풀폭 나열 */}
+      <section className="space-y-5 md:space-y-7">
         {projects.map((p) => (
-          <ProjectCard key={p.id} p={p} />
+          <ProjectCard key={p.id} project={p} posts={posts} />
         ))}
+
+        {loading && (
+          <GlassCard className="p-5 md:p-6">
+            <p className="text-white/70 text-sm">업데이트를 불러오는 중…</p>
+          </GlassCard>
+        )}
+
+
       </section>
     </main>
   )

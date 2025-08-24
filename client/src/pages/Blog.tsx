@@ -105,14 +105,13 @@ export default function Blog() {
     if (inProgressMode && progressTag) {
       // 진행 모드: 해당 프로젝트 태그 글만
       base = posts.filter(p => hasTag(p, progressTag))
-      // 진행 모드에서는 카테고리/날짜 필터는 그대로 두되, 필요없으면 나중에 UI에서 숨김
       base = byCatAndDate(base)
     } else if (normalTag) {
       // 일반 태그 필터
       base = posts.filter(p => hasTag(p, normalTag))
       base = byCatAndDate(base)
     } else {
-      // 기본 블로그 목록: 프로젝트 태그(p1/p2/p3) 달린 글은 제외
+      // 기본 블로그 목록: 프로젝트 태그(p1/p2/p3) 달린 글은 제외(프로젝트 페이지에서 보여줌)
       base = posts
         .filter(p => !(p.tags || []).some(t => isProjectTag((t || '').toLowerCase())))
       base = byCatAndDate(base)
@@ -181,7 +180,7 @@ export default function Blog() {
 
         {/* 레이아웃: 데스크톱 3:1 / 모바일 1열 */}
         <div className="grid gap-6 lg:grid-cols-4">
-          {/* 글 목록 (3): 가로형 카드 + 타임라인 */}
+          {/* 글 목록 (3) */}
           <div className="lg:col-span-3">
             <div className="relative">
               {!inProgressMode && (
@@ -203,7 +202,7 @@ export default function Blog() {
                       <article className="rounded-2xl bg-white/5 border border-white/10 shadow-glass overflow-hidden">
                         <Link to={`/blog/${p.id}`} className="block select-none">
                           <div className="grid grid-cols-[88px,1fr] md:grid-cols-[128px,1fr] gap-3 md:gap-4 p-3 md:p-4 items-center">
-                            {/* 썸네일: 정사각 & 축소 */}
+                            {/* 썸네일 */}
                             <div className="w-[88px] h-[88px] md:w-[128px] md:h-[128px] rounded-xl overflow-hidden bg-white/5 border border-white/10">
                               {cover ? (
                                 <img src={cover} alt={p.title} className="w-full h-full object-cover block" loading="lazy" draggable={false} />

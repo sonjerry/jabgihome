@@ -25,8 +25,7 @@ function formatFullDate(s: string) {
 const PROJECT_TAGS = new Set(['p1', 'p2', 'p3'])
 const isProjectTag = (t: string) => PROJECT_TAGS.has((t || '').toLowerCase())
 
-/* ───── 이미지: 비율 강제 + object-contain (크롭 없음) + 하단 클립 방지 ─────
-   핵심: aspect 컨테이너 내부에 p-px(1px) 인너 래퍼를 두어 서브픽셀 절단 방지 */
+/* ───── 이미지 컨테이너 ───── */
 function FigureImage(props: React.ImgHTMLAttributes<HTMLImageElement>) {
   const { alt = '', ...rest } = props
   return (
@@ -36,17 +35,15 @@ function FigureImage(props: React.ImgHTMLAttributes<HTMLImageElement>) {
           mx-auto max-w-[64ch]
           aspect-[4/3] md:aspect-[16/9]
           rounded-2xl border border-white/10 bg-white/[0.03]
-          overflow-hidden
           grid
         "
       >
-        {/* 하단/우측 1px 잘림 방지 인너 패딩 */}
         <div className="p-px w-full h-full grid place-items-center">
           <img
             {...rest}
             alt={alt}
             loading="lazy"
-            className="block max-w-full max-h-full w-auto h-auto object-contain object-center select-none"
+            className="block max-w-full max-h-full w-auto h-auto object-contain object-center select-none rounded-[inherit]"
             draggable={false}
           />
         </div>
@@ -112,7 +109,7 @@ export default function PostDetail() {
     )
   }
 
-  /* ── 마크다운 컴포넌트: 이미지 컨테이너 + 표 지브라 + 타이포 ── */
+  /* ── 마크다운 컴포넌트 ── */
   const mdComponents: Components = {
     img: (props) => <FigureImage {...props} />,
 
@@ -153,7 +150,6 @@ export default function PostDetail() {
       )
     },
 
-    /* 표: 스크롤 래퍼 + 지브라(홀수행) */
     table: ({ className, ...props }) => (
       <div className="-mx-2 px-2 overflow-x-auto my-5">
         <table {...props} className={clsx('text-sm w-full border-collapse', className)} />
@@ -185,6 +181,9 @@ export default function PostDetail() {
     ol: ({ className, ...props }) => <ol {...props} className={clsx('my-4 pl-6 list-decimal', className)} />,
     p:  ({ className, ...props }) => <p  {...props} className={clsx('my-4', className)} />,
   }
+
+  // 프로젝트 태그는 표시에서 숨김
+  const visibleTags = (post.tags || []).filter(t => !isProjectTag((t || '').toLowerCase()))
 
   return (
     <div className="pt-24 mx-auto max-w-[1000px] px-3 md:px-6">
@@ -228,28 +227,22 @@ export default function PostDetail() {
               {formatFullDate(post.createdAt)} {post.category ? `• ${post.category}` : ''}
             </p>
 
-            {post.tags?.length > 0 && (
+            {visibleTags.length > 0 && (
               <div className="flex gap-2 flex-wrap mt-3">
-                {post.tags.map((t, i) => {
-                  const lower = (t || '').toLowerCase()
-                  const toUrl = isProjectTag(lower)
-                    ? `/blog?progress=${encodeURIComponent(lower)}`
-                    : `/blog?tag=${encodeURIComponent(t)}`
-                  return (
-                    <Link
-                      key={`${t}-${i}`}
-                      to={toUrl}
-                      className="text-[11px] px-2 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/10"
-                    >
-                      #{t}
-                    </Link>
-                  )
-                })}
+                {visibleTags.map((t, i) => (
+                  <Link
+                    key={`${t}-${i}`}
+                    to={`/blog?tag=${encodeURIComponent(t)}`}
+                    className="text-[11px] px-2 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/10"
+                  >
+                    #{t}
+                  </Link>
+                ))}
               </div>
             )}
           </header>
 
-          {/* 본문: 읽기 폭/리듬 고정 */}
+          {/* 본문 */}
           <div
             className={clsx(
               'prose prose-invert post-content',
