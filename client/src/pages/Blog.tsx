@@ -230,7 +230,7 @@ export default function Blog() {
                   )
                 })}
               </ul>
-              {visible.length === 0 && (<p className="text-cream/70">글이 없습니다.</p>)}
+              {visible.length === 0 && (<p className="text-cream/70">데이터베이스에서 자료 로딩중</p>)}
             </div>
           </div>
 
