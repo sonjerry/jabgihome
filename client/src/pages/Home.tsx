@@ -111,11 +111,18 @@ export default function Home() {
     }
   }, [hasUnmuted])
 
-  // 로딩 완료 전 스크롤 금지
+  // iOS 밴딩 효과 방지 및 스크롤 제어
   useEffect(() => {
     const html = document.documentElement
     const body = document.body
-    if (!isVideoReady) {
+    
+    // iOS 밴딩 효과 방지
+    html.style.overscrollBehavior = 'none'
+    body.style.overscrollBehavior = 'none'
+    ;(html.style as any).WebkitOverflowScrolling = 'touch'
+    ;(body.style as any).WebkitOverflowScrolling = 'touch'
+    
+    if (isInitialLoad) {
       const prevHtml = html.style.overflow
       const prevBody = body.style.overflow
       html.style.overflow = 'hidden'
@@ -123,9 +130,20 @@ export default function Home() {
       return () => {
         html.style.overflow = prevHtml
         body.style.overflow = prevBody
+        html.style.overscrollBehavior = ''
+        body.style.overscrollBehavior = ''
+        ;(html.style as any).WebkitOverflowScrolling = ''
+        ;(body.style as any).WebkitOverflowScrolling = ''
       }
     }
-  }, [isVideoReady])
+    
+    return () => {
+      html.style.overscrollBehavior = ''
+      body.style.overscrollBehavior = ''
+      ;(html.style as any).WebkitOverflowScrolling = ''
+      ;(body.style as any).WebkitOverflowScrolling = ''
+    }
+  }, [isInitialLoad])
 
   // 패럴랙스 효과 제거 - 영상은 고정
 
@@ -176,13 +194,23 @@ export default function Home() {
   }, [])
 
   return (
-    <main className="relative overflow-x-hidden text-white">
+    <main 
+      className="relative overflow-x-hidden text-white bg-black"
+      style={{ 
+        overscrollBehavior: 'none',
+        WebkitOverflowScrolling: 'touch',
+        minHeight: '200vh'
+      }}
+    >
       {/* 히어로 섹션: 고정된 배경 비디오 (포털로 body에 렌더링하여 어느 상위 transform 영향도 받지 않도록) */}
       {createPortal(
       <section
         ref={heroRef}
-        className="fixed inset-0 w-full h-[100svh] overflow-hidden"
-        style={{ ['--home-reveal' as any]: String(revealProgress) }}
+        className="fixed inset-0 w-full h-[100svh] overflow-hidden bg-black"
+        style={{ 
+          ['--home-reveal' as any]: String(revealProgress),
+          overscrollBehavior: 'none'
+        }}
       >
         {/* 스타일: 슬로우 줌 키프레임 */}
         <style
@@ -248,7 +276,7 @@ export default function Home() {
         {(!isVideoReady || isInitialLoad) && (
           <div
             aria-hidden
-            className={`absolute inset-0 z-40 flex flex-col items-center justify-center gap-6 px-4 transition-opacity duration-300`}
+            className={`absolute inset-0 z-40 flex flex-col items-center justify-center gap-6 px-4 bg-black transition-opacity duration-300`}
           >
             <CircularText
               text={"로딩중*로딩중*로딩중*"}
@@ -449,3 +477,4 @@ function MiniStat({
     </a>
   )
 }
+
