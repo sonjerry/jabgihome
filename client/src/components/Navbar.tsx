@@ -55,9 +55,9 @@ export default function Navbar() {
 
   return (
     <>
-      {/* 상단/좌측 고정 사이드바 한 가지 형태만 사용 */}
+      {/* 상단/좌측 고정 사이드바 - 홈에서는 모바일에서도 표시 */}
       <aside
-        className="hidden md:block fixed left-0 top-0 h-screen w-64 z-[100] isolate glass border-r border-white/10"
+        className={`fixed left-0 top-0 h-screen w-64 z-[100] isolate glass border-r border-white/10 ${pathname === '/' ? 'block' : 'hidden md:block'}`}
         style={pathname === '/' ? {
           opacity: reveal,
           transform: `translateX(${(-20 * (1 - reveal || 0)).toFixed(2)}px)`,
@@ -68,15 +68,17 @@ export default function Navbar() {
         <SidebarContent navItems={navItems} groupOpen={groupOpen} setGroupOpen={setGroupOpen} />
       </aside>
 
-      {/* 모바일 버튼 */}
-      <button
-        type="button" aria-label="Open sidebar" onClick={() => setMobileOpen(true)}
-        className="fixed top-3 left-3 z-[101] md:hidden rounded-full border border-white/15 bg-white/10 backdrop-blur px-2.5 py-2"
-      >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      </button>
+      {/* 모바일 버튼 - 홈에서는 숨김 */}
+      {pathname !== '/' && (
+        <button
+          type="button" aria-label="Open sidebar" onClick={() => setMobileOpen(true)}
+          className="fixed top-3 left-3 z-[101] md:hidden rounded-full border border-white/15 bg-white/10 backdrop-blur px-2.5 py-2"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+      )}
 
       {/* 모바일 드로어 */}
       {mobileOpen && (

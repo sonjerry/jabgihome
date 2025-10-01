@@ -98,6 +98,12 @@ export default function Home() {
     }
     setShowHint(false)
   }, [isVideoReady])
+  // 음소거 해제 시 바로 카드가 등장하도록 리빌 트리거
+  useEffect(() => {
+    if (hasUnmuted) {
+      revealTargetRef.current = 1
+    }
+  }, [hasUnmuted])
 
   // 로딩 완료 전 스크롤 금지
   useEffect(() => {
@@ -164,12 +170,12 @@ export default function Home() {
   }, [])
 
   return (
-    <main className="relative overflow-x-hidden text-white" style={{ height: '200vh' }}>
+    <main className="relative overflow-x-hidden text-white">
       {/* 히어로 섹션: 고정된 배경 비디오 (포털로 body에 렌더링하여 어느 상위 transform 영향도 받지 않도록) */}
       {createPortal(
       <section
         ref={heroRef}
-        className="fixed inset-0 w-full h-screen overflow-hidden"
+        className="fixed inset-0 w-full h-[100svh] overflow-hidden"
         style={{ ['--home-reveal' as any]: String(revealProgress) }}
       >
         {/* 스타일: 슬로우 줌 키프레임 */}
@@ -325,7 +331,7 @@ export default function Home() {
         {/* 히어로 콘텐츠 (제목) - 로딩 중 숨김, 재생 시작 후 BlurText로 출현 */}
         {(isVideoReady && isVideoPlaying) && (
           <div className="absolute inset-0 z-10 px-4 md:px-8 flex items-center justify-center" style={{ transform: 'translateY(-6vh)' }}>
-            <div className="mx-auto w-full max-w-5xl text-center">
+            <div className="w-full max-w-5xl flex flex-col items-center text-center">
               <BlurText
                 text="잡다한 기록 홈페이지"
                 animateBy="letters"
@@ -352,8 +358,8 @@ export default function Home() {
       <section
         className="fixed right-0 bottom-0 z-10 w-full p-4 md:p-8 flex flex-col items-end pointer-events-none"
         style={{
-          opacity: revealProgress,
-          transform: `translateY(${(48 * (1 - revealProgress)).toFixed(2)}px)`,
+          opacity: hasUnmuted ? 1 : revealProgress,
+          transform: `translateY(${(64 * (1 - revealProgress)).toFixed(2)}px)`,
           transition: 'transform 360ms ease, opacity 300ms ease'
         }}
       >
