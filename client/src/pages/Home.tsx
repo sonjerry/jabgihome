@@ -328,8 +328,7 @@ export default function Home() {
         {/* 로딩 오버레이: 중앙 CircularText + 하단 음소거 해제 버튼 */}
         {(!isVideoReady || isInitialLoad) && (
           <div
-            aria-hidden
-            className={`absolute inset-0 z-40 flex flex-col items-center justify-center gap-6 px-4 bg-black transition-opacity duration-300`}
+            className={`absolute inset-0 z-[100] flex flex-col items-center justify-center gap-6 px-4 bg-black transition-opacity duration-300`}
           >
             <CircularText
               text={"로딩중*로딩중*로딩중*"}
@@ -340,6 +339,8 @@ export default function Home() {
             <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
               <button
                 type="button"
+                role="button"
+                tabIndex={0}
                 onClick={(e) => {
                   e.stopPropagation()
                   const next = false
@@ -356,6 +357,9 @@ export default function Home() {
                     setTimeout(() => { v.play().catch(() => {}) }, 0)
                   }
                 }}
+                onTouchStart={(e) => {
+                  e.stopPropagation()
+                }}
                 className="inline-flex items-center gap-2 rounded-2xl border border-white/25 bg-black/35 hover:bg-black/45 transition backdrop-blur-md px-5 py-2.5 shadow-glass"
               >
                 <span className="text-sm md:text-base text-white/95 whitespace-nowrap">이곳을 눌러 음소거를 해제해주세요</span>
@@ -366,10 +370,12 @@ export default function Home() {
 
         {/* 로딩 후에도 클릭 전까지 하단 음소거 버튼 유지 */}
         {isVideoReady && !hasUnmuted && (
-          <div className="pointer-events-none absolute inset-0 z-30">
+          <div className="pointer-events-none absolute inset-0 z-[90]">
             <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
               <button
                 type="button"
+                role="button"
+                tabIndex={0}
                 onClick={(e) => {
                   e.stopPropagation()
                   const next = false
@@ -385,6 +391,9 @@ export default function Home() {
                     try { v.pause() } catch {}
                     setTimeout(() => { v.play().catch(() => {}) }, 0)
                   }
+                }}
+                onTouchStart={(e) => {
+                  e.stopPropagation()
                 }}
                 className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/40 hover:bg-black/50 transition backdrop-blur-md px-7 py-3.5 shadow-glass"
               >

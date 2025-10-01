@@ -56,8 +56,11 @@ export default function Navbar() {
   return (
     <>
       {/* 상단/좌측 고정 사이드바 - 홈 모바일에서는 기본 숨김, reveal 기반 */}
+      {(() => {
+        const showMobile = pathname === '/' && (reveal || 0) > 0.02
+        return (
       <aside
-        className={`fixed left-0 top-0 h-screen w-64 z-[100] isolate glass border-r border-white/10 ${pathname === '/' ? 'hidden md:block' : 'hidden md:block'}`}
+        className={`fixed left-0 top-0 h-screen w-64 z-[100] isolate glass border-r border-white/10 ${pathname === '/' ? (showMobile ? 'block' : 'hidden md:block') : 'hidden md:block'}`}
         style={pathname === '/' ? {
           opacity: reveal,
           transform: `translateX(${(-20 * (1 - reveal || 0)).toFixed(2)}px)`,
@@ -67,6 +70,8 @@ export default function Navbar() {
       >
         <SidebarContent navItems={navItems} groupOpen={groupOpen} setGroupOpen={setGroupOpen} />
       </aside>
+        )
+      })()}
 
       {/* 모바일 버튼 - 홈에서는 숨김 */}
       {pathname !== '/' && (
