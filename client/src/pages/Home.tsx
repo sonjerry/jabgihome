@@ -1,5 +1,6 @@
 // client/src/pages/Home.tsx
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import djVideo from '../assets/media/dj.mp4'
 import { Link } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
@@ -11,7 +12,7 @@ export default function Home() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const heroRef = useRef<HTMLDivElement | null>(null)
   const [isMuted, setIsMuted] = useState(true)
-  const [showMuteButton, setShowMuteButton] = useState(false)
+  const [hasUnmuted, setHasUnmuted] = useState(false)
   const [loadProgress, setLoadProgress] = useState(0)
   const [isVideoReady, setIsVideoReady] = useState(false)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
@@ -86,8 +87,8 @@ export default function Home() {
     }
   }, [loadProgress])
 
-  // 중앙 음소거 버튼은 로딩 단계에서 CircularText 아래에 표시하고, 클릭 시 사라지도록만 사용
-  useEffect(() => { setShowMuteButton(false) }, [])
+  // 초기 상태: 아직 음소거 해제하지 않음
+  useEffect(() => { setHasUnmuted(false) }, [])
 
   // 로딩 완료 3초 후 힌트 표시, 그 전에는 숨김
   useEffect(() => {
@@ -164,7 +165,8 @@ export default function Home() {
 
   return (
     <main className="relative overflow-x-hidden text-white" style={{ height: '200vh' }}>
-      {/* 히어로 섹션: 고정된 배경 비디오 */}
+      {/* 히어로 섹션: 고정된 배경 비디오 (포털로 body에 렌더링하여 어느 상위 transform 영향도 받지 않도록) */}
+      {createPortal(
       <section
         ref={heroRef}
         className="fixed inset-0 w-full h-screen overflow-hidden"
@@ -200,7 +202,7 @@ export default function Home() {
         />
 
         {/* 스크롤 힌트: 화면 중앙 (음소거 버튼 표시 중에는 숨김) */}
-        {showHint && !showMuteButton && (
+        {showHint && hasUnmuted && (
           <div
             className="absolute inset-x-0 bottom-[20vh] z-20 flex items-center justify-center pointer-events-none"
             style={{
@@ -247,7 +249,7 @@ export default function Home() {
               onClick={() => {
                 const next = false
                 setIsMuted(next)
-                setShowMuteButton(false)
+                setHasUnmuted(true)
                 const v = videoRef.current
                 if (v) {
                   v.muted = next
@@ -261,6 +263,32 @@ export default function Home() {
               className="inline-flex items-center gap-2 rounded-2xl border border-white/25 bg-black/35 hover:bg-black/45 transition backdrop-blur-md px-5 py-2.5 shadow-glass"
             >
               <span className="text-sm md:text-base text-white/95">이곳을 눌러 음소거를 해제해주세요</span>
+            </button>
+          </div>
+        )}
+
+        {/* 로딩 후에도 클릭 전까지 중앙 음소거 버튼 유지 */}
+        {isVideoReady && !hasUnmuted && (
+          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => {
+                const next = false
+                setIsMuted(next)
+                setHasUnmuted(true)
+                const v = videoRef.current
+                if (v) {
+                  v.muted = next
+                  try { v.removeAttribute('muted') } catch {}
+                  v.muted = false
+                  v.volume = 1
+                  try { v.pause() } catch {}
+                  setTimeout(() => { v.play().catch(() => {}) }, 0)
+                }
+              }}
+              className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/40 hover:bg-black/50 transition backdrop-blur-md px-7 py-3.5 shadow-glass"
+            >
+              <span className="opacity-90 text-base font-medium">이곳을 눌러 음소거를 해제해주세요</span>
             </button>
           </div>
         )}
@@ -296,7 +324,7 @@ export default function Home() {
 
         {/* 히어로 콘텐츠 (제목) - 로딩 중 숨김, 재생 시작 후 BlurText로 출현 */}
         {(isVideoReady && isVideoPlaying) && (
-          <div className="absolute inset-x-0 top-[18vh] md:top-[22vh] z-10 px-4 md:px-8">
+          <div className="absolute inset-0 z-10 px-4 md:px-8 flex items-center justify-center" style={{ transform: 'translateY(-6vh)' }}>
             <div className="mx-auto w-full max-w-5xl text-center">
               <BlurText
                 text="잡다한 기록 홈페이지"
@@ -318,7 +346,7 @@ export default function Home() {
 
         {/* 중앙 음소거 버튼 블록은 로딩 오버레이에서 처리하므로 별도 노출 없음 */}
 
-      </section>
+      </section>, document.body)}
 
       {/* 본문: 글래스 요소 - 하단에서 위로 슬라이드 (배경 위 오버레이) */}
       <section
