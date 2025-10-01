@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from 'react'
 import djVideo from '../assets/media/dj.mp4'
 import { Link } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
-import BlurText from "../components/BlurText";  
+import BlurText from "../components/BlurText"
+import CircularText from '../components/CircularText'
+
 
 export default function Home() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -13,6 +15,7 @@ export default function Home() {
   const [loadProgress, setLoadProgress] = useState(0)
   const [isVideoReady, setIsVideoReady] = useState(false)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
+  const [showHint, setShowHint] = useState(false)
   const [revealProgress, setRevealProgress] = useState(0) // 0~1: 네비/카드 등장, 비디오 리레이아웃
   const revealTargetRef = useRef(0)
   const rafRevealRef = useRef(0)
@@ -90,6 +93,31 @@ export default function Home() {
       return () => clearTimeout(t)
     } else {
       setShowMuteButton(false)
+    }
+  }, [isVideoReady])
+
+  // 로딩 완료 3초 후 힌트 표시, 그 전에는 숨김
+  useEffect(() => {
+    if (isVideoReady) {
+      const t = setTimeout(() => setShowHint(true), 3000)
+      return () => clearTimeout(t)
+    }
+    setShowHint(false)
+  }, [isVideoReady])
+
+  // 로딩 완료 전 스크롤 금지
+  useEffect(() => {
+    const html = document.documentElement
+    const body = document.body
+    if (!isVideoReady) {
+      const prevHtml = html.style.overflow
+      const prevBody = body.style.overflow
+      html.style.overflow = 'hidden'
+      body.style.overflow = 'hidden'
+      return () => {
+        html.style.overflow = prevHtml
+        body.style.overflow = prevBody
+      }
     }
   }, [isVideoReady])
 
@@ -179,9 +207,9 @@ export default function Home() {
         />
 
         {/* 스크롤 힌트: 화면 중앙 (음소거 버튼 표시 중에는 숨김) */}
-        {!showMuteButton && (
+        {showHint && !showMuteButton && (
           <div
-            className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
+            className="absolute inset-x-0 bottom-[20vh] z-20 flex items-center justify-center pointer-events-none"
             style={{
               opacity: Math.max(0, 1 - revealProgress * 1.2),
               transition: 'opacity 300ms ease'
@@ -325,26 +353,23 @@ export default function Home() {
 
       {/* 본문: 글래스 요소 - 하단에서 위로 슬라이드 (배경 위 오버레이) */}
       <section
-        className="fixed inset-x-0 bottom-0 z-10 w-full p-4 md:p-8 flex flex-col justify-end items-stretch pointer-events-none"
+        className="fixed right-0 bottom-0 z-10 w-full p-4 md:p-8 flex flex-col items-end pointer-events-none"
         style={{
           opacity: revealProgress,
-          transform: `translateY(${(40 * (1 - revealProgress)).toFixed(2)}px)`,
+          transform: `translateY(${(48 * (1 - revealProgress)).toFixed(2)}px)`,
           transition: 'transform 360ms ease, opacity 300ms ease'
         }}
       >
-        <div className="w-full pointer-events-auto">
-          {/* 상단 헤더 제거 → 히어로로 이동 */}
-
-          {/* 메인 컨텐츠 그리드 */}
-          <div className="grid grid-cols-1 gap-4 w-full">
-            {/* 연락처 정보 카드만 유지 */}
-            <div
-              style={{
-                transform: `translate(${(24 * (1 - revealProgress)).toFixed(2)}px, ${(8 * (1 - revealProgress)).toFixed(2)}px)`,
-                transition: 'transform 380ms ease'
-              }}
-            >
-            <GlassCard className="p-6 md:p-8 flex flex-col justify-end order-1 lg:order-2 pointer-events-auto">
+        <div className="w-full pointer-events-auto flex justify-end">
+          {/* 연락처 정보 카드: 우하단 좁은 폭으로 배치 */}
+          <div
+            style={{
+              transform: `translate(${(16 * (1 - revealProgress)).toFixed(2)}px, ${(6 * (1 - revealProgress)).toFixed(2)}px)`,
+              transition: 'transform 380ms ease'
+            }}
+            className="w-[min(92%,360px)]"
+          >
+            <GlassCard className="p-6 md:p-6 flex flex-col justify-end pointer-events-auto">
               <div className="mt-auto">
                 <h2 className="text-lg md:text-xl font-semibold text-white/80 mb-3">
                   Contact Me
@@ -363,7 +388,6 @@ export default function Home() {
                 </div>
               </div>
             </GlassCard>
-            </div>
           </div>
         </div>
       </section>
