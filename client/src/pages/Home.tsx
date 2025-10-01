@@ -163,34 +163,36 @@ export default function Home() {
           }}
         />
 
-        {/* 스크롤 힌트: 화면 중앙 글라스 화살표 */}
-        <div
-          className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
-          style={{
-            opacity: Math.max(0, 1 - revealProgress * 1.2),
-            transition: 'opacity 300ms ease'
-          }}
-        >
-          <div className="pointer-events-auto rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-8 py-4 shadow-glass">
-            <div className="flex items-center gap-3">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                   style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '0ms' }}
-                   aria-hidden>
-                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                   style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '150ms' }}
-                   aria-hidden>
-                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                   style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '300ms' }}
-                   aria-hidden>
-                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+        {/* 스크롤 힌트: 화면 중앙 (음소거 버튼 표시 중에는 숨김) */}
+        {!showMuteButton && (
+          <div
+            className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
+            style={{
+              opacity: Math.max(0, 1 - revealProgress * 1.2),
+              transition: 'opacity 300ms ease'
+            }}
+          >
+            <div className="pointer-events-auto rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass">
+              <div className="flex items-center gap-3">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                     style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '0ms' }}
+                     aria-hidden>
+                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                     style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '150ms' }}
+                     aria-hidden>
+                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                     style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '300ms' }}
+                     aria-hidden>
+                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* 로딩 바 (비디오 중앙, 준비 완료 시 페이드 아웃) */}
         <div
@@ -252,7 +254,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 중앙 음소거 버튼 */}
+        {/* 중앙 음소거 버튼 (클릭 시 자연스럽게 페이드 아웃) */}
         {showMuteButton && (
           <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
             <button
@@ -260,7 +262,7 @@ export default function Home() {
               onClick={() => {
                 const next = !isMuted
                 setIsMuted(next)
-                setShowMuteButton(false) // 클릭 시 사라짐
+                setTimeout(() => setShowMuteButton(false), 120) // 약간의 여유를 두고 사라짐
                 const v = videoRef.current
                 if (v) {
                   v.muted = next
@@ -272,7 +274,7 @@ export default function Home() {
                   setTimeout(() => { v.play().catch(() => {}) }, 0)
                 }
               }}
-              className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/35 hover:bg-black/45 transition backdrop-blur-md px-6 py-3 shadow-glass"
+              className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/40 hover:bg-black/50 transition backdrop-blur-md px-7 py-3.5 shadow-glass"
             >
               {isMuted ? (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
@@ -294,13 +296,13 @@ export default function Home() {
 
       </section>
 
-      {/* 본문: 글래스 요소들이 영상 위에 나타남 */}
+      {/* 본문: 글래스 요소 - 하단에서 위로 슬라이드 (배경 위 오버레이) */}
       <section
-        className="fixed inset-0 z-10 w-full h-screen p-4 md:p-8 flex flex-col justify-center items-center pointer-events-none"
+        className="fixed inset-x-0 bottom-0 z-10 w-full p-4 md:p-8 flex flex-col items-center pointer-events-none"
         style={{
           opacity: revealProgress,
-          transform: `translateY(${(20 * (1 - revealProgress)).toFixed(2)}px)`,
-          transition: 'transform 300ms ease, opacity 300ms ease'
+          transform: `translateY(${(40 * (1 - revealProgress)).toFixed(2)}px)`,
+          transition: 'transform 360ms ease, opacity 300ms ease'
         }}
       >
         <div className="w-full max-w-6xl pointer-events-auto">
