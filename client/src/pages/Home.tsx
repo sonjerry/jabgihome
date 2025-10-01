@@ -391,6 +391,7 @@ export default function Home() {
                 tabIndex={0}
                 onClick={handleUnmute}
                 onMouseDown={handleUnmute}
+                data-unmute-button
                 className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/40 hover:bg-black/50 transition backdrop-blur-md px-7 py-3.5 shadow-glass"
               >
                 <span className="opacity-90 text-base font-medium whitespace-nowrap">이곳을 눌러 음소거를 해제해주세요</span>
