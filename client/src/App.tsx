@@ -79,9 +79,9 @@ export default function App() {
       {/* Navbar는 포털로 body에 그려지므로 여기선 그냥 사용 */}
       <Navbar />
 
-      {/* 본문: 홈 초기에는 여백 없이 풀블리드, reveal 후(또는 홈 외 페이지)에는 사이드바 폭만큼 여백 */}
+      {/* 본문: 홈('/')에서는 항상 여백 없이 풀블리드, 기타 페이지는 사이드바 폭만큼 여백 */}
       <div
-        className={(location.pathname === '/' ? (homeReveal > 0.02 ? 'md:pl-64' : '') : 'md:pl-64')}
+        className={(location.pathname === '/' ? '' : 'md:pl-64')}
         style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 800px' }}
       >
         <Suspense fallback={<div className="p-6 text-sm text-white/70">로딩중…</div>}>

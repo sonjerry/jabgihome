@@ -8,7 +8,7 @@ export default function Home() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const heroRef = useRef<HTMLDivElement | null>(null)
   const [isMuted, setIsMuted] = useState(true)
-  const [showMuteButton, setShowMuteButton] = useState(true)
+  const [showMuteButton, setShowMuteButton] = useState(false)
   const [loadProgress, setLoadProgress] = useState(0)
   const [isVideoReady, setIsVideoReady] = useState(false)
   const [revealProgress, setRevealProgress] = useState(0) // 0~1: 네비/카드 등장, 비디오 리레이아웃
@@ -77,6 +77,16 @@ export default function Home() {
       vid.removeEventListener('playing', onPlaying)
     }
   }, [loadProgress])
+
+  // 로딩 완료 후에만 중앙 음소거 버튼 노출
+  useEffect(() => {
+    if (isVideoReady) {
+      const t = setTimeout(() => setShowMuteButton(true), 120)
+      return () => clearTimeout(t)
+    } else {
+      setShowMuteButton(false)
+    }
+  }, [isVideoReady])
 
   // 패럴랙스 효과 제거 - 영상은 고정
 
@@ -194,24 +204,26 @@ export default function Home() {
           </div>
         )}
 
-        {/* 로딩 바 (비디오 중앙, 준비 완료 시 페이드 아웃) */}
-        <div
-          aria-hidden
-          className={`absolute inset-0 z-20 flex items-center justify-center px-4 transition-opacity duration-300 ${isVideoReady ? 'opacity-0' : 'opacity-100'}`}
-        >
-          <div className="w-[min(92%,720px)] px-4 py-3 rounded-2xl bg-black/45 border border-white/20 backdrop-blur-md shadow-glass">
-            <div className="flex items-center gap-3">
-              <span className="text-xs md:text-sm text-white/90">로딩중</span>
-              <div className="relative flex-1 h-2 rounded-full bg-white/15 overflow-hidden">
-                <div
-                  className="absolute inset-y-0 left-0 bg-amber-300/90 shadow-[0_0_16px_rgba(251,191,36,0.65)]"
-                  style={{ width: `${loadProgress}%`, transition: 'width 220ms ease' }}
-                />
+        {/* 로딩 바 (비디오 중앙, 준비 완료 전까지만 표시) */}
+        {!isVideoReady && (
+          <div
+            aria-hidden
+            className={`absolute inset-0 z-40 flex items-center justify-center px-4 transition-opacity duration-300`}
+          >
+            <div className="w-[min(92%,720px)] px-4 py-3 rounded-2xl bg-black/45 border border-white/20 backdrop-blur-md shadow-glass">
+              <div className="flex items-center gap-3">
+                <span className="text-xs md:text-sm text-white/90">로딩중</span>
+                <div className="relative flex-1 h-2 rounded-full bg-white/15 overflow-hidden">
+                  <div
+                    className="absolute inset-y-0 left-0 bg-amber-300/90 shadow-[0_0_16px_rgba(251,191,36,0.65)]"
+                    style={{ width: `${loadProgress}%`, transition: 'width 220ms ease' }}
+                  />
+                </div>
+                <span className="text-[11px] md:text-xs text-white/85 tabular-nums min-w-[38px] text-right">{loadProgress}%</span>
               </div>
-              <span className="text-[11px] md:text-xs text-white/85 tabular-nums min-w-[38px] text-right">{loadProgress}%</span>
             </div>
           </div>
-        </div>
+        )}
 
         {/* 비네트 + 컬러 그레이딩 + 그라데이션 마스크 + 그레인 */}
         <div className="absolute inset-0 pointer-events-none">
@@ -298,19 +310,25 @@ export default function Home() {
 
       {/* 본문: 글래스 요소 - 하단에서 위로 슬라이드 (배경 위 오버레이) */}
       <section
-        className="fixed inset-x-0 bottom-0 z-10 w-full p-4 md:p-8 flex flex-col items-center pointer-events-none"
+        className="fixed inset-x-0 bottom-0 z-10 w-full p-4 md:p-8 flex flex-col justify-end items-stretch pointer-events-none"
         style={{
           opacity: revealProgress,
           transform: `translateY(${(40 * (1 - revealProgress)).toFixed(2)}px)`,
           transition: 'transform 360ms ease, opacity 300ms ease'
         }}
       >
-        <div className="w-full max-w-6xl pointer-events-auto">
+        <div className="w-full pointer-events-auto">
           {/* 상단 헤더 제거 → 히어로로 이동 */}
 
           {/* 메인 컨텐츠 그리드 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
             {/* 좌측 카드: 소개 및 내비게이션 */}
+            <div
+              style={{
+                transform: `translate(${(-24 * (1 - revealProgress)).toFixed(2)}px, ${(8 * (1 - revealProgress)).toFixed(2)}px)`,
+                transition: 'transform 380ms ease'
+              }}
+            >
             <GlassCard className="p-6 md:p-8 flex flex-col justify-between order-2 lg:order-1 pointer-events-auto">
               <div>
                 <h2 className="text-2xl md:text-3xl font-semibold text-amber-300">
@@ -326,8 +344,15 @@ export default function Home() {
                 <CTA to="/projects" title="프로젝트" />
               </nav>
             </GlassCard>
+            </div>
 
             {/* 우측 카드: 연락처 정보 */}
+            <div
+              style={{
+                transform: `translate(${(24 * (1 - revealProgress)).toFixed(2)}px, ${(8 * (1 - revealProgress)).toFixed(2)}px)`,
+                transition: 'transform 380ms ease'
+              }}
+            >
             <GlassCard className="p-6 md:p-8 flex flex-col justify-end order-1 lg:order-2 pointer-events-auto">
               <div className="mt-auto">
                 <h2 className="text-lg md:text-xl font-semibold text-white/80 mb-3">
@@ -347,6 +372,7 @@ export default function Home() {
                 </div>
               </div>
             </GlassCard>
+            </div>
           </div>
         </div>
       </section>
