@@ -35,9 +35,23 @@ export default function Navbar() {
   useEffect(() => setGroupOpen(defaultOpen), [defaultOpen])
 
   // 홈에서만 Home이 주입하는 CSS 변수('--home-reveal')를 읽어 슬라이드/페이드 처리
-  const reveal = typeof window !== 'undefined'
-    ? Number(getComputedStyle(document.documentElement).getPropertyValue('--home-reveal') || getComputedStyle(document.body).getPropertyValue('--home-reveal') || 0)
-    : 0
+  const [reveal, setReveal] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0
+    const root = getComputedStyle(document.documentElement).getPropertyValue('--home-reveal')
+    const body = getComputedStyle(document.body).getPropertyValue('--home-reveal')
+    return Number(root || body || 0) || 0
+  })
+
+  useEffect(() => {
+    const onReveal = (e: Event) => {
+      try {
+        const detail = (e as CustomEvent<number>).detail
+        if (typeof detail === 'number') setReveal(detail)
+      } catch {}
+    }
+    window.addEventListener('home:reveal', onReveal as any)
+    return () => window.removeEventListener('home:reveal', onReveal as any)
+  }, [])
 
   return (
     <>

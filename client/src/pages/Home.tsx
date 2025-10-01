@@ -111,6 +111,10 @@ export default function Home() {
       const next = current + (target - current) * 0.12
       if (Math.abs(next - current) > 0.002) {
         setRevealProgress(next)
+        try {
+          document.documentElement.style.setProperty('--home-reveal', String(next))
+          window.dispatchEvent(new CustomEvent('home:reveal', { detail: next }))
+        } catch {}
       }
       rafRevealRef.current = requestAnimationFrame(animate)
     }
@@ -165,11 +169,12 @@ export default function Home() {
           // @ts-ignore
           webkit-playsinline="true"
           preload="metadata"
-          className="absolute inset-0 w-full h-full object-cover will-change-transform"
+          className="fixed inset-0 w-full h-full object-cover will-change-transform"
           style={{
             transform: `translateY(${parallaxY * -1 - revealProgress * 30}px) scale(${1 - revealProgress * 0.06})`,
             animation: 'heroSlowZoom 28s linear infinite alternate',
-            filter: 'brightness(0.9) saturate(0.9) contrast(1.05)'
+            filter: 'brightness(0.9) saturate(0.9) contrast(1.05)',
+            zIndex: 0 as any
           }}
         />
 
@@ -221,13 +226,13 @@ export default function Home() {
           />
         </div>
 
-        {/* 히어로 콘텐츠 (제목) */}
-        <div className="relative z-10 h-full px-4 md:px-8 flex items-end">
-          <div className="w-full max-w-6xl pb-8">
+        {/* 히어로 콘텐츠 (제목) - 상단~중앙 심미적 배치 */}
+        <div className="absolute inset-x-0 top-[18vh] md:top-[22vh] z-10 px-4 md:px-8">
+          <div className="mx-auto w-full max-w-5xl text-center">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg">
               잡다한 기록 홈페이지
             </h1>
-            <p className="mt-4 md:mt-6 text-md md:text-lg text-amber-300">
+            <p className="mt-4 md:mt-6 text-base md:text-lg text-amber-300">
               인스타는 너무 평범해서 홈페이지 직접 만듦
             </p>
           </div>
