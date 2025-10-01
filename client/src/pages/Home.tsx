@@ -235,6 +235,20 @@ export default function Home() {
 
   const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches
 
+  const handleUnmute = (e: React.SyntheticEvent) => {
+    e.stopPropagation()
+    const v = videoRef.current
+    setHasUnmuted(true)
+    setVideoMuteOverride('forceUnmute')
+    setIsMuted(false)
+    if (v) {
+      try { v.removeAttribute('muted') } catch {}
+      v.muted = false
+      v.volume = 1
+      try { void v.play() } catch {}
+    }
+  }
+
   return (
     <main 
       className="relative overflow-x-hidden text-white bg-black"
@@ -361,32 +375,7 @@ export default function Home() {
                 type="button"
                 role="button"
                 tabIndex={0}
-                onPointerDown={(e) => {
-                  e.stopPropagation()
-                  const next = false
-                  setIsMuted(next)
-                  setHasUnmuted(true)
-                  setVideoMuteOverride('forceUnmute')
-                  const v = videoRef.current
-                  if (v) {
-                    try { v.removeAttribute('muted') } catch {}
-                    v.muted = false
-                    v.volume = 1
-                    try { v.pause() } catch {}
-                    // 사용자 제스처 내에서 재생 호출 (모바일 브라우저 정책 대응)
-                    try { void v.play() } catch {}
-                  }
-                }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  const v = videoRef.current
-                  if (v) {
-                    try { v.removeAttribute('muted') } catch {}
-                    v.muted = false
-                    v.volume = 1
-                    try { void v.play() } catch {}
-                  }
-                }}
+                onClick={handleUnmute}
                 className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/40 hover:bg-black/50 transition backdrop-blur-md px-7 py-3.5 shadow-glass"
               >
                 <span className="opacity-90 text-base font-medium whitespace-nowrap">이곳을 눌러 음소거를 해제해주세요</span>
@@ -412,10 +401,22 @@ export default function Home() {
 
         {/* 비네트 + 컬러 그레이딩 + 그라데이션 마스크 + 그레인 */}
         <div className="absolute inset-0 pointer-events-none">
+          {/* 컬러 글로우 레이어: 글래스 대비 강화 */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(800px 600px at 15% 10%, rgba(108,173,255,0.20), rgba(0,0,0,0) 60%),\
+radial-gradient(900px 700px at 85% 20%, rgba(246,197,108,0.18), rgba(0,0,0,0) 55%),\
+radial-gradient(700px 500px at 50% 90%, rgba(153,98,79,0.16), rgba(0,0,0,0) 60%)',
+              filter: 'blur(18px)',
+              mixBlendMode: 'screen',
+            }}
+          />
           {/* 상/하단 그라데이션 */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/30 to-black/85" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/80" />
           {/* 소프트 라이트 앰버 오버레이 (강도 약간 증가) */}
-          <div className="absolute inset-0 mix-blend-soft-light bg-amber-300/14" />
+          <div className="absolute inset-0 mix-blend-soft-light bg-amber-300/24" />
           {/* 비네트 */}
           <div
             className="absolute inset-0"
@@ -427,12 +428,13 @@ export default function Home() {
           {/* 그레인/노이즈 레이어 */}
           <div
             aria-hidden
-            className="absolute inset-0 opacity-[0.10]"
+            className="absolute inset-0 opacity-[0.08]"
             style={{
               backgroundImage:
-                'radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), radial-gradient(rgba(0,0,0,0.07) 1px, transparent 1px)',
-              backgroundPosition: '0 0, 1px 1px',
-              backgroundSize: '3px 3px, 3px 3px',
+                'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), radial-gradient(rgba(0,0,0,0.05) 1px, transparent 1px)',
+              backgroundPosition: '0 0, 2px 2px',
+              backgroundSize: '4px 4px, 4px 4px',
+              backgroundRepeat: 'repeat',
               mixBlendMode: 'overlay',
               pointerEvents: 'none',
             }}
