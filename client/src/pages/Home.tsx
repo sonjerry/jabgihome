@@ -1,5 +1,5 @@
 // client/src/pages/Home.tsx
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import FullscreenVideoModal from '../components/FullscreenVideoModal'
 import Stickers from '../components/StickerPeel'
@@ -27,15 +27,6 @@ export default function Home() {
     }
   }, [])
 
-  const today = useMemo(() => {
-    const d = new Date()
-    return d.toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }, [])
-
   return (
     <main className="relative min-h-screen overflow-hidden text-white">
       <FullscreenVideoModal open={showVideo} onClose={closeVideo} />
@@ -47,10 +38,10 @@ export default function Home() {
           <header className="flex flex-col md:flex-row md:items-end md:justify-between mb-6 md:mb-10">
             <div className="text-left md:text-left mb-4 md:mb-0">
               <h1 className="text-4xl md:text-8xl font-extrabold tracking-tight leading-tight drop-shadow-lg">
-                이가을 블로그
+                잡다한 기록 홈페이지 (잡기홈)
               </h1>
               <p className="mt-6 text-md md:text-lg text-amber-300">
-                인스타 싫어서 홈페이지 직접 만듬
+                인스타는 너무 평범해서 홈페이지 직접 만듬
               </p>
             </div>
           </header>
@@ -61,10 +52,10 @@ export default function Home() {
             <GlassCard className="p-6 md:p-8 flex flex-col justify-between order-2 lg:order-1 pointer-events-auto">
               <div>
                 <h2 className="text-2xl md:text-3xl font-semibold text-amber-300">
-                  홈페이지 소개
+                  컨텐츠츠
                 </h2>
                 <p className="mt-4 text-sm md:text-base text-white/90 leading-relaxed">
-                  제가 평소에 소개하고 싶었던 것들을 전시합니다.
+                   
                 </p>
               </div>
               <nav className="mt-6 grid grid-cols-3 gap-3 pointer-events-auto">

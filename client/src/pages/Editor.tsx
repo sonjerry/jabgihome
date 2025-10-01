@@ -1,9 +1,7 @@
 // client/src/pages/Editor.tsx
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { Post, Attachment } from '../types'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { getPost, savePost, uploadFile } from '../lib/api'
 import PageShell from '../components/PageShell'
 
@@ -41,8 +39,6 @@ export default function Editor(){
       })
       .finally(()=> setLoading(false))
   }, [id, isEdit])
-
-  const preview = useMemo(()=>content,[content])
   const addTag = ()=>{ const tt = tagInput.trim(); if(tt && !tags.includes(tt)) setTags(v=>[...v,tt]); setTagInput('') }
   const removeTag = (tt:string)=> setTags(v=>v.filter(x=>x!==tt))
 
@@ -84,7 +80,6 @@ export default function Editor(){
       title, content, category, tags,
       createdAt: now,
       updatedAt: isEdit ? now : undefined,
-      comments: [],
       attachments
     }
     try{

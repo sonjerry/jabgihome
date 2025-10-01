@@ -86,9 +86,6 @@ export async function getPost(id: string): Promise<Post> {
 export async function savePost(p: Post): Promise<Post> {
   return apiPost<Post>('/posts', p)
 }
-export async function deletePost(id: string): Promise<void> {
-  await apiDelete<void>(`/posts/${id}`)
-}
 export async function uploadFile(file: File): Promise<Attachment> {
   const fd = new FormData()
   fd.append('file', file)

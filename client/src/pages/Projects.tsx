@@ -1,5 +1,5 @@
 // client/src/pages/Projects.tsx
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
 
@@ -222,15 +222,11 @@ function ProjectCard({
 export default function Projects() {
   const [posts, setPosts] = useState<PostBrief[]>([])
   const [loading, setLoading] = useState(true)
-  const [err, setErr] = useState<string | null>(null)
-
-  const projects = useMemo(() => PROJECTS, [])
 
   useEffect(() => {
     let mounted = true
     ;(async () => {
       setLoading(true)
-      setErr(null)
       try {
         // 1) 정적 프리로드 우선
         const r1 = await fetch('/posts-brief.json', { cache: 'no-store' })
@@ -257,7 +253,7 @@ export default function Projects() {
         const d2 = (await r2.json()) as PostBrief[]
         if (mounted) setPosts(Array.isArray(d2) ? d2 : [])
       } catch (e: any) {
-        if (mounted) setErr(e?.message || '불러오기 오류')
+        console.error('Failed to load posts:', e?.message || '불러오기 오류')
       } finally {
         if (mounted) setLoading(false)
       }
@@ -285,7 +281,7 @@ export default function Projects() {
 
       {/* 세로 풀폭 나열 */}
       <section className="space-y-5 md:space-y-7">
-        {projects.map((p) => (
+        {PROJECTS.map((p) => (
           <ProjectCard key={p.id} project={p} posts={posts} />
         ))}
 

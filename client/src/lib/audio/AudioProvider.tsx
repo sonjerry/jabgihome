@@ -173,6 +173,3 @@ export default function AudioProvider({ children }: { children: React.ReactNode 
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
-export function useAudioOptional() {
-  return React.useContext(Ctx)
-}
