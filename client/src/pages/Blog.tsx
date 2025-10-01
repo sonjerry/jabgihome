@@ -1,5 +1,5 @@
 // client/src/pages/Blog.tsx
-import { useEffect, useMemo, useState, useEffect as useEffectReact } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
 import type { Post, Attachment } from '../types'
@@ -123,7 +123,7 @@ export default function Blog() {
   const clearFilters = () => { setActiveCat('전체'); setActiveDate(null) }
 
   // 바텀시트 열렸을 때 바디 스크롤 잠금 + ESC 닫기
-  useEffectReact(() => {
+  useEffect(() => {
     if (!sheetOpen) return
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
