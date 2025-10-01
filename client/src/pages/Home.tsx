@@ -383,7 +383,7 @@ export default function Home() {
 
         {/* 로딩 후에도 클릭 전까지 하단 음소거 버튼 유지 */}
         {isVideoReady && !hasUnmuted && (
-          <div className="absolute inset-0 z-[999]" style={{ pointerEvents: 'auto' }}>
+          <div className="fixed inset-0 z-[100000]" style={{ pointerEvents: 'auto' }}>
             <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}>
               <button
                 type="button"
