@@ -127,6 +127,8 @@ export default function AudioDock() {
     }
   }, [a, hasList])
 
+  // (원복) 별도 음소거 토글/자동 해제 로직 없이 기본 볼륨 변경만 수행
+
   return (
     <div className="w-full">
       <div

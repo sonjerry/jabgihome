@@ -61,6 +61,14 @@ export default function Home() {
         const end = ranges.end(ranges.length - 1)
         const pct = Math.max(0, Math.min(100, Math.round((end / vid.duration) * 100)))
         setLoadProgress(pct)
+        // 5%만 로딩되어도 바로 준비 완료로 처리하여 재생을 진행
+        if (pct >= 5) {
+          if (!isVideoReady) {
+            setIsVideoReady(true)
+            setIsInitialLoad(false)
+            try { void vid.play() } catch {}
+          }
+        }
         if (pct >= 100) setIsVideoReady(true)
       } catch {}
     }
@@ -94,7 +102,7 @@ export default function Home() {
       vid.removeEventListener('waiting', onWaiting)
       vid.removeEventListener('playing', onPlaying)
     }
-  }, [loadProgress])
+  }, [])
 
   // 초기 상태: 아직 음소거 해제하지 않음
   useEffect(() => { setHasUnmuted(false) }, [])
@@ -336,35 +344,6 @@ export default function Home() {
               spinDuration={20}
               className="text-white/95"
             />
-            <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
-              <button
-                type="button"
-                role="button"
-                tabIndex={0}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  const next = false
-                  setIsMuted(next)
-                  setHasUnmuted(true)
-                  setVideoMuteOverride('forceUnmute')
-                  const v = videoRef.current
-                  if (v) {
-                    v.muted = next
-                    try { v.removeAttribute('muted') } catch {}
-                    v.muted = false
-                    v.volume = 1
-                    try { v.pause() } catch {}
-                    setTimeout(() => { v.play().catch(() => {}) }, 0)
-                  }
-                }}
-                onTouchStart={(e) => {
-                  e.stopPropagation()
-                }}
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/25 bg-black/35 hover:bg-black/45 transition backdrop-blur-md px-5 py-2.5 shadow-glass"
-              >
-                <span className="text-sm md:text-base text-white/95 whitespace-nowrap">이곳을 눌러 음소거를 해제해주세요</span>
-              </button>
-            </div>
           </div>
         )}
 
@@ -388,8 +367,8 @@ export default function Home() {
                     try { v.removeAttribute('muted') } catch {}
                     v.muted = false
                     v.volume = 1
-                    try { v.pause() } catch {}
-                    setTimeout(() => { v.play().catch(() => {}) }, 0)
+                    // 사용자 제스처 내에서 바로 재생 시도 (iOS/Safari 정책 대응)
+                    try { void v.play() } catch {}
                   }
                 }}
                 onTouchStart={(e) => {
