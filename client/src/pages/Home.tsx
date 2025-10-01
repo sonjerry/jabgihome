@@ -37,11 +37,11 @@ export default function Home() {
           {/* 상단 헤더 및 소개 섹션 */}
           <header className="flex flex-col md:flex-row md:items-end md:justify-between mb-6 md:mb-10">
             <div className="text-left md:text-left mb-4 md:mb-0">
-              <h1 className="text-4xl md:text-8xl font-extrabold tracking-tight leading-tight drop-shadow-lg">
-                잡다한 기록 홈페이지 (잡기홈)
+              <h1 className="text-4xl md:text-4xl font-extrabold tracking-tight leading-tight drop-shadow-lg">
+                잡다한 기록 홈페이지
               </h1>
               <p className="mt-6 text-md md:text-lg text-amber-300">
-                인스타는 너무 평범해서 홈페이지 직접 만듬
+                인스타는 너무 평범해서 홈페이지 직접 만듦
               </p>
             </div>
           </header>

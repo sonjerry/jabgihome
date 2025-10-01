@@ -91,7 +91,7 @@ function SidebarContent({
     <div className="flex h-full flex-col">
       <Link to="/" className="px-3 md:px-5 py-4 border-b border-white/10 flex items-center">
         <span className="font-bold text-amber-400 text-lg md:text-xl">
-          이가을<span className="text-cream/80">·</span>블로그
+          잡기홈
         </span>
       </Link>
       <nav className="flex-1 overflow-y-auto py-4 space-y-1">
