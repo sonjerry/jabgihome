@@ -66,22 +66,20 @@ export default function Home() {
     }
 
     const onLoadedMeta = () => { updateProgress() }
+    const onLoadedData = () => { setIsVideoReady(true); setIsInitialLoad(false) }
+    const onCanPlay = () => { setIsVideoReady(true); setIsInitialLoad(false) }
     const onProgress = () => { updateProgress() }
-    const onCanPlayThrough = () => { 
-      setIsVideoReady(true); 
-      setLoadProgress(100);
-      setIsInitialLoad(false);
-    }
-    const onWaiting = () => { setIsVideoReady(false); setIsVideoPlaying(false) }
+    const onWaiting = () => { /* 대기 중에도 준비 상태를 유지 */ }
     const onPlaying = () => {
-      if (loadProgress >= 100) setIsVideoReady(true)
+      setIsVideoReady(true)
       setIsVideoPlaying(true)
-      setIsInitialLoad(false);
+      setIsInitialLoad(false)
     }
 
     vid.addEventListener('loadedmetadata', onLoadedMeta)
+    vid.addEventListener('loadeddata', onLoadedData)
+    vid.addEventListener('canplay', onCanPlay)
     vid.addEventListener('progress', onProgress)
-    vid.addEventListener('canplaythrough', onCanPlayThrough)
     vid.addEventListener('waiting', onWaiting)
     vid.addEventListener('playing', onPlaying)
 
@@ -90,8 +88,9 @@ export default function Home() {
 
     return () => {
       vid.removeEventListener('loadedmetadata', onLoadedMeta)
+      vid.removeEventListener('loadeddata', onLoadedData)
+      vid.removeEventListener('canplay', onCanPlay)
       vid.removeEventListener('progress', onProgress)
-      vid.removeEventListener('canplaythrough', onCanPlayThrough)
       vid.removeEventListener('waiting', onWaiting)
       vid.removeEventListener('playing', onPlaying)
     }
@@ -274,7 +273,7 @@ export default function Home() {
           loop
           // @ts-ignore
           webkit-playsinline="true"
-          preload="auto"
+          preload="metadata"
           className="fixed inset-0 w-full h-full object-cover will-change-transform"
           style={{
             animation: 'heroSlowZoom 28s linear infinite alternate',
