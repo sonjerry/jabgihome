@@ -58,6 +58,10 @@ export default function AudioProvider({ children }: { children: React.ReactNode 
     el.style.display = 'none'
     document.body.appendChild(el)
     audioRef.current = el
+    // 홈 비디오 언뮤트 시 음악 일시정지 (겹침 방지)
+    const onHomeVideoUnmuted = () => {
+      try { el.pause() } catch {}
+    }
 
     const onPlay = () => {
       setPlaying(true)
@@ -86,6 +90,7 @@ export default function AudioProvider({ children }: { children: React.ReactNode 
     el.addEventListener('timeupdate', onTime)
     el.addEventListener('durationchange', onDur)
     el.addEventListener('ended', onEnded)
+    window.addEventListener('home:video-unmuted', onHomeVideoUnmuted)
 
     return () => {
       el.pause()
@@ -94,6 +99,7 @@ export default function AudioProvider({ children }: { children: React.ReactNode 
       el.removeEventListener('timeupdate', onTime)
       el.removeEventListener('durationchange', onDur)
       el.removeEventListener('ended', onEnded)
+      window.removeEventListener('home:video-unmuted', onHomeVideoUnmuted)
       el.remove()
     }
   }, [])

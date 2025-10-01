@@ -21,6 +21,8 @@ export default function Home() {
   const [showHint, setShowHint] = useState(false)
   const [overlaysVisible, setOverlaysVisible] = useState(false) // 모바일: 힌트 클릭 시 표시
   const [videoMuteOverride, setVideoMuteOverride] = useState<null | 'forceUnmute'>(null) // 음악 자동 음소거 무시
+  const videoMuteOverrideRef = useRef<null | 'forceUnmute'>(null)
+  const justUnmutedAtRef = useRef<number>(0)
   const [revealProgress, setRevealProgress] = useState(0) // 0~1: 네비/카드 등장, 비디오 리레이아웃
   const [isInitialLoad, setIsInitialLoad] = useState(true) // 초기 로딩 상태
   const revealTargetRef = useRef(0)
@@ -122,31 +124,37 @@ export default function Home() {
     }
   }, [hasUnmuted])
 
-  // 뮤직 플레이어 재생 시 영상 자동 음소거
+  // 뮤직 플레이어 재생 시 영상 자동 음소거 (레퍼런스로 레이스 방지)
+  useEffect(() => {
+    videoMuteOverrideRef.current = videoMuteOverride
+  }, [videoMuteOverride])
+
   useEffect(() => {
     const onMusicPlaying = (e: Event) => {
       try {
         const isPlaying = (e as CustomEvent<boolean>).detail
         const v = videoRef.current
-        if (v) {
-          if (isPlaying) {
-            if (videoMuteOverride !== 'forceUnmute') {
-              v.muted = true
-              setIsMuted(true)
-            }
-          } else {
-            // 음악이 멈춘 경우, 사용자가 강제 해제했었다면 그 상태 유지
-            if (videoMuteOverride === 'forceUnmute') {
-              v.muted = false
-              setIsMuted(false)
-            }
+        const override = videoMuteOverrideRef.current
+        const now = Date.now()
+        // 언뮤트 직후 짧은 시간(800ms) 동안은 재음소거 무시
+        const withinGrace = now - (justUnmutedAtRef.current || 0) < 800
+        if (!v) return
+        if (isPlaying) {
+          if (override !== 'forceUnmute' && !withinGrace) {
+            v.muted = true
+            setIsMuted(true)
+          }
+        } else {
+          if (override === 'forceUnmute') {
+            v.muted = false
+            setIsMuted(false)
           }
         }
       } catch {}
     }
     window.addEventListener('music:playing', onMusicPlaying as any)
     return () => window.removeEventListener('music:playing', onMusicPlaying as any)
-  }, [videoMuteOverride])
+  }, [])
 
   // iOS 밴딩 효과 방지 및 스크롤 제어
   useEffect(() => {
@@ -240,6 +248,8 @@ export default function Home() {
     const v = videoRef.current
     setHasUnmuted(true)
     setVideoMuteOverride('forceUnmute')
+    videoMuteOverrideRef.current = 'forceUnmute'
+    justUnmutedAtRef.current = Date.now()
     setIsMuted(false)
     if (v) {
       try { v.removeAttribute('muted') } catch {}
@@ -247,6 +257,8 @@ export default function Home() {
       v.volume = 1
       try { void v.play() } catch {}
     }
+    // 음악과의 겹침 방지: 오디오 일시정지 이벤트 브로드캐스트
+    try { window.dispatchEvent(new CustomEvent('home:video-unmuted')) } catch {}
   }
 
   return (
@@ -369,13 +381,14 @@ export default function Home() {
 
         {/* 로딩 후에도 클릭 전까지 하단 음소거 버튼 유지 */}
         {isVideoReady && !hasUnmuted && (
-          <div className="absolute inset-0 z-[90]">
+          <div className="absolute inset-0 z-[999]" style={{ pointerEvents: 'auto' }}>
             <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}>
               <button
                 type="button"
                 role="button"
                 tabIndex={0}
                 onClick={handleUnmute}
+                onMouseDown={handleUnmute}
                 className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/40 hover:bg-black/50 transition backdrop-blur-md px-7 py-3.5 shadow-glass"
               >
                 <span className="opacity-90 text-base font-medium whitespace-nowrap">이곳을 눌러 음소거를 해제해주세요</span>
