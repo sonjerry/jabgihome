@@ -86,15 +86,8 @@ export default function Home() {
     }
   }, [loadProgress])
 
-  // 로딩 완료 후에만 중앙 음소거 버튼 노출
-  useEffect(() => {
-    if (isVideoReady) {
-      const t = setTimeout(() => setShowMuteButton(true), 120)
-      return () => clearTimeout(t)
-    } else {
-      setShowMuteButton(false)
-    }
-  }, [isVideoReady])
+  // 중앙 음소거 버튼은 로딩 단계에서 CircularText 아래에 표시하고, 클릭 시 사라지도록만 사용
+  useEffect(() => { setShowMuteButton(false) }, [])
 
   // 로딩 완료 3초 후 힌트 표시, 그 전에는 숨김
   useEffect(() => {
@@ -237,24 +230,38 @@ export default function Home() {
           </div>
         )}
 
-        {/* 로딩 바 (비디오 중앙, 준비 완료 전까지만 표시) */}
+        {/* 로딩 오버레이: 중앙 CircularText + 아래 음소거 해제 버튼 */}
         {!isVideoReady && (
           <div
             aria-hidden
-            className={`absolute inset-0 z-40 flex items-center justify-center px-4 transition-opacity duration-300`}
+            className={`absolute inset-0 z-40 flex flex-col items-center justify-center gap-6 px-4 transition-opacity duration-300`}
           >
-            <div className="w-[min(92%,720px)] px-4 py-3 rounded-2xl bg-black/45 border border-white/20 backdrop-blur-md shadow-glass">
-              <div className="flex items-center gap-3">
-                <span className="text-xs md:text-sm text-white/90">로딩중</span>
-                <div className="relative flex-1 h-2 rounded-full bg-white/15 overflow-hidden">
-                  <div
-                    className="absolute inset-y-0 left-0 bg-amber-300/90 shadow-[0_0_16px_rgba(251,191,36,0.65)]"
-                    style={{ width: `${loadProgress}%`, transition: 'width 220ms ease' }}
-                  />
-                </div>
-                <span className="text-[11px] md:text-xs text-white/85 tabular-nums min-w-[38px] text-right">{loadProgress}%</span>
-              </div>
-            </div>
+            <CircularText
+              text={"로딩중*로딩중*로딩중*"}
+              onHover="speedUp"
+              spinDuration={20}
+              className="text-white/95"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const next = false
+                setIsMuted(next)
+                setShowMuteButton(false)
+                const v = videoRef.current
+                if (v) {
+                  v.muted = next
+                  try { v.removeAttribute('muted') } catch {}
+                  v.muted = false
+                  v.volume = 1
+                  try { v.pause() } catch {}
+                  setTimeout(() => { v.play().catch(() => {}) }, 0)
+                }
+              }}
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/25 bg-black/35 hover:bg-black/45 transition backdrop-blur-md px-5 py-2.5 shadow-glass"
+            >
+              <span className="text-sm md:text-base text-white/95">이곳을 눌러 음소거를 해제해주세요</span>
+            </button>
           </div>
         )}
 
@@ -309,45 +316,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* 중앙 음소거 버튼 (클릭 시 자연스럽게 페이드 아웃) */}
-        {showMuteButton && (
-          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
-            <button
-              type="button"
-              onClick={() => {
-                const next = !isMuted
-                setIsMuted(next)
-                setTimeout(() => setShowMuteButton(false), 120) // 약간의 여유를 두고 사라짐
-                const v = videoRef.current
-                if (v) {
-                  v.muted = next
-                  if (next) return
-                  try { v.removeAttribute('muted') } catch {}
-                  v.muted = false
-                  v.volume = 1
-                  try { v.pause() } catch {}
-                  setTimeout(() => { v.play().catch(() => {}) }, 0)
-                }
-              }}
-              className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/40 hover:bg-black/50 transition backdrop-blur-md px-7 py-3.5 shadow-glass"
-            >
-              {isMuted ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                  <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
-                  <path d="M16 8l4 8" stroke="currentColor" strokeWidth="2"/>
-                  <path d="M20 8l-4 8" stroke="currentColor" strokeWidth="2"/>
-                </svg>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                  <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
-                  <path d="M18.5 8.5a6 6 0 010 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  <path d="M16.5 10.5a3 3 0 010 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              )}
-              <span className="opacity-90 text-base font-medium">{isMuted ? '음소거 해제' : '음소거'}</span>
-            </button>
-          </div>
-        )}
+        {/* 중앙 음소거 버튼 블록은 로딩 오버레이에서 처리하므로 별도 노출 없음 */}
 
       </section>
 
