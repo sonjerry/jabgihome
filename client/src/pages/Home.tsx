@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from 'react'
 import djVideo from '../assets/media/dj.mp4'
 import { Link } from 'react-router-dom'
-import Stickers from '../components/StickerPeel'
 import GlassCard from '../components/GlassCard'
 
 export default function Home() {
@@ -124,13 +123,14 @@ export default function Home() {
           style={{ transform: `translateY(${parallaxY * -1}px)`, animation: 'heroSlowZoom 24s linear infinite alternate' }}
         />
 
-        {/* 로딩 바 (비디오 위 하단, 준비 완료 시 페이드 아웃) */}
+        {/* 로딩 바 (비디오 중앙, 준비 완료 시 페이드 아웃) */}
         <div
           aria-hidden
-          className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[min(92%,720px)] transition-opacity duration-300 ${isVideoReady ? 'opacity-0' : 'opacity-100'}`}
+          className={`absolute inset-0 z-20 flex items-center justify-center px-4 transition-opacity duration-300 ${isVideoReady ? 'opacity-0' : 'opacity-100'}`}
         >
-          <div className="px-3 py-2 rounded-2xl bg-black/35 border border-white/20 backdrop-blur-md shadow-glass">
+          <div className="w-[min(92%,720px)] px-4 py-3 rounded-2xl bg-black/45 border border-white/20 backdrop-blur-md shadow-glass">
             <div className="flex items-center gap-3">
+              <span className="text-xs md:text-sm text-white/90">로딩중</span>
               <div className="relative flex-1 h-2 rounded-full bg-white/15 overflow-hidden">
                 <div
                   className="absolute inset-y-0 left-0 bg-amber-300/90 shadow-[0_0_16px_rgba(251,191,36,0.65)]"
@@ -142,7 +142,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 비네트 + 컬러 그레이딩 + 그라데이션 마스크 */}
+        {/* 비네트 + 컬러 그레이딩 + 그라데이션 마스크 + 그레인 */}
         <div className="absolute inset-0 pointer-events-none">
           {/* 상/하단 그라데이션 */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/25 to-black/80" />
@@ -156,6 +156,19 @@ export default function Home() {
               mixBlendMode: 'multiply',
             }}
           />
+          {/* 그레인/노이즈 레이어 */}
+          <div
+            aria-hidden
+            className="absolute inset-0 opacity-[0.10]"
+            style={{
+              backgroundImage:
+                'radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), radial-gradient(rgba(0,0,0,0.07) 1px, transparent 1px)',
+              backgroundPosition: '0 0, 1px 1px',
+              backgroundSize: '3px 3px, 3px 3px',
+              mixBlendMode: 'overlay',
+              pointerEvents: 'none',
+            }}
+          />
         </div>
 
         {/* 히어로 콘텐츠 */}
@@ -167,47 +180,7 @@ export default function Home() {
             <p className="mt-4 md:mt-6 text-md md:text-lg text-amber-300">
               인스타는 너무 평범해서 홈페이지 직접 만듦
             </p>
-            {/* 사운드 토글 버튼 */}
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  const next = !isMuted
-                  setIsMuted(next)
-                  const v = videoRef.current
-                  if (v) {
-                    v.muted = next
-                    if (next) {
-                      // Mute: keep playing silently
-                      return
-                    }
-                    // Unmute: make sure audio starts reliably on user gesture
-                    try { v.removeAttribute('muted') } catch {}
-                    v.muted = false
-                    v.volume = 1
-                    // Some browsers need a pause->play to reattach audio pipeline
-                    try { v.pause() } catch {}
-                    setTimeout(() => { v.play().catch(() => {}) }, 0)
-                  }
-                }}
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 hover:bg-white/20 transition backdrop-blur px-3 py-2 text-sm md:text-base pointer-events-auto"
-              >
-                {isMuted ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                    <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
-                    <path d="M16 8l4 8" stroke="currentColor" strokeWidth="2"/>
-                    <path d="M20 8l-4 8" stroke="currentColor" strokeWidth="2"/>
-                  </svg>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                    <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
-                    <path d="M18.5 8.5a6 6 0 010 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    <path d="M16.5 10.5a3 3 0 010 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                )}
-                <span className="opacity-90">{isMuted ? '음소거 해제' : '음소거'}</span>
-              </button>
-            </div>
+            {/* 사운드 토글은 하단 앵커 바로 이동 */}
           </div>
         </div>
       </section>
@@ -260,10 +233,46 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 스티커: 화면 전체 오버레이 */}
-      <div className="fixed inset-0 z-[2000] pointer-events-none scale-75 sm:scale-100 origin-top-left">
-        <Stickers />
+      {/* 전경 앵커: 하단 글래스 바 (사운드 토글) */}
+      <div className="pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-30 w-[min(92%,720px)]">
+        <div className="pointer-events-auto mx-auto flex items-center justify-end gap-3 rounded-2xl bg-black/35 border border-white/20 backdrop-blur-md px-3 py-2 shadow-glass">
+          <button
+            type="button"
+            onClick={() => {
+              const next = !isMuted
+              setIsMuted(next)
+              const v = videoRef.current
+              if (v) {
+                v.muted = next
+                if (next) return
+                try { v.removeAttribute('muted') } catch {}
+                v.muted = false
+                v.volume = 1
+                try { v.pause() } catch {}
+                setTimeout(() => { v.play().catch(() => {}) }, 0)
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 transition backdrop-blur px-3 py-1.5 text-sm md:text-base"
+          >
+            {isMuted ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
+                <path d="M16 8l4 8" stroke="currentColor" strokeWidth="2"/>
+                <path d="M20 8l-4 8" stroke="currentColor" strokeWidth="2"/>
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
+                <path d="M18.5 8.5a6 6 0 010 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M16.5 10.5a3 3 0 010 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            )}
+            <span className="opacity-90">{isMuted ? '음소거 해제' : '음소거'}</span>
+          </button>
+        </div>
       </div>
+
+      {/* 스티커 오버레이 홈에서는 제거됨 */}
     </main>
   )
 }
