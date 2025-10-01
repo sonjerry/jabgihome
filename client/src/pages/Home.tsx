@@ -263,12 +263,13 @@ export default function Home() {
 
   return (
     <main 
-      className="relative overflow-x-hidden text-white bg-black"
+      className="relative overflow-x-hidden text-white"
       style={{ 
         overscrollBehavior: 'none',
         WebkitOverflowScrolling: 'touch',
         minHeight: isMobile ? '100dvh' : '200vh',
-        overflowY: isMobile ? 'hidden' : undefined
+        overflowY: isMobile ? 'hidden' : undefined,
+        background: 'transparent'
       }}
       onClick={(e) => {
         if (isMobile) {
@@ -287,10 +288,11 @@ export default function Home() {
       {createPortal(
       <section
         ref={heroRef}
-        className="fixed inset-0 w-full h-[100lvh] overflow-hidden bg-black"
+        className="fixed inset-0 w-full h-[100lvh] overflow-hidden"
         style={{ 
           ['--home-reveal' as any]: String(revealProgress),
-          overscrollBehavior: 'none'
+          overscrollBehavior: 'none',
+          background: 'transparent'
         }}
       >
         {/* 스타일: 슬로우 줌 키프레임 */}
@@ -412,39 +414,41 @@ export default function Home() {
           />
         )}
 
-        {/* 비네트 + 컬러 그레이딩 + 그라데이션 마스크 + 그레인 */}
+        {/* 글래스모피즘 강화를 위한 다층 오버레이 */}
         <div className="absolute inset-0 pointer-events-none">
-          {/* 컬러 글로우 레이어: 글래스 대비 강화 */}
+          {/* 컬러 글로우 레이어: 글래스모피즘 대비 강화 */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                'radial-gradient(800px 600px at 15% 10%, rgba(108,173,255,0.20), rgba(0,0,0,0) 60%),\
-radial-gradient(900px 700px at 85% 20%, rgba(246,197,108,0.18), rgba(0,0,0,0) 55%),\
-radial-gradient(700px 500px at 50% 90%, rgba(153,98,79,0.16), rgba(0,0,0,0) 60%)',
-              filter: 'blur(18px)',
+                'radial-gradient(1000px 700px at 10% 5%, rgba(99,102,241,0.25), rgba(0,0,0,0) 65%),\
+radial-gradient(900px 600px at 90% 10%, rgba(236,72,153,0.20), rgba(0,0,0,0) 60%),\
+radial-gradient(800px 500px at 50% 20%, rgba(139,92,246,0.15), rgba(0,0,0,0) 70%),\
+radial-gradient(700px 400px at 30% 90%, rgba(245,158,11,0.18), rgba(0,0,0,0) 65%),\
+radial-gradient(600px 400px at 80% 95%, rgba(6,182,212,0.12), rgba(0,0,0,0) 60%)',
+              filter: 'blur(20px)',
               mixBlendMode: 'screen',
             }}
           />
-          {/* 상/하단 그라데이션 */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/80" />
-          {/* 소프트 라이트 앰버 오버레이 (강도 약간 증가) */}
-          <div className="absolute inset-0 mix-blend-soft-light bg-amber-300/24" />
-          {/* 비네트 */}
+          {/* 부드러운 그라데이션 오버레이 */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/60" />
+          {/* 글래스모피즘 강화를 위한 소프트 라이트 */}
+          <div className="absolute inset-0 mix-blend-soft-light bg-gradient-to-br from-purple-300/15 via-pink-300/10 to-cyan-300/15" />
+          {/* 비네트 효과 */}
           <div
             className="absolute inset-0"
             style={{
-              background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 48%, rgba(0,0,0,0.55) 100%)',
+              background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,0.4) 100%)',
               mixBlendMode: 'multiply',
             }}
           />
-          {/* 그레인/노이즈 레이어 */}
+          {/* 미세 그레인 텍스처 */}
           <div
             aria-hidden
-            className="absolute inset-0 opacity-[0.08]"
+            className="absolute inset-0 opacity-[0.12]"
             style={{
               backgroundImage:
-                'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), radial-gradient(rgba(0,0,0,0.05) 1px, transparent 1px)',
+                'radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), radial-gradient(rgba(0,0,0,0.04) 1px, transparent 1px)',
               backgroundPosition: '0 0, 2px 2px',
               backgroundSize: '4px 4px, 4px 4px',
               backgroundRepeat: 'repeat',
@@ -481,8 +485,16 @@ radial-gradient(700px 500px at 50% 90%, rgba(153,98,79,0.16), rgba(0,0,0,0) 60%)
 
       </section>, document.body)}
 
-      {/* Contact Dock: 데스크톱에서만 표시; 모바일은 힌트 클릭 시 오버레이 토글 */}
-      <ContactDock />
+      {/* Contact Dock: 언뮤트 전에는 포인터 이벤트 차단하여 버튼과 충돌 방지 */}
+      <div
+        style={{
+          pointerEvents: (isVideoReady && !hasUnmuted) ? 'none' : undefined,
+          zIndex: (isVideoReady && !hasUnmuted) ? 10 as any : undefined,
+          position: 'relative'
+        }}
+      >
+        <ContactDock />
+      </div>
 
 
       {/* 스티커 오버레이 홈에서는 제거됨 */}
