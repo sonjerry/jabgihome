@@ -7,8 +7,8 @@ import GlassCard from '../components/GlassCard'
 export default function Home() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const heroRef = useRef<HTMLDivElement | null>(null)
-  const [parallaxY, setParallaxY] = useState(0)
   const [isMuted, setIsMuted] = useState(true)
+  const [showMuteButton, setShowMuteButton] = useState(true)
   const [loadProgress, setLoadProgress] = useState(0)
   const [isVideoReady, setIsVideoReady] = useState(false)
   const [revealProgress, setRevealProgress] = useState(0) // 0~1: 네비/카드 등장, 비디오 리레이아웃
@@ -78,23 +78,7 @@ export default function Home() {
     }
   }, [loadProgress])
 
-  // 부드러운 패럴랙스
-  useEffect(() => {
-    let raf = 0
-    const onScroll = () => {
-      cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(() => {
-        const y = window.scrollY
-        // 스크롤 대비 약한 비율로 이동
-        setParallaxY(Math.min(40, y * 0.08))
-      })
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      cancelAnimationFrame(raf)
-      window.removeEventListener('scroll', onScroll)
-    }
-  }, [])
+  // 패럴랙스 효과 제거 - 영상은 고정
 
   // 스크롤/영상 종료에 따른 등장 애니메이션 트리거 + 부드러운 보간
   useEffect(() => {
@@ -143,11 +127,11 @@ export default function Home() {
   }, [])
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden text-white">
-      {/* 히어로 섹션: 배경 비디오 */}
+    <main className="relative overflow-x-hidden text-white" style={{ height: '200vh' }}>
+      {/* 히어로 섹션: 고정된 배경 비디오 */}
       <section
         ref={heroRef}
-        className="relative w-full h-[100vh] overflow-hidden"
+        className="fixed inset-0 w-full h-screen overflow-hidden"
         style={{ ['--home-reveal' as any]: String(revealProgress) }}
       >
         {/* 스타일: 슬로우 줌 키프레임 */}
@@ -160,7 +144,7 @@ export default function Home() {
           `,
           }}
         />
-        {/* 배경 비디오 */}
+        {/* 배경 비디오 - 고정된 배경 */}
         <video
           ref={videoRef}
           src={djVideo}
@@ -173,34 +157,33 @@ export default function Home() {
           preload="metadata"
           className="fixed inset-0 w-full h-full object-cover will-change-transform"
           style={{
-            transform: `translateY(${parallaxY * -1 - revealProgress * 30}px) scale(${1 - revealProgress * 0.06})`,
             animation: 'heroSlowZoom 28s linear infinite alternate',
             filter: 'brightness(0.9) saturate(0.9) contrast(1.05)',
             zIndex: 0 as any
           }}
         />
 
-        {/* 스크롤 힌트: 하단 중앙 글라스 화살표 3개 (blink) */}
+        {/* 스크롤 힌트: 화면 중앙 글라스 화살표 */}
         <div
-          className="absolute inset-x-0 bottom-[12vh] z-20 flex justify-center pointer-events-none"
+          className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
           style={{
             opacity: Math.max(0, 1 - revealProgress * 1.2),
             transition: 'opacity 300ms ease'
           }}
         >
-          <div className="pointer-events-auto rounded-2xl border border-white/20 bg-white/10 backdrop-blur px-2.5 py-2 shadow-glass">
-            <div className="flex flex-col items-center gap-1">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+          <div className="pointer-events-auto rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-8 py-4 shadow-glass">
+            <div className="flex items-center gap-3">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
                    style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '0ms' }}
                    aria-hidden>
                 <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
                    style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '150ms' }}
                    aria-hidden>
                 <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
                    style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '300ms' }}
                    aria-hidden>
                 <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -269,48 +252,51 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 하단 우측 플로팅 사운드 토글 (히어로 섹션 내부, 영상 우하단 가장자리) */}
-        <div className="pointer-events-none absolute bottom-3 right-3 z-30">
-          <button
-            type="button"
-            onClick={() => {
-              const next = !isMuted
-              setIsMuted(next)
-              const v = videoRef.current
-              if (v) {
-                v.muted = next
-                if (next) return
-                try { v.removeAttribute('muted') } catch {}
-                v.muted = false
-                v.volume = 1
-                try { v.pause() } catch {}
-                setTimeout(() => { v.play().catch(() => {}) }, 0)
-              }
-            }}
-            className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/35 hover:bg-black/45 transition backdrop-blur-md px-3 py-2 shadow-glass"
-          >
-            {isMuted ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
-                <path d="M16 8l4 8" stroke="currentColor" strokeWidth="2"/>
-                <path d="M20 8l-4 8" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
-                <path d="M18.5 8.5a6 6 0 010 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <path d="M16.5 10.5a3 3 0 010 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            )}
-            <span className="opacity-90 text-sm">{isMuted ? '음소거 해제' : '음소거'}</span>
-          </button>
-        </div>
+        {/* 중앙 음소거 버튼 */}
+        {showMuteButton && (
+          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => {
+                const next = !isMuted
+                setIsMuted(next)
+                setShowMuteButton(false) // 클릭 시 사라짐
+                const v = videoRef.current
+                if (v) {
+                  v.muted = next
+                  if (next) return
+                  try { v.removeAttribute('muted') } catch {}
+                  v.muted = false
+                  v.volume = 1
+                  try { v.pause() } catch {}
+                  setTimeout(() => { v.play().catch(() => {}) }, 0)
+                }
+              }}
+              className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/35 hover:bg-black/45 transition backdrop-blur-md px-6 py-3 shadow-glass"
+            >
+              {isMuted ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                  <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
+                  <path d="M16 8l4 8" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M20 8l-4 8" stroke="currentColor" strokeWidth="2"/>
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                  <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
+                  <path d="M18.5 8.5a6 6 0 010 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M16.5 10.5a3 3 0 010 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              )}
+              <span className="opacity-90 text-base font-medium">{isMuted ? '음소거 해제' : '음소거'}</span>
+            </button>
+          </div>
+        )}
 
       </section>
 
-      {/* 본문: 기존 그리드 등장 애니메이션 (새 요소 없이) */}
+      {/* 본문: 글래스 요소들이 영상 위에 나타남 */}
       <section
-        className="relative z-10 w-full p-4 md:p-8 flex flex-col justify-center items-center pointer-events-auto"
+        className="fixed inset-0 z-10 w-full h-screen p-4 md:p-8 flex flex-col justify-center items-center pointer-events-none"
         style={{
           opacity: revealProgress,
           transform: `translateY(${(20 * (1 - revealProgress)).toFixed(2)}px)`,
