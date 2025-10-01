@@ -10,6 +10,8 @@ export default function Home() {
   const heroRef = useRef<HTMLDivElement | null>(null)
   const [parallaxY, setParallaxY] = useState(0)
   const [isMuted, setIsMuted] = useState(true)
+  const [loadProgress, setLoadProgress] = useState(0)
+  const [isVideoReady, setIsVideoReady] = useState(false)
 
   // 뷰포트 진입 시 재생, 이탈 시 일시정지
   useEffect(() => {
@@ -32,6 +34,47 @@ export default function Home() {
     io.observe(el)
     return () => io.disconnect()
   }, [])
+
+  // 비디오 로딩 진행률 추적 (buffered 기반)
+  useEffect(() => {
+    const vid = videoRef.current
+    if (!vid) return
+
+    const updateProgress = () => {
+      try {
+        if (!vid.duration || vid.duration === Infinity) return
+        const ranges = vid.buffered
+        if (!ranges || ranges.length === 0) return
+        const end = ranges.end(ranges.length - 1)
+        const pct = Math.max(0, Math.min(100, Math.round((end / vid.duration) * 100)))
+        setLoadProgress(pct)
+        if (pct >= 100) setIsVideoReady(true)
+      } catch {}
+    }
+
+    const onLoadedMeta = () => { updateProgress() }
+    const onProgress = () => { updateProgress() }
+    const onCanPlayThrough = () => { setIsVideoReady(true); setLoadProgress(100) }
+    const onWaiting = () => { setIsVideoReady(false) }
+    const onPlaying = () => { if (loadProgress >= 100) setIsVideoReady(true) }
+
+    vid.addEventListener('loadedmetadata', onLoadedMeta)
+    vid.addEventListener('progress', onProgress)
+    vid.addEventListener('canplaythrough', onCanPlayThrough)
+    vid.addEventListener('waiting', onWaiting)
+    vid.addEventListener('playing', onPlaying)
+
+    // 초기 한번 계산
+    updateProgress()
+
+    return () => {
+      vid.removeEventListener('loadedmetadata', onLoadedMeta)
+      vid.removeEventListener('progress', onProgress)
+      vid.removeEventListener('canplaythrough', onCanPlayThrough)
+      vid.removeEventListener('waiting', onWaiting)
+      vid.removeEventListener('playing', onPlaying)
+    }
+  }, [loadProgress])
 
   // 부드러운 패럴랙스
   useEffect(() => {
@@ -73,6 +116,19 @@ export default function Home() {
           style={{ transform: `translateY(${parallaxY * -1}px)` }}
         />
 
+        {/* 로딩 바 (비디오 위 상단, 준비 완료 시 페이드 아웃) */}
+        <div
+          aria-hidden
+          className={`absolute top-0 left-0 right-0 z-10 px-3 md:px-4 transition-opacity duration-300 ${isVideoReady ? 'opacity-0' : 'opacity-100'}`}
+        >
+          <div className="h-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-sm overflow-hidden">
+            <div
+              className="h-full bg-amber-300/80 shadow-[0_0_12px_rgba(251,191,36,0.6)]"
+              style={{ width: `${loadProgress}%`, transition: 'width 200ms ease' }}
+            />
+          </div>
+        </div>
+
         {/* 컬러 오버레이 + 그라데이션 마스크로 콘텐츠와 자연스러운 블렌딩 */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black/70" />
@@ -98,13 +154,20 @@ export default function Home() {
                   const v = videoRef.current
                   if (v) {
                     v.muted = next
-                    if (!next) {
-                      v.volume = 1
-                      v.play().catch(() => {})
+                    if (next) {
+                      // Mute: keep playing silently
+                      return
                     }
+                    // Unmute: make sure audio starts reliably on user gesture
+                    try { v.removeAttribute('muted') } catch {}
+                    v.muted = false
+                    v.volume = 1
+                    // Some browsers need a pause->play to reattach audio pipeline
+                    try { v.pause() } catch {}
+                    setTimeout(() => { v.play().catch(() => {}) }, 0)
                   }
                 }}
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 hover:bg-white/20 transition backdrop-blur px-3 py-2 text-sm md:text-base"
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 hover:bg-white/20 transition backdrop-blur px-3 py-2 text-sm md:text-base pointer-events-auto"
               >
                 {isMuted ? (
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
