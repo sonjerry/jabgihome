@@ -34,11 +34,21 @@ export default function Navbar() {
   const [groupOpen, setGroupOpen] = useState<Record<string, boolean>>(defaultOpen)
   useEffect(() => setGroupOpen(defaultOpen), [defaultOpen])
 
+  // 홈에서만 Home이 주입하는 CSS 변수('--home-reveal')를 읽어 슬라이드/페이드 처리
+  const reveal = typeof window !== 'undefined'
+    ? Number(getComputedStyle(document.documentElement).getPropertyValue('--home-reveal') || getComputedStyle(document.body).getPropertyValue('--home-reveal') || 0)
+    : 0
+
   return (
     <>
       {/* 상단/좌측 고정 사이드바 한 가지 형태만 사용 */}
       <aside
         className="hidden md:block fixed left-0 top-0 h-screen w-64 z-[100] isolate glass border-r border-white/10"
+        style={pathname === '/' ? {
+          opacity: reveal,
+          transform: `translateX(${(-20 * (1 - reveal || 0)).toFixed(2)}px)`,
+          transition: 'transform 300ms ease, opacity 300ms ease'
+        } : undefined}
         role="navigation" aria-label="사이드바"
       >
         <SidebarContent navItems={navItems} groupOpen={groupOpen} setGroupOpen={setGroupOpen} />

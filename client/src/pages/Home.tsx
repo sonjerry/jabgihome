@@ -144,6 +144,7 @@ export default function Home() {
       <section
         ref={heroRef}
         className="relative w-full h-[100vh] overflow-hidden"
+        style={{ ['--home-reveal' as any]: String(revealProgress) }}
       >
         {/* 스타일: 슬로우 줌 키프레임 */}
         <style
@@ -232,22 +233,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 좌측 네비바 (슬라이드 인) */}
-        <div
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 z-30"
-          style={{
-            opacity: revealProgress,
-            transform: `translateY(-50%) translateX(${(-20 * (1 - revealProgress)).toFixed(2)}px)`
-          }}
-        >
-          <GlassCard className="pointer-events-auto p-3 md:p-4 rounded-2xl">
-            <nav className="flex flex-col gap-2">
-              <Link to="/blog" className="rounded-xl px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/15">블로그</Link>
-              <Link to="/gallery" className="rounded-xl px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/15">갤러리</Link>
-              <Link to="/projects" className="rounded-xl px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/15">프로젝트</Link>
-            </nav>
-          </GlassCard>
-        </div>
         {/* 하단 우측 플로팅 사운드 토글 (히어로 섹션 내부, 영상 우하단 가장자리) */}
         <div className="pointer-events-none absolute bottom-3 right-3 z-30">
           <button
@@ -285,30 +270,17 @@ export default function Home() {
           </button>
         </div>
 
-        {/* 하단 가장자리 글래스 카드 등장 */}
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex justify-center px-4"
-          style={{
-            opacity: revealProgress,
-            transform: `translateY(${(20 * (1 - revealProgress)).toFixed(2)}px)`
-          }}
-        >
-          <div className="w-full max-w-4xl grid grid-cols-3 gap-3">
-            <GlassCard className="pointer-events-auto p-3 md:p-4 text-center">
-              <Link to="/blog" className="block">블로그</Link>
-            </GlassCard>
-            <GlassCard className="pointer-events-auto p-3 md:p-4 text-center">
-              <Link to="/gallery" className="block">갤러리</Link>
-            </GlassCard>
-            <GlassCard className="pointer-events-auto p-3 md:p-4 text-center">
-              <Link to="/projects" className="block">프로젝트</Link>
-            </GlassCard>
-          </div>
-        </div>
       </section>
 
-      {/* 본문: 클릭 보장용 pointer-events-auto */}
-      <section className="relative z-10 w-full p-4 md:p-8 flex flex-col justify-center items-center pointer-events-auto">
+      {/* 본문: 기존 그리드 등장 애니메이션 (새 요소 없이) */}
+      <section
+        className="relative z-10 w-full p-4 md:p-8 flex flex-col justify-center items-center pointer-events-auto"
+        style={{
+          opacity: revealProgress,
+          transform: `translateY(${(20 * (1 - revealProgress)).toFixed(2)}px)`,
+          transition: 'transform 300ms ease, opacity 300ms ease'
+        }}
+      >
         <div className="w-full max-w-6xl pointer-events-auto">
           {/* 상단 헤더 제거 → 히어로로 이동 */}
 
