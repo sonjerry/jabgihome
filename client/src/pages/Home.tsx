@@ -246,7 +246,13 @@ export default function Home() {
       }}
       onClick={(e) => {
         if (isMobile) {
-          // 영상 영역 클릭 시 오버레이 숨김
+          // 영상 영역 클릭 시 오버레이 숨김 및 네비 닫기
+          if (overlaysVisible) {
+            try {
+              document.documentElement.style.setProperty('--home-reveal', '0')
+              window.dispatchEvent(new CustomEvent('home:reveal', { detail: 0 }))
+            } catch {}
+          }
           setOverlaysVisible(false)
         }
       }}
@@ -291,7 +297,7 @@ export default function Home() {
         />
 
         {/* 스크롤 힌트: 모바일에서는 스크롤 영향 없이 고정 표시 */}
-        {hasUnmuted && (
+        {hasUnmuted && !overlaysVisible && (
           <div
             className="absolute inset-x-0 bottom-[20vh] z-20 flex items-center justify-center"
             style={{
@@ -349,13 +355,13 @@ export default function Home() {
 
         {/* 로딩 후에도 클릭 전까지 하단 음소거 버튼 유지 */}
         {isVideoReady && !hasUnmuted && (
-          <div className="pointer-events-none absolute inset-0 z-[90]">
-            <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
+          <div className="absolute inset-0 z-[90]">
+            <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}>
               <button
                 type="button"
                 role="button"
                 tabIndex={0}
-                onClick={(e) => {
+                onPointerDown={(e) => {
                   e.stopPropagation()
                   const next = false
                   setIsMuted(next)
@@ -363,16 +369,23 @@ export default function Home() {
                   setVideoMuteOverride('forceUnmute')
                   const v = videoRef.current
                   if (v) {
-                    v.muted = next
                     try { v.removeAttribute('muted') } catch {}
                     v.muted = false
                     v.volume = 1
-                    // 사용자 제스처 내에서 바로 재생 시도 (iOS/Safari 정책 대응)
+                    try { v.pause() } catch {}
+                    // 사용자 제스처 내에서 재생 호출 (모바일 브라우저 정책 대응)
                     try { void v.play() } catch {}
                   }
                 }}
-                onTouchStart={(e) => {
+                onClick={(e) => {
                   e.stopPropagation()
+                  const v = videoRef.current
+                  if (v) {
+                    try { v.removeAttribute('muted') } catch {}
+                    v.muted = false
+                    v.volume = 1
+                    try { void v.play() } catch {}
+                  }
                 }}
                 className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/40 hover:bg-black/50 transition backdrop-blur-md px-7 py-3.5 shadow-glass"
               >
@@ -380,6 +393,21 @@ export default function Home() {
               </button>
             </div>
           </div>
+        )}
+
+        {/* 모바일: 네비바가 열린 상태에서 바깥 클릭 시 닫히도록 투명 백드롭 */}
+        {isMobile && overlaysVisible && (
+          <div
+            className="fixed inset-0 z-[99]"
+            onClick={(e) => {
+              e.stopPropagation()
+              try {
+                document.documentElement.style.setProperty('--home-reveal', '0')
+                window.dispatchEvent(new CustomEvent('home:reveal', { detail: 0 }))
+              } catch {}
+              setOverlaysVisible(false)
+            }}
+          />
         )}
 
         {/* 비네트 + 컬러 그레이딩 + 그라데이션 마스크 + 그레인 */}

@@ -31,8 +31,41 @@ html, body, #root { min-height: 100%; }
 body {
   @apply text-cream font-rokaf;
   /* 홈 초기 진입 시 플래시 방지를 위해 전역 배경을 순수 블랙으로 통일 */
-  background-color: #000;
+  /* 글래스모피즘 대비를 높이는 레이어드 배경 */
+  background:
+    radial-gradient(1200px 800px at 10% -10%, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%),
+    radial-gradient(900px 600px at 90% 0%, rgba(246,197,108,0.10), rgba(246,197,108,0) 55%),
+    radial-gradient(1200px 700px at 50% 120%, rgba(153,98,79,0.10), rgba(153,98,79,0) 60%),
+    linear-gradient(180deg, #0b0c10 0%, #0a0a0a 60%, #090909 100%);
+  background-attachment: fixed, fixed, fixed, fixed;
   isolation: isolate;
+}
+
+/* 글래스모피즘 배경 텍스처(그레인 + 비네트) */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* 미세 그레인 */
+  background-image:
+    radial-gradient(rgba(255,255,255,0.06) 1px, rgba(0,0,0,0) 1px),
+    radial-gradient(rgba(0,0,0,0.06) 1px, rgba(0,0,0,0) 1px);
+  background-size: 3px 3px, 3px 3px;
+  background-position: 0 0, 1.5px 1.5px;
+  mix-blend-mode: overlay;
+  opacity: 0.25;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* 소프트 비네트로 중앙 대비 강화 (유리 카드 가독성 향상) */
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55) 100%);
 }
 
 /* 폰트 로딩 중 시스템 폰트 플래시 억제 */
