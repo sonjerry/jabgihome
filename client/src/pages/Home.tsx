@@ -1,50 +1,98 @@
 // client/src/pages/Home.tsx
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import FullscreenVideoModal from '../components/FullscreenVideoModal'
 import Stickers from '../components/StickerPeel'
 import GlassCard from '../components/GlassCard'
 
 export default function Home() {
-  const [showVideo, setShowVideo] = useState(false)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const heroRef = useRef<HTMLDivElement | null>(null)
+  const [parallaxY, setParallaxY] = useState(0)
 
+  // 뷰포트 진입 시 재생, 이탈 시 일시정지
   useEffect(() => {
-    const seen = sessionStorage.getItem('videoShown')
-    if (!seen) setShowVideo(true)
+    const el = heroRef.current
+    const vid = videoRef.current
+    if (!el || !vid) return
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            vid.play().catch(() => {})
+          } else {
+            vid.pause()
+          }
+        }
+      },
+      { threshold: 0.15 }
+    )
+    io.observe(el)
+    return () => io.disconnect()
   }, [])
 
-  const closeVideo = () => {
-    sessionStorage.setItem('videoShown', '1')
-    setShowVideo(false)
-  }
-
-  // 이 페이지에 있는 동안만 세로 스크롤 잠금
+  // 부드러운 패럴랙스
   useEffect(() => {
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    let raf = 0
+    const onScroll = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        const y = window.scrollY
+        // 스크롤 대비 약한 비율로 이동
+        setParallaxY(Math.min(60, y * 0.15))
+      })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
     return () => {
-      document.body.style.overflow = prev
+      cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', onScroll)
     }
   }, [])
 
   return (
-    <main className="relative min-h-screen overflow-hidden text-white">
-      <FullscreenVideoModal open={showVideo} onClose={closeVideo} />
+    <main className="relative min-h-screen overflow-x-hidden text-white">
+      {/* 히어로 섹션: 배경 비디오 */}
+      <section
+        ref={heroRef}
+        className="relative w-full h-[82vh] md:h-[88vh] overflow-hidden"
+      >
+        {/* 배경 비디오 */}
+        <video
+          ref={videoRef}
+          src="/media/dj.mp4"
+          muted
+          playsInline
+          autoPlay
+          // @ts-ignore
+          webkit-playsinline="true"
+          preload="metadata"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ transform: `translateY(${parallaxY * -1}px)` }}
+        />
+
+        {/* 컬러 오버레이 + 그라데이션 마스크로 콘텐츠와 자연스러운 블렌딩 */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black/70" />
+          <div className="absolute inset-0 mix-blend-screen bg-amber-300/5" />
+        </div>
+
+        {/* 히어로 콘텐츠 */}
+        <div className="relative z-10 h-full px-4 md:px-8 flex items-end">
+          <div className="w-full max-w-6xl pb-8">
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg">
+              잡다한 기록 홈페이지
+            </h1>
+            <p className="mt-4 md:mt-6 text-md md:text-lg text-amber-300">
+              인스타는 너무 평범해서 홈페이지 직접 만듦
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* 본문: 클릭 보장용 pointer-events-auto */}
-      <section className="relative z-10 w-full h-screen p-4 md:p-8 flex flex-col justify-center items-center pointer-events-auto">
+      <section className="relative z-10 w-full p-4 md:p-8 flex flex-col justify-center items-center pointer-events-auto">
         <div className="w-full max-w-6xl pointer-events-auto">
-          {/* 상단 헤더 및 소개 섹션 */}
-          <header className="flex flex-col md:flex-row md:items-end md:justify-between mb-6 md:mb-10">
-            <div className="text-left md:text-left mb-4 md:mb-0">
-              <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg">
-                잡다한 기록 홈페이지
-              </h1>
-              <p className="mt-6 text-md md:text-lg text-amber-300">
-                인스타는 너무 평범해서 홈페이지 직접 만듦
-              </p>
-            </div>
-          </header>
+          {/* 상단 헤더 제거 → 히어로로 이동 */}
 
           {/* 메인 컨텐츠 그리드 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
@@ -89,15 +137,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 스티커: 화면 전체 오버레이 (모달이 떠있을 땐 렌더 안함)
-          - 이벤트 차단 방지: pointer-events-none 유지
-          - 모바일 크기 축소: scale-75 (필요하면 더 줄여도 됨)
-      */}
-      {!showVideo && (
-        <div className="fixed inset-0 z-[2000] pointer-events-none scale-75 sm:scale-100 origin-top-left">
-          <Stickers />
-        </div>
-      )}
+      {/* 스티커: 화면 전체 오버레이 */}
+      <div className="fixed inset-0 z-[2000] pointer-events-none scale-75 sm:scale-100 origin-top-left">
+        <Stickers />
+      </div>
     </main>
   )
 }
