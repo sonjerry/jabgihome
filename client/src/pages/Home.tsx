@@ -4,8 +4,10 @@ import { createPortal } from 'react-dom'
 import djVideo from '../assets/media/dj.mp4'
 import { Link } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
+import ContactDock from '../components/ContactDock'
 import BlurText from "../components/BlurText"
 import CircularText from '../components/CircularText'
+import GlitchText from '../components/GlitchText'
 
 
 export default function Home() {
@@ -111,6 +113,22 @@ export default function Home() {
     }
   }, [hasUnmuted])
 
+  // 뮤직 플레이어 재생 시 영상 자동 음소거
+  useEffect(() => {
+    const onMusicPlaying = (e: Event) => {
+      try {
+        const isPlaying = (e as CustomEvent<boolean>).detail
+        const v = videoRef.current
+        if (v) {
+          v.muted = isPlaying
+          setIsMuted(isPlaying)
+        }
+      } catch {}
+    }
+    window.addEventListener('music:playing', onMusicPlaying as any)
+    return () => window.removeEventListener('music:playing', onMusicPlaying as any)
+  }, [])
+
   // iOS 밴딩 효과 방지 및 스크롤 제어
   useEffect(() => {
     const html = document.documentElement
@@ -206,7 +224,7 @@ export default function Home() {
       {createPortal(
       <section
         ref={heroRef}
-        className="fixed inset-0 w-full h-[100svh] overflow-hidden bg-black"
+        className="fixed inset-0 w-full h-[100lvh] overflow-hidden bg-black"
         style={{ 
           ['--home-reveal' as any]: String(revealProgress),
           overscrollBehavior: 'none'
@@ -272,7 +290,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* 로딩 오버레이: 중앙 CircularText + 아래 음소거 해제 버튼 */}
+        {/* 로딩 오버레이: 중앙 CircularText + 하단 음소거 해제 버튼 */}
         {(!isVideoReady || isInitialLoad) && (
           <div
             aria-hidden
@@ -284,52 +302,56 @@ export default function Home() {
               spinDuration={20}
               className="text-white/95"
             />
-            <button
-              type="button"
-              onClick={() => {
-                const next = false
-                setIsMuted(next)
-                setHasUnmuted(true)
-                const v = videoRef.current
-                if (v) {
-                  v.muted = next
-                  try { v.removeAttribute('muted') } catch {}
-                  v.muted = false
-                  v.volume = 1
-                  try { v.pause() } catch {}
-                  setTimeout(() => { v.play().catch(() => {}) }, 0)
-                }
-              }}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/25 bg-black/35 hover:bg-black/45 transition backdrop-blur-md px-5 py-2.5 shadow-glass"
-            >
-              <span className="text-sm md:text-base text-white/95">이곳을 눌러 음소거를 해제해주세요</span>
-            </button>
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+              <button
+                type="button"
+                onClick={() => {
+                  const next = false
+                  setIsMuted(next)
+                  setHasUnmuted(true)
+                  const v = videoRef.current
+                  if (v) {
+                    v.muted = next
+                    try { v.removeAttribute('muted') } catch {}
+                    v.muted = false
+                    v.volume = 1
+                    try { v.pause() } catch {}
+                    setTimeout(() => { v.play().catch(() => {}) }, 0)
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/25 bg-black/35 hover:bg-black/45 transition backdrop-blur-md px-5 py-2.5 shadow-glass"
+              >
+                <span className="text-sm md:text-base text-white/95">이곳을 눌러 음소거를 해제해주세요</span>
+              </button>
+            </div>
           </div>
         )}
 
-        {/* 로딩 후에도 클릭 전까지 중앙 음소거 버튼 유지 */}
+        {/* 로딩 후에도 클릭 전까지 하단 음소거 버튼 유지 */}
         {isVideoReady && !hasUnmuted && (
-          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
-            <button
-              type="button"
-              onClick={() => {
-                const next = false
-                setIsMuted(next)
-                setHasUnmuted(true)
-                const v = videoRef.current
-                if (v) {
-                  v.muted = next
-                  try { v.removeAttribute('muted') } catch {}
-                  v.muted = false
-                  v.volume = 1
-                  try { v.pause() } catch {}
-                  setTimeout(() => { v.play().catch(() => {}) }, 0)
-                }
-              }}
-              className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/40 hover:bg-black/50 transition backdrop-blur-md px-7 py-3.5 shadow-glass"
-            >
-              <span className="opacity-90 text-base font-medium">이곳을 눌러 음소거를 해제해주세요</span>
-            </button>
+          <div className="pointer-events-none absolute inset-0 z-30">
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+              <button
+                type="button"
+                onClick={() => {
+                  const next = false
+                  setIsMuted(next)
+                  setHasUnmuted(true)
+                  const v = videoRef.current
+                  if (v) {
+                    v.muted = next
+                    try { v.removeAttribute('muted') } catch {}
+                    v.muted = false
+                    v.volume = 1
+                    try { v.pause() } catch {}
+                    setTimeout(() => { v.play().catch(() => {}) }, 0)
+                  }
+                }}
+                className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/40 hover:bg-black/50 transition backdrop-blur-md px-7 py-3.5 shadow-glass"
+              >
+                <span className="opacity-90 text-base font-medium">이곳을 눌러 음소거를 해제해주세요</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -362,24 +384,26 @@ export default function Home() {
           />
         </div>
 
-        {/* 히어로 콘텐츠 (제목) - 로딩 중 숨김, 재생 시작 후 BlurText로 출현 */}
+        {/* 히어로 콘텐츠 (제목) - 로딩 중 숨김, 재생 시작 후 GlitchText로 출현 */}
         {(isVideoReady && isVideoPlaying) && (
           <div className="absolute inset-0 z-10 px-4 md:px-8 flex items-center justify-center" style={{ transform: 'translateY(-6vh)' }}>
             <div className="w-full max-w-5xl flex flex-col items-center text-center">
-              <BlurText
-                text="잡다한 기록 홈페이지"
-                animateBy="letters"
+              <GlitchText
+                speed={0.3}
+                enableShadows={true}
+                enableOnHover={false}
                 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg"
-                delay={20}
-                direction="top"
-              />
-              <BlurText
-                text="인스타는 너무 평범해서 홈페이지 직접 만듦"
-                animateBy="words"
+              >
+                잡다한 기록 홈페이지
+              </GlitchText>
+              <GlitchText
+                speed={0.5}
+                enableShadows={true}
+                enableOnHover={false}
                 className="mt-4 md:mt-6 text-base md:text-lg text-amber-300"
-                delay={80}
-                direction="bottom"
-              />
+              >
+                인스타는 너무 평범해서 홈페이지 직접 만듦
+              </GlitchText>
             </div>
           </div>
         )}
@@ -388,46 +412,8 @@ export default function Home() {
 
       </section>, document.body)}
 
-      {/* 본문: 글래스 요소 - 하단에서 위로 슬라이드 (배경 위 오버레이) */}
-      <section
-        className="fixed right-0 bottom-0 z-10 w-full p-4 md:p-8 flex flex-col items-end pointer-events-none"
-        style={{
-          opacity: hasUnmuted ? 1 : revealProgress,
-          transform: `translateY(${(64 * (1 - revealProgress)).toFixed(2)}px)`,
-          transition: 'transform 360ms ease, opacity 300ms ease'
-        }}
-      >
-        <div className="w-full pointer-events-auto flex justify-end">
-          {/* 연락처 정보 카드: 우하단 좁은 폭으로 배치 */}
-          <div
-            style={{
-              transform: `translate(${(16 * (1 - revealProgress)).toFixed(2)}px, ${(6 * (1 - revealProgress)).toFixed(2)}px)`,
-              transition: 'transform 380ms ease'
-            }}
-            className="w-[min(92%,360px)]"
-          >
-            <GlassCard className="p-6 md:p-6 flex flex-col justify-end pointer-events-auto">
-              <div className="mt-auto">
-                <h2 className="text-lg md:text-xl font-semibold text-white/80 mb-3">
-                  Contact Me
-                </h2>
-                <div className="flex flex-col gap-2">
-                  <MiniStat
-                    label="GitHub"
-                    value="sonjerry"
-                    link="https://github.com/sonjerry"
-                  />
-                  <MiniStat
-                    label="Email"
-                    value="qh.e.720@icloud.com"
-                    link="mailto:qh.e.720@icloud.com"
-                  />
-                </div>
-              </div>
-            </GlassCard>
-          </div>
-        </div>
-      </section>
+      {/* Contact Dock: 네비바와 동일한 reveal 로직으로 표시 */}
+      <ContactDock />
 
 
       {/* 스티커 오버레이 홈에서는 제거됨 */}

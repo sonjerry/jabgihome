@@ -59,8 +59,16 @@ export default function AudioProvider({ children }: { children: React.ReactNode 
     document.body.appendChild(el)
     audioRef.current = el
 
-    const onPlay = () => setPlaying(true)
-    const onPause = () => setPlaying(false)
+    const onPlay = () => {
+      setPlaying(true)
+      // 뮤직 재생 시 홈 페이지 영상 음소거 이벤트 발생
+      window.dispatchEvent(new CustomEvent('music:playing', { detail: true }))
+    }
+    const onPause = () => {
+      setPlaying(false)
+      // 뮤직 일시정지 시 홈 페이지 영상 음소거 해제 이벤트 발생
+      window.dispatchEvent(new CustomEvent('music:playing', { detail: false }))
+    }
     const onTime = () => setCurrentTime(el.currentTime || 0)
     const onDur = () => setDuration(Number.isFinite(el.duration) ? el.duration : 0)
     const onEnded = () => {
