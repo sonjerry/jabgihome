@@ -31,7 +31,7 @@ export default function ContactDock() {
 
   return createPortal(
     <aside
-      className="fixed right-0 bottom-0 z-[11] w-full p-4 md:p-8 pointer-events-none"
+      className="hidden md:block fixed right-0 bottom-0 z-[11] w-full p-4 md:p-8 pointer-events-none"
       aria-label="Contact dock"
       style={{
         opacity: reveal,

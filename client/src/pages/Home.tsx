@@ -7,7 +7,7 @@ import GlassCard from '../components/GlassCard'
 import ContactDock from '../components/ContactDock'
 import BlurText from "../components/BlurText"
 import CircularText from '../components/CircularText'
-import GlitchText from '../components/GlitchText'
+ 
 
 
 export default function Home() {
@@ -19,6 +19,7 @@ export default function Home() {
   const [isVideoReady, setIsVideoReady] = useState(false)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const [showHint, setShowHint] = useState(false)
+  const [overlaysVisible, setOverlaysVisible] = useState(false) // 모바일: 힌트 클릭 시 표시
   const [revealProgress, setRevealProgress] = useState(0) // 0~1: 네비/카드 등장, 비디오 리레이아웃
   const [isInitialLoad, setIsInitialLoad] = useState(true) // 초기 로딩 상태
   const revealTargetRef = useRef(0)
@@ -211,13 +212,22 @@ export default function Home() {
     }
   }, [])
 
+  const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches
+
   return (
     <main 
       className="relative overflow-x-hidden text-white bg-black"
       style={{ 
         overscrollBehavior: 'none',
         WebkitOverflowScrolling: 'touch',
-        minHeight: '200vh'
+        minHeight: isMobile ? '100dvh' : '200vh',
+        overflowY: isMobile ? 'hidden' : undefined
+      }}
+      onClick={(e) => {
+        if (isMobile) {
+          // 영상 영역 클릭 시 오버레이 숨김
+          setOverlaysVisible(false)
+        }
       }}
     >
       {/* 히어로 섹션: 고정된 배경 비디오 (포털로 body에 렌더링하여 어느 상위 transform 영향도 받지 않도록) */}
@@ -262,13 +272,17 @@ export default function Home() {
         {/* 스크롤 힌트: 화면 중앙 (음소거 버튼 표시 중에는 숨김) */}
         {showHint && hasUnmuted && (
           <div
-            className="absolute inset-x-0 bottom-[20vh] z-20 flex items-center justify-center pointer-events-none"
+            className="absolute inset-x-0 bottom-[20vh] z-20 flex items-center justify-center"
             style={{
               opacity: Math.max(0, 1 - revealProgress * 1.2),
               transition: 'opacity 300ms ease'
             }}
           >
-            <div className="pointer-events-auto rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setOverlaysVisible(true) }}
+              className="pointer-events-auto rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass"
+            >
               <div className="flex items-center gap-3">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
                      style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '0ms' }}
@@ -286,7 +300,7 @@ export default function Home() {
                   <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-            </div>
+            </button>
           </div>
         )}
 
@@ -305,7 +319,8 @@ export default function Home() {
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation()
                   const next = false
                   setIsMuted(next)
                   setHasUnmuted(true)
@@ -321,7 +336,7 @@ export default function Home() {
                 }}
                 className="inline-flex items-center gap-2 rounded-2xl border border-white/25 bg-black/35 hover:bg-black/45 transition backdrop-blur-md px-5 py-2.5 shadow-glass"
               >
-                <span className="text-sm md:text-base text-white/95">이곳을 눌러 음소거를 해제해주세요</span>
+                <span className="text-sm md:text-base text-white/95 whitespace-nowrap">이곳을 눌러 음소거를 해제해주세요</span>
               </button>
             </div>
           </div>
@@ -349,7 +364,7 @@ export default function Home() {
                 }}
                 className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/40 hover:bg-black/50 transition backdrop-blur-md px-7 py-3.5 shadow-glass"
               >
-                <span className="opacity-90 text-base font-medium">이곳을 눌러 음소거를 해제해주세요</span>
+                <span className="opacity-90 text-base font-medium whitespace-nowrap">이곳을 눌러 음소거를 해제해주세요</span>
               </button>
             </div>
           </div>
@@ -384,26 +399,25 @@ export default function Home() {
           />
         </div>
 
-        {/* 히어로 콘텐츠 (제목) - 로딩 중 숨김, 재생 시작 후 GlitchText로 출현 */}
+        {/* 히어로 콘텐츠 (제목) - 로딩 중 숨김, 재생 시작 후 BlurText로 출현 */}
         {(isVideoReady && isVideoPlaying) && (
           <div className="absolute inset-0 z-10 px-4 md:px-8 flex items-center justify-center" style={{ transform: 'translateY(-6vh)' }}>
             <div className="w-full max-w-5xl flex flex-col items-center text-center">
-              <GlitchText
-                speed={0.3}
-                enableShadows={true}
-                enableOnHover={false}
-                className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg break-keep"
-              >
-                잡다한 기록 홈페이지
-              </GlitchText>
-              <GlitchText
-                speed={0.5}
-                enableShadows={true}
-                enableOnHover={false}
+              <BlurText
+                text="잡다한 기록 홈페이지"
+                animateBy="letters"
+                className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg break-keep whitespace-nowrap"
+                delay={20}
+                direction="top"
+                noWrap
+              />
+              <BlurText
+                text="인스타는 너무 평범해서 홈페이지 직접 만듦"
+                animateBy="words"
                 className="mt-4 md:mt-6 text-base md:text-lg text-amber-300 break-keep"
-              >
-                인스타는 너무 평범해서 홈페이지 직접 만듦
-              </GlitchText>
+                delay={80}
+                direction="bottom"
+              />
             </div>
           </div>
         )}
@@ -412,7 +426,7 @@ export default function Home() {
 
       </section>, document.body)}
 
-      {/* Contact Dock: 네비바와 동일한 reveal 로직으로 표시 */}
+      {/* Contact Dock: 데스크톱에서만 표시; 모바일은 힌트 클릭 시 오버레이 토글 */}
       <ContactDock />
 
 

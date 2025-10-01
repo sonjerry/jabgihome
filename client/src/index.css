@@ -30,11 +30,8 @@ html, body, #root { min-height: 100%; }
 /* 전역 배경/타이포 */
 body {
   @apply text-cream font-rokaf;
-  /* ⬇️ 임의값 유틸 대신 CSS로 직접 지정 */
-  background-image: radial-gradient(ellipse at top left, #38bdf8, #120e0b); /* sky-400 ≈ #38bdf8 */
-  background-attachment: fixed;
-  background-repeat: no-repeat;
-  background-size: cover;
+  /* 홈 초기 진입 시 플래시 방지를 위해 전역 배경을 순수 블랙으로 통일 */
+  background-color: #000;
   isolation: isolate;
 }
 
