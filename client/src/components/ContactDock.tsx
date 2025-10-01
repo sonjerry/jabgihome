@@ -15,9 +15,6 @@ export default function ContactDock() {
     return Number(root || body || 0) || 0
   })
 
-  // 음소거 해제 버튼이 활성화된 상태인지 확인
-  const [isUnmuteActive, setIsUnmuteActive] = useState(false)
-
   useEffect(() => {
     const onReveal = (e: Event) => {
       try {
@@ -29,40 +26,22 @@ export default function ContactDock() {
     return () => window.removeEventListener('home:reveal', onReveal as any)
   }, [])
 
-  // 음소거 해제 버튼 상태 감지
-  useEffect(() => {
-    const checkUnmuteState = () => {
-      const unmuteButton = document.querySelector('[data-unmute-button]')
-      setIsUnmuteActive(!!unmuteButton)
-    }
-    
-    // 초기 체크
-    checkUnmuteState()
-    
-    // 주기적으로 체크 (음소거 해제 버튼이 동적으로 나타나고 사라지므로)
-    const interval = setInterval(checkUnmuteState, 100)
-    
-    return () => clearInterval(interval)
-  }, [])
-
   // 홈이 아닌 경로에서는 표시하지 않음
   if (pathname !== '/') return null
 
   return createPortal(
     <aside
-      className="hidden md:block fixed right-0 bottom-0 z-[5] w-full p-4 md:p-8"
+      className="hidden md:block fixed right-0 bottom-0 z-[11] w-full p-4 md:p-8 pointer-events-none"
       aria-label="Contact dock"
       style={{
         opacity: reveal,
         transform: `translateY(${(48 * (1 - reveal || 0)).toFixed(2)}px)`,
-        transition: 'transform 360ms ease, opacity 300ms ease',
-        pointerEvents: isUnmuteActive ? 'none' : 'auto'
+        transition: 'transform 360ms ease, opacity 300ms ease'
       }}
     >
-      <div className="w-full flex justify-end pointer-events-auto">
-        <div className="w-[min(92%,360px)]">
-          <GlassCard className="p-6 md:p-6 flex flex-col justify-end pointer-events-auto">
-            <div className="mt-auto">
+      <div className="ml-auto w-[min(92%,360px)] pointer-events-none">
+        <GlassCard className="p-6 md:p-6 flex flex-col justify-end pointer-events-auto">
+          <div className="mt-auto">
               <h2 className="text-lg md:text-xl font-semibold text-white/80 mb-3">Contact Me</h2>
               <div className="flex flex-col gap-2">
                 <a
@@ -85,7 +64,6 @@ export default function ContactDock() {
             </div>
           </GlassCard>
         </div>
-      </div>
     </aside>,
     document.body
   )
