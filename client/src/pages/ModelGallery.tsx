@@ -44,6 +44,15 @@ export default function ModelGallery() {
     []
   )
 
+  // 페이지 마운트 시 Canvas 렌더링 강제 트리거 (페이지 전환 애니메이션 이슈 해결)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Canvas들을 강제로 다시 렌더링
+      window.dispatchEvent(new Event('resize'))
+    }, 350) // 페이지 전환 애니메이션(280ms) 후
+    return () => clearTimeout(timer)
+  }, [])
+
   const categories = useMemo(() => {
     const s = new Set<string>()
     for (const m of allModels) s.add(m.category)

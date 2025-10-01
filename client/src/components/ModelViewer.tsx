@@ -502,6 +502,9 @@ const ModelViewer: FC<ViewerProps> = ({
           cameraRef.current = camera
           gl.toneMapping = THREE.ACESFilmicToneMapping
           gl.outputColorSpace = THREE.SRGBColorSpace
+          // 초기 렌더링 강제 트리거 (페이지 전환 애니메이션 후에도 보이도록)
+          requestAnimationFrame(() => invalidate())
+          setTimeout(() => invalidate(), 100)
         }}
         camera={{ fov: 50, position: [0, 0, camZ], near: 0.01, far: 100 }}
         style={{ touchAction: "pan-y pinch-zoom" }}
