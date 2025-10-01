@@ -38,6 +38,11 @@ body {
   isolation: isolate;
 }
 
+/* 폰트 로딩 중 시스템 폰트 플래시 억제 */
+.fonts-loading body {
+  visibility: hidden;
+}
+
 /* 유리 카드 */
 .glass { @apply bg-white/10 border border-white/20 backdrop-blur-xl shadow-glass; }
 

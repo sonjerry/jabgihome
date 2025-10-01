@@ -101,6 +101,14 @@ export default function Home() {
         ref={heroRef}
         className="relative w-full h-[82vh] md:h-[88vh] overflow-hidden"
       >
+        {/* 스타일: 슬로우 줌 키프레임 */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+            @keyframes heroSlowZoom { 0% { transform: scale(1) } 100% { transform: scale(1.03) } }
+          `,
+          }}
+        />
         {/* 배경 비디오 */}
         <video
           ref={videoRef}
@@ -112,27 +120,42 @@ export default function Home() {
           // @ts-ignore
           webkit-playsinline="true"
           preload="metadata"
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ transform: `translateY(${parallaxY * -1}px)` }}
+          className="absolute inset-0 w-full h-full object-cover will-change-transform"
+          style={{ transform: `translateY(${parallaxY * -1}px)`, animation: 'heroSlowZoom 24s linear infinite alternate' }}
         />
 
-        {/* 로딩 바 (비디오 위 상단, 준비 완료 시 페이드 아웃) */}
+        {/* 로딩 바 (비디오 위 하단, 준비 완료 시 페이드 아웃) */}
         <div
           aria-hidden
-          className={`absolute top-0 left-0 right-0 z-10 px-3 md:px-4 transition-opacity duration-300 ${isVideoReady ? 'opacity-0' : 'opacity-100'}`}
+          className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[min(92%,720px)] transition-opacity duration-300 ${isVideoReady ? 'opacity-0' : 'opacity-100'}`}
         >
-          <div className="h-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-sm overflow-hidden">
-            <div
-              className="h-full bg-amber-300/80 shadow-[0_0_12px_rgba(251,191,36,0.6)]"
-              style={{ width: `${loadProgress}%`, transition: 'width 200ms ease' }}
-            />
+          <div className="px-3 py-2 rounded-2xl bg-black/35 border border-white/20 backdrop-blur-md shadow-glass">
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 h-2 rounded-full bg-white/15 overflow-hidden">
+                <div
+                  className="absolute inset-y-0 left-0 bg-amber-300/90 shadow-[0_0_16px_rgba(251,191,36,0.65)]"
+                  style={{ width: `${loadProgress}%`, transition: 'width 220ms ease' }}
+                />
+              </div>
+              <span className="text-[11px] md:text-xs text-white/85 tabular-nums min-w-[38px] text-right">{loadProgress}%</span>
+            </div>
           </div>
         </div>
 
-        {/* 컬러 오버레이 + 그라데이션 마스크로 콘텐츠와 자연스러운 블렌딩 */}
+        {/* 비네트 + 컬러 그레이딩 + 그라데이션 마스크 */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black/70" />
-          <div className="absolute inset-0 mix-blend-screen bg-amber-300/5" />
+          {/* 상/하단 그라데이션 */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/25 to-black/80" />
+          {/* 소프트 라이트 앰버 오버레이 */}
+          <div className="absolute inset-0 mix-blend-soft-light bg-amber-300/10" />
+          {/* 비네트 */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 50%, rgba(0,0,0,0.45) 100%)',
+              mixBlendMode: 'multiply',
+            }}
+          />
         </div>
 
         {/* 히어로 콘텐츠 */}
