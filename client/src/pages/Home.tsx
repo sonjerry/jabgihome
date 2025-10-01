@@ -83,7 +83,7 @@ export default function Home() {
       raf = requestAnimationFrame(() => {
         const y = window.scrollY
         // 스크롤 대비 약한 비율로 이동
-        setParallaxY(Math.min(60, y * 0.15))
+        setParallaxY(Math.min(40, y * 0.08))
       })
     }
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -120,7 +120,11 @@ export default function Home() {
           webkit-playsinline="true"
           preload="metadata"
           className="absolute inset-0 w-full h-full object-cover will-change-transform"
-          style={{ transform: `translateY(${parallaxY * -1}px)`, animation: 'heroSlowZoom 24s linear infinite alternate' }}
+          style={{
+            transform: `translateY(${parallaxY * -1}px)`,
+            animation: 'heroSlowZoom 28s linear infinite alternate',
+            filter: 'brightness(0.9) saturate(0.9) contrast(1.05)'
+          }}
         />
 
         {/* 로딩 바 (비디오 중앙, 준비 완료 시 페이드 아웃) */}
@@ -145,14 +149,14 @@ export default function Home() {
         {/* 비네트 + 컬러 그레이딩 + 그라데이션 마스크 + 그레인 */}
         <div className="absolute inset-0 pointer-events-none">
           {/* 상/하단 그라데이션 */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/25 to-black/80" />
-          {/* 소프트 라이트 앰버 오버레이 */}
-          <div className="absolute inset-0 mix-blend-soft-light bg-amber-300/10" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/30 to-black/85" />
+          {/* 소프트 라이트 앰버 오버레이 (강도 약간 증가) */}
+          <div className="absolute inset-0 mix-blend-soft-light bg-amber-300/14" />
           {/* 비네트 */}
           <div
             className="absolute inset-0"
             style={{
-              background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 50%, rgba(0,0,0,0.45) 100%)',
+              background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 48%, rgba(0,0,0,0.55) 100%)',
               mixBlendMode: 'multiply',
             }}
           />
@@ -233,43 +237,41 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 전경 앵커: 하단 글래스 바 (사운드 토글) */}
-      <div className="pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-30 w-[min(92%,720px)]">
-        <div className="pointer-events-auto mx-auto flex items-center justify-end gap-3 rounded-2xl bg-black/35 border border-white/20 backdrop-blur-md px-3 py-2 shadow-glass">
-          <button
-            type="button"
-            onClick={() => {
-              const next = !isMuted
-              setIsMuted(next)
-              const v = videoRef.current
-              if (v) {
-                v.muted = next
-                if (next) return
-                try { v.removeAttribute('muted') } catch {}
-                v.muted = false
-                v.volume = 1
-                try { v.pause() } catch {}
-                setTimeout(() => { v.play().catch(() => {}) }, 0)
-              }
-            }}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 transition backdrop-blur px-3 py-1.5 text-sm md:text-base"
-          >
-            {isMuted ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
-                <path d="M16 8l4 8" stroke="currentColor" strokeWidth="2"/>
-                <path d="M20 8l-4 8" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
-                <path d="M18.5 8.5a6 6 0 010 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <path d="M16.5 10.5a3 3 0 010 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            )}
-            <span className="opacity-90">{isMuted ? '음소거 해제' : '음소거'}</span>
-          </button>
-        </div>
+      {/* 전경 앵커: 하단 우측 플로팅 사운드 토글 버튼 */}
+      <div className="pointer-events-none fixed bottom-4 right-4 z-30">
+        <button
+          type="button"
+          onClick={() => {
+            const next = !isMuted
+            setIsMuted(next)
+            const v = videoRef.current
+            if (v) {
+              v.muted = next
+              if (next) return
+              try { v.removeAttribute('muted') } catch {}
+              v.muted = false
+              v.volume = 1
+              try { v.pause() } catch {}
+              setTimeout(() => { v.play().catch(() => {}) }, 0)
+            }
+          }}
+          className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/35 hover:bg-black/45 transition backdrop-blur-md px-3 py-2 shadow-glass"
+        >
+          {isMuted ? (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+              <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
+              <path d="M16 8l4 8" stroke="currentColor" strokeWidth="2"/>
+              <path d="M20 8l-4 8" stroke="currentColor" strokeWidth="2"/>
+            </svg>
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+              <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
+              <path d="M18.5 8.5a6 6 0 010 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M16.5 10.5a3 3 0 010 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          )}
+          <span className="opacity-90 text-sm">{isMuted ? '음소거 해제' : '음소거'}</span>
+        </button>
       </div>
 
       {/* 스티커 오버레이 홈에서는 제거됨 */}
