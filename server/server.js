@@ -129,6 +129,55 @@ function ensureObjectBody(body) {
   return body
 }
 
+/* ─────────────── 캐시 유틸 (메모리) ─────────────── */
+const CACHE_TTL_MS = Number(process.env.API_CACHE_TTL_MS || 60_000) // 기본 60초
+const cacheStore = new Map()
+
+function makeEtagFromBody(body) {
+  try {
+    const json = typeof body === 'string' ? body : JSON.stringify(body)
+    const h = crypto.createHash('sha1').update(json).digest('base64')
+    return `W/"${h}"`
+  } catch {
+    return undefined
+  }
+}
+
+function getCached(key) {
+  const item = cacheStore.get(key)
+  if (!item) return null
+  if (Date.now() > item.expiresAt) {
+    cacheStore.delete(key)
+    return null
+  }
+  return item
+}
+
+function setCached(key, body) {
+  const etag = makeEtagFromBody(body)
+  const value = { body, etag, expiresAt: Date.now() + CACHE_TTL_MS }
+  cacheStore.set(key, value)
+  return value
+}
+
+function clearCache(keys = []) {
+  if (!keys.length) return
+  for (const k of keys) cacheStore.delete(k)
+}
+
+function respondWithCaching(req, res, cacheKey, payload) {
+  const item = setCached(cacheKey, payload)
+  const reqTag = req.headers['if-none-match']
+  if (item.etag && reqTag && reqTag === item.etag) {
+    res.setHeader('ETag', item.etag)
+    res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
+    return res.status(304).end()
+  }
+  if (item.etag) res.setHeader('ETag', item.etag)
+  res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
+  return res.json(item.body)
+}
+
 /* ───────────────────── 인증 ───────────────────── */
 function signAdmin() {
   return jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '2h' })
@@ -232,15 +281,29 @@ app.post('/api/upload', requireAdmin, upload.single('file'), async (req, res) =>
 })
 
 /* ───────────────────── 글(API) ───────────────────── */
-app.get('/api/posts', async (_req, res) => {
+app.get('/api/posts', async (req, res) => {
   try {
+    const cacheKey = 'posts:index'
+    const cached = getCached(cacheKey)
+    if (cached) {
+      const reqTag = req.headers['if-none-match']
+      if (cached.etag && reqTag && reqTag === cached.etag) {
+        res.setHeader('ETag', cached.etag)
+        res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
+        return res.status(304).end()
+      }
+      if (cached.etag) res.setHeader('ETag', cached.etag)
+      res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
+      return res.json(cached.body)
+    }
+
     const { data, error } = await supabase
       .from('posts')
       .select('data, created_at')
       .order('created_at', { ascending: false })
     if (error) return res.status(500).json({ error: error.message })
     const posts = (data || []).map(r => r.data)
-    res.json(posts)
+    return respondWithCaching(req, res, cacheKey, posts)
   } catch (e) {
     console.error('list posts error', e)
     res.status(500).json({ error: 'posts list failed' })
@@ -250,12 +313,26 @@ app.get('/api/posts', async (_req, res) => {
 app.get('/api/posts/:id', async (req, res) => {
   try {
     const id = req.params.id
+    const cacheKey = `posts:item:${id}`
+    const cached = getCached(cacheKey)
+    if (cached) {
+      const reqTag = req.headers['if-none-match']
+      if (cached.etag && reqTag && reqTag === cached.etag) {
+        res.setHeader('ETag', cached.etag)
+        res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
+        return res.status(304).end()
+      }
+      if (cached.etag) res.setHeader('ETag', cached.etag)
+      res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
+      return res.json(cached.body)
+    }
+
     const { data, error } = await supabase.from('posts').select('data').eq('id', id).single()
     if (error) {
       if (error.code === 'PGRST116') return res.status(404).json({ error: 'not found' })
       return res.status(500).json({ error: error.message })
     }
-    res.json(data.data)
+    return respondWithCaching(req, res, cacheKey, data.data)
   } catch (e) {
     console.error('get post error', e)
     res.status(500).json({ error: 'post get failed' })
@@ -278,6 +355,8 @@ app.post('/api/posts', requireAdmin, async (req, res) => {
       .single()
     if (error) return res.status(500).json({ error: error.message })
 
+    // 캐시 무효화
+    clearCache(['posts:index', `posts:item:${post.id}`])
     res.json({ ok: true, id: data.id })
   } catch (e) {
     console.error('create post error', e)
@@ -302,6 +381,8 @@ app.put('/api/posts/:id', requireAdmin, async (req, res) => {
       if (error.code === 'PGRST116') return res.status(404).json({ error: 'not found' })
       return res.status(500).json({ error: error.message })
     }
+    // 캐시 무효화
+    clearCache(['posts:index', `posts:item:${id}`])
     res.json({ ok: true, id: data.id })
   } catch (e) {
     console.error('update post error', e)
@@ -315,6 +396,8 @@ app.delete('/api/posts/:id', requireAdmin, async (req, res) => {
     const id = req.params.id
     const { error } = await supabase.from('posts').delete().eq('id', id)
     if (error) return res.status(500).json({ error: error.message })
+    // 캐시 무효화
+    clearCache(['posts:index', `posts:item:${id}`])
     res.json({ ok: true })
   } catch (e) {
     console.error('delete post error', e)
@@ -452,6 +535,31 @@ app.delete('/api/comments/:cid', async (req, res) => {
     res.status(500).json({ ok: false })
   }
 })
+
+/* ───────────────────── Prewarm (무료 Supabase 웜업) ───────────────────── */
+const PREWARM_INTERVAL_MS = Number(process.env.PREWARM_INTERVAL_MS || 240_000) // 4분
+if (PREWARM_INTERVAL_MS > 0) {
+  setInterval(async () => {
+    try {
+      // 가벼운 쿼리로 연결 웜업
+      await supabase
+        .from('posts')
+        .select('id')
+        .order('created_at', { ascending: false })
+        .limit(1)
+      // 캐시 갱신(선택): 인덱스만 가볍게 미리 로드
+      const { data, error } = await supabase
+        .from('posts')
+        .select('data, created_at')
+        .order('created_at', { ascending: false })
+        .limit(10)
+      if (!error) {
+        const posts = (data || []).map(r => r.data)
+        setCached('posts:index', posts)
+      }
+    } catch {}
+  }, PREWARM_INTERVAL_MS).unref?.()
+}
 
 /* ───────────────────── 서버 시작 ───────────────────── */
 app.listen(PORT, '0.0.0.0', () => {
