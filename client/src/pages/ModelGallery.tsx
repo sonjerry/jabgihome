@@ -1,7 +1,8 @@
 // client/src/pages/ModelGallery.tsx
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import GlassCard from '../components/GlassCard'
 import ModelViewer from '../components/ModelViewer'
+import { useAuth } from '../state/auth'
 
 type ModelItem = {
   title: string
@@ -32,6 +33,7 @@ function pathToCategory(p: string) {
 }
 
 export default function ModelGallery() {
+  const { role } = useAuth()
   const allModels: ModelItem[] = useMemo(
     () =>
       Object.entries(MODEL_FILES)
@@ -76,6 +78,94 @@ export default function ModelGallery() {
     if (el) el.scrollTo({ top: 0, behavior: 'smooth' })
   }, [cat])
 
+  // ── modal state for enlarged viewer and comments ─────────
+  const [open, setOpen] = useState(false)
+  const [entering, setEntering] = useState(false)
+  const [idx, setIdx] = useState(0)
+
+  const openAt = useCallback((i: number) => {
+    setIdx(i)
+    setOpen(true)
+  }, [])
+  const close = useCallback(() => {
+    setEntering(false)
+    setTimeout(() => setOpen(false), 200)
+  }, [])
+  const next = useCallback(() => setIdx(i => (i + 1) % visible.length), [visible.length])
+  const prev = useCallback(() => setIdx(i => (i - 1 + visible.length) % visible.length), [visible.length])
+
+  useEffect(() => {
+    if (!open) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prevOverflow }
+  }, [open])
+
+  useEffect(() => {
+    if (open) {
+      const id = requestAnimationFrame(() => setEntering(true))
+      return () => cancelAnimationFrame(id)
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close()
+      else if (e.key === 'ArrowRight') next()
+      else if (e.key === 'ArrowLeft') prev()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, close, next, prev])
+
+  // comments per model url
+  type Comment = { id: string; author: string; text: string; time: number }
+  const currentKey = visible[idx]?.url ?? ''
+  const [comments, setComments] = useState<Comment[]>([])
+  const [draft, setDraft] = useState('')
+
+  const loadComments = useCallback((key: string): Comment[] => {
+    try {
+      const raw = localStorage.getItem('comments:' + key)
+      return raw ? (JSON.parse(raw) as Comment[]) : []
+    } catch {
+      return []
+    }
+  }, [])
+  const saveComments = useCallback((key: string, list: Comment[]) => {
+    localStorage.setItem('comments:' + key, JSON.stringify(list))
+  }, [])
+  useEffect(() => {
+    if (open && currentKey) {
+      setComments(loadComments(currentKey))
+      setDraft('')
+    }
+  }, [open, currentKey, loadComments])
+  const handleAddComment = useCallback(() => {
+    const text = draft.trim()
+    if (!text || !currentKey) return
+    const existing = loadComments(currentKey)
+    const nextIdx = existing.length + 1
+    const newItem: Comment = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      author: `익명${nextIdx}`,
+      text,
+      time: Date.now(),
+    }
+    const updated = [...existing, newItem]
+    saveComments(currentKey, updated)
+    setComments(updated)
+    setDraft('')
+  }, [draft, currentKey, loadComments, saveComments])
+
+  const handleDeleteComment = useCallback((id: string) => {
+    if (role !== 'admin' || !currentKey) return
+    const updated = comments.filter(c => c.id !== id)
+    saveComments(currentKey, updated)
+    setComments(updated)
+  }, [role, currentKey, comments, saveComments])
+
   return (
     <main className="relative min-h-screen overflow-x-hidden">
       {/* 캔버스 배경 투명화 (글래스카드와 자연스레 어울리게) */}
@@ -114,7 +204,7 @@ export default function ModelGallery() {
 
         {/* 모바일 2열 · md 3열 · lg 4열 / 전신 3:4 카드 */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-          {visible.map(m => (
+          {visible.map((m, i) => (
             <GlassCard
               key={m.url}
               className="relative p-0 overflow-hidden rounded-2xl bg-white/10 backdrop-blur border border-white/10"
@@ -123,27 +213,29 @@ export default function ModelGallery() {
               <div className="relative w-full">
                 <div className="pt-[133.333%]" /> {/* 3:4 */}
                 <div className="absolute inset-0 glass-viewer flex items-center justify-center">
-                  <ModelViewer
-                    url={m.url}
-                    width="100%"
-                    height="100%"
-                    environmentPreset="studio"
-                    autoFrame
-                    autoRotate
-                    autoRotateSpeed={0.25}
-                    enableManualRotation
-                    enableManualZoom
-                    enableHoverRotation
-                    placeholderSrc="/icons/model-placeholder.png"
-                    showScreenshotButton={false}
-                    ambientIntensity={0.45}
-                    keyLightIntensity={1}
-                    fillLightIntensity={0.65}
-                    rimLightIntensity={0.85}
-                    defaultZoom={1.56}   // 전신이 카드에 알맞게
-                    minZoomDistance={0.5}
-                    maxZoomDistance={6}
-                  />
+                  <button onClick={() => openAt(i)} className="w-full h-full">
+                    <ModelViewer
+                      url={m.url}
+                      width="100%"
+                      height="100%"
+                      environmentPreset="studio"
+                      autoFrame
+                      autoRotate
+                      autoRotateSpeed={0.25}
+                      enableManualRotation
+                      enableManualZoom
+                      enableHoverRotation
+                      placeholderSrc="/icons/model-placeholder.png"
+                      showScreenshotButton={false}
+                      ambientIntensity={0.45}
+                      keyLightIntensity={1}
+                      fillLightIntensity={0.65}
+                      rimLightIntensity={0.85}
+                      defaultZoom={1.56}   // 전신이 카드에 알맞게
+                      minZoomDistance={0.5}
+                      maxZoomDistance={6}
+                    />
+                  </button>
                 </div>
               </div>
 
@@ -155,6 +247,110 @@ export default function ModelGallery() {
           ))}
         </div>
       </section>
+      {open && visible[idx] && (
+        <div
+          className={[
+            'fixed inset-0 z-50 flex items-center justify-center',
+            entering ? 'bg-black/90' : 'bg-black/0',
+            'transition-[background-color] duration-200 ease-out'
+          ].join(' ')}
+          role="dialog"
+          aria-modal="true"
+          onClick={close}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); prev(); }}
+            className="absolute left-[30%] top-1/2 -translate-y-1/2 rounded-full px-3 py-2 bg-white/10 hover:bg-white/20 backdrop-blur text-white"
+            aria-label="이전"
+          >
+            ◀
+          </button>
+
+          <button
+            onClick={(e) => { e.stopPropagation(); next(); }}
+            className="absolute right-[30%] top-1/2 -translate-y-1/2 rounded-full px-3 py-2 bg-white/10 hover:bg-white/20 backdrop-blur text-white"
+            aria-label="다음"
+          >
+            ▶
+          </button>
+
+          <div
+            className="relative w-[92vw] max-w-5xl max-h-[86vh] rounded-xl overflow-hidden bg-black/30 backdrop-blur border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className={[
+                'transition-all duration-200 ease-out',
+                entering ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+              ].join(' ')}
+            >
+              {/* enlarged model viewer */}
+              <div className="w-full h-[60vh]">
+                <ModelViewer
+                  url={visible[idx].url}
+                  width="100%"
+                  height="100%"
+                  environmentPreset="studio"
+                  autoFrame
+                  autoRotate
+                  autoRotateSpeed={0.25}
+                  enableManualRotation
+                  enableManualZoom
+                  enableHoverRotation
+                  placeholderSrc="/icons/model-placeholder.png"
+                  showScreenshotButton={false}
+                  ambientIntensity={0.45}
+                  keyLightIntensity={1}
+                  fillLightIntensity={0.65}
+                  rimLightIntensity={0.85}
+                />
+              </div>
+
+              {/* comments */}
+              <div className="px-4 py-3 space-y-3">
+                <h3 className="text-sm font-semibold text-white/80">댓글</h3>
+                <div className="max-h-[18vh] overflow-y-auto space-y-2 pr-1">
+                  {comments.length === 0 ? (
+                    <p className="text-xs text-white/50">첫 댓글을 남겨보세요.</p>
+                  ) : (
+                    comments.map(c => (
+                      <div key={c.id} className="text-sm flex items-start gap-2">
+                        <div className="flex-1">
+                          <span className="text-white/70 mr-2">{c.author}</span>
+                          <span className="text-white/90 break-words align-middle">{c.text}</span>
+                        </div>
+                        {role === 'admin' && (
+                          <button
+                            onClick={() => handleDeleteComment(c.id)}
+                            className="shrink-0 text-xs px-2 py-1 rounded bg-red-500/20 hover:bg-red-500/30 text-red-200"
+                          >삭제</button>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={draft}
+                    onChange={e => setDraft(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddComment() } }}
+                    placeholder="텍스트만 입력..."
+                    className="flex-1 rounded-md bg-white/10 text-white placeholder:text-white/40 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20"
+                  />
+                  <button
+                    onClick={handleAddComment}
+                    className="px-3 py-2 rounded-md bg-white/10 hover:bg-white/20 text-white text-sm"
+                  >
+                    남기기
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

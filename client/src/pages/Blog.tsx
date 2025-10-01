@@ -377,7 +377,7 @@ export default function Blog() {
         )}
       </section>
       {/* 스티커: 화면 전체 오버레이 (블로그 전용) */}
-      <div className="fixed inset-0 z-[5] pointer-events-none scale-75 sm:scale-100 origin-top-left">
+      <div className="fixed inset-0 z-[30] pointer-events-none origin-top-left">
         <Stickers />
       </div>
     </main>

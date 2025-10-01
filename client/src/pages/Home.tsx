@@ -11,6 +11,9 @@ export default function Home() {
   const [isMuted, setIsMuted] = useState(true)
   const [loadProgress, setLoadProgress] = useState(0)
   const [isVideoReady, setIsVideoReady] = useState(false)
+  const [revealProgress, setRevealProgress] = useState(0) // 0~1: 네비/카드 등장, 비디오 리레이아웃
+  const revealTargetRef = useRef(0)
+  const rafRevealRef = useRef(0)
 
   // 뷰포트 진입 시 재생, 이탈 시 일시정지
   useEffect(() => {
@@ -93,12 +96,54 @@ export default function Home() {
     }
   }, [])
 
+  // 스크롤/영상 종료에 따른 등장 애니메이션 트리거 + 부드러운 보간
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY
+      revealTargetRef.current = y > 40 ? 1 : 0
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+
+    const animate = () => {
+      const current = revealProgress
+      const target = revealTargetRef.current
+      const next = current + (target - current) * 0.12
+      if (Math.abs(next - current) > 0.002) {
+        setRevealProgress(next)
+      }
+      rafRevealRef.current = requestAnimationFrame(animate)
+    }
+    rafRevealRef.current = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(rafRevealRef.current)
+  }, [revealProgress])
+
+  // 비디오 진행이 끝나가면 자동으로 등장
+  useEffect(() => {
+    const vid = videoRef.current
+    if (!vid) return
+    const onTime = () => {
+      try {
+        if (!vid.duration || vid.duration === Infinity) return
+        const ratio = vid.currentTime / vid.duration
+        if (ratio >= 0.9) revealTargetRef.current = 1
+      } catch {}
+    }
+    const onEnded = () => { revealTargetRef.current = 1 }
+    vid.addEventListener('timeupdate', onTime)
+    vid.addEventListener('ended', onEnded)
+    return () => {
+      vid.removeEventListener('timeupdate', onTime)
+      vid.removeEventListener('ended', onEnded)
+    }
+  }, [])
+
   return (
     <main className="relative min-h-screen overflow-x-hidden text-white">
       {/* 히어로 섹션: 배경 비디오 */}
       <section
         ref={heroRef}
-        className="relative w-full h-[82vh] md:h-[88vh] overflow-hidden"
+        className="relative w-full h-[100vh] overflow-hidden"
       >
         {/* 스타일: 슬로우 줌 키프레임 */}
         <style
@@ -121,7 +166,7 @@ export default function Home() {
           preload="metadata"
           className="absolute inset-0 w-full h-full object-cover will-change-transform"
           style={{
-            transform: `translateY(${parallaxY * -1}px)`,
+            transform: `translateY(${parallaxY * -1 - revealProgress * 30}px) scale(${1 - revealProgress * 0.06})`,
             animation: 'heroSlowZoom 28s linear infinite alternate',
             filter: 'brightness(0.9) saturate(0.9) contrast(1.05)'
           }}
@@ -175,7 +220,7 @@ export default function Home() {
           />
         </div>
 
-        {/* 히어로 콘텐츠 */}
+        {/* 히어로 콘텐츠 (제목) */}
         <div className="relative z-10 h-full px-4 md:px-8 flex items-end">
           <div className="w-full max-w-6xl pb-8">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg">
@@ -184,7 +229,80 @@ export default function Home() {
             <p className="mt-4 md:mt-6 text-md md:text-lg text-amber-300">
               인스타는 너무 평범해서 홈페이지 직접 만듦
             </p>
-            {/* 사운드 토글은 하단 앵커 바로 이동 */}
+          </div>
+        </div>
+
+        {/* 좌측 네비바 (슬라이드 인) */}
+        <div
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 z-30"
+          style={{
+            opacity: revealProgress,
+            transform: `translateY(-50%) translateX(${(-20 * (1 - revealProgress)).toFixed(2)}px)`
+          }}
+        >
+          <GlassCard className="pointer-events-auto p-3 md:p-4 rounded-2xl">
+            <nav className="flex flex-col gap-2">
+              <Link to="/blog" className="rounded-xl px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/15">블로그</Link>
+              <Link to="/gallery" className="rounded-xl px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/15">갤러리</Link>
+              <Link to="/projects" className="rounded-xl px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/15">프로젝트</Link>
+            </nav>
+          </GlassCard>
+        </div>
+        {/* 하단 우측 플로팅 사운드 토글 (히어로 섹션 내부, 영상 우하단 가장자리) */}
+        <div className="pointer-events-none absolute bottom-3 right-3 z-30">
+          <button
+            type="button"
+            onClick={() => {
+              const next = !isMuted
+              setIsMuted(next)
+              const v = videoRef.current
+              if (v) {
+                v.muted = next
+                if (next) return
+                try { v.removeAttribute('muted') } catch {}
+                v.muted = false
+                v.volume = 1
+                try { v.pause() } catch {}
+                setTimeout(() => { v.play().catch(() => {}) }, 0)
+              }
+            }}
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/35 hover:bg-black/45 transition backdrop-blur-md px-3 py-2 shadow-glass"
+          >
+            {isMuted ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
+                <path d="M16 8l4 8" stroke="currentColor" strokeWidth="2"/>
+                <path d="M20 8l-4 8" stroke="currentColor" strokeWidth="2"/>
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
+                <path d="M18.5 8.5a6 6 0 010 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M16.5 10.5a3 3 0 010 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            )}
+            <span className="opacity-90 text-sm">{isMuted ? '음소거 해제' : '음소거'}</span>
+          </button>
+        </div>
+
+        {/* 하단 가장자리 글래스 카드 등장 */}
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex justify-center px-4"
+          style={{
+            opacity: revealProgress,
+            transform: `translateY(${(20 * (1 - revealProgress)).toFixed(2)}px)`
+          }}
+        >
+          <div className="w-full max-w-4xl grid grid-cols-3 gap-3">
+            <GlassCard className="pointer-events-auto p-3 md:p-4 text-center">
+              <Link to="/blog" className="block">블로그</Link>
+            </GlassCard>
+            <GlassCard className="pointer-events-auto p-3 md:p-4 text-center">
+              <Link to="/gallery" className="block">갤러리</Link>
+            </GlassCard>
+            <GlassCard className="pointer-events-auto p-3 md:p-4 text-center">
+              <Link to="/projects" className="block">프로젝트</Link>
+            </GlassCard>
           </div>
         </div>
       </section>
@@ -237,42 +355,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 전경 앵커: 하단 우측 플로팅 사운드 토글 버튼 */}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-30">
-        <button
-          type="button"
-          onClick={() => {
-            const next = !isMuted
-            setIsMuted(next)
-            const v = videoRef.current
-            if (v) {
-              v.muted = next
-              if (next) return
-              try { v.removeAttribute('muted') } catch {}
-              v.muted = false
-              v.volume = 1
-              try { v.pause() } catch {}
-              setTimeout(() => { v.play().catch(() => {}) }, 0)
-            }
-          }}
-          className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/35 hover:bg-black/45 transition backdrop-blur-md px-3 py-2 shadow-glass"
-        >
-          {isMuted ? (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-              <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
-              <path d="M16 8l4 8" stroke="currentColor" strokeWidth="2"/>
-              <path d="M20 8l-4 8" stroke="currentColor" strokeWidth="2"/>
-            </svg>
-          ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-              <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
-              <path d="M18.5 8.5a6 6 0 010 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              <path d="M16.5 10.5a3 3 0 010 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          )}
-          <span className="opacity-90 text-sm">{isMuted ? '음소거 해제' : '음소거'}</span>
-        </button>
-      </div>
 
       {/* 스티커 오버레이 홈에서는 제거됨 */}
     </main>
