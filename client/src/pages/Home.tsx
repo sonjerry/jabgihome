@@ -18,6 +18,7 @@ export default function Home() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [revealProgress, setRevealProgress] = useState(0) // 0~1: 네비/카드 등장, 비디오 리레이아웃
+  const [isInitialLoad, setIsInitialLoad] = useState(true) // 초기 로딩 상태
   const revealTargetRef = useRef(0)
   const rafRevealRef = useRef(0)
 
@@ -62,11 +63,16 @@ export default function Home() {
 
     const onLoadedMeta = () => { updateProgress() }
     const onProgress = () => { updateProgress() }
-    const onCanPlayThrough = () => { setIsVideoReady(true); setLoadProgress(100) }
+    const onCanPlayThrough = () => { 
+      setIsVideoReady(true); 
+      setLoadProgress(100);
+      setIsInitialLoad(false);
+    }
     const onWaiting = () => { setIsVideoReady(false); setIsVideoPlaying(false) }
     const onPlaying = () => {
       if (loadProgress >= 100) setIsVideoReady(true)
       setIsVideoPlaying(true)
+      setIsInitialLoad(false);
     }
 
     vid.addEventListener('loadedmetadata', onLoadedMeta)
@@ -198,7 +204,7 @@ export default function Home() {
           loop
           // @ts-ignore
           webkit-playsinline="true"
-          preload="metadata"
+          preload="auto"
           className="fixed inset-0 w-full h-full object-cover will-change-transform"
           style={{
             animation: 'heroSlowZoom 28s linear infinite alternate',
@@ -239,7 +245,7 @@ export default function Home() {
         )}
 
         {/* 로딩 오버레이: 중앙 CircularText + 아래 음소거 해제 버튼 */}
-        {!isVideoReady && (
+        {(!isVideoReady || isInitialLoad) && (
           <div
             aria-hidden
             className={`absolute inset-0 z-40 flex flex-col items-center justify-center gap-6 px-4 transition-opacity duration-300`}
