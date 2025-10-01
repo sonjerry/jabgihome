@@ -1,5 +1,6 @@
 // client/src/pages/Home.tsx
 import { useEffect, useRef, useState } from 'react'
+import djVideo from '../assets/media/dj.mp4'
 import { Link } from 'react-router-dom'
 import Stickers from '../components/StickerPeel'
 import GlassCard from '../components/GlassCard'
@@ -8,6 +9,7 @@ export default function Home() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const heroRef = useRef<HTMLDivElement | null>(null)
   const [parallaxY, setParallaxY] = useState(0)
+  const [isMuted, setIsMuted] = useState(true)
 
   // 뷰포트 진입 시 재생, 이탈 시 일시정지
   useEffect(() => {
@@ -59,10 +61,11 @@ export default function Home() {
         {/* 배경 비디오 */}
         <video
           ref={videoRef}
-          src="/media/dj.mp4"
-          muted
+          src={djVideo}
+          muted={isMuted}
           playsInline
           autoPlay
+          loop
           // @ts-ignore
           webkit-playsinline="true"
           preload="metadata"
@@ -85,6 +88,40 @@ export default function Home() {
             <p className="mt-4 md:mt-6 text-md md:text-lg text-amber-300">
               인스타는 너무 평범해서 홈페이지 직접 만듦
             </p>
+            {/* 사운드 토글 버튼 */}
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !isMuted
+                  setIsMuted(next)
+                  const v = videoRef.current
+                  if (v) {
+                    v.muted = next
+                    if (!next) {
+                      v.volume = 1
+                      v.play().catch(() => {})
+                    }
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 hover:bg-white/20 transition backdrop-blur px-3 py-2 text-sm md:text-base"
+              >
+                {isMuted ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                    <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
+                    <path d="M16 8l4 8" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M20 8l-4 8" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                    <path d="M4 9h4l5-4v14l-5-4H4V9z" fill="currentColor"/>
+                    <path d="M18.5 8.5a6 6 0 010 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <path d="M16.5 10.5a3 3 0 010 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                )}
+                <span className="opacity-90">{isMuted ? '음소거 해제' : '음소거'}</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
