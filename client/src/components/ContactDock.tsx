@@ -1,5 +1,6 @@
 // client/src/components/ContactDock.tsx
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import GlassCard from './GlassCard'
 
@@ -28,7 +29,7 @@ export default function ContactDock() {
   // 홈이 아닌 경로에서는 표시하지 않음
   if (pathname !== '/') return null
 
-  return (
+  return createPortal(
     <aside
       className="fixed right-0 bottom-0 z-[11] w-full p-4 md:p-8 pointer-events-none"
       aria-label="Contact dock"
@@ -65,7 +66,8 @@ export default function ContactDock() {
           </GlassCard>
         </div>
       </div>
-    </aside>
+    </aside>,
+    document.body
   )
 }
 

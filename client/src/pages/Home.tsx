@@ -392,7 +392,7 @@ export default function Home() {
                 speed={0.3}
                 enableShadows={true}
                 enableOnHover={false}
-                className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg"
+                className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg break-keep"
               >
                 잡다한 기록 홈페이지
               </GlitchText>
@@ -400,7 +400,7 @@ export default function Home() {
                 speed={0.5}
                 enableShadows={true}
                 enableOnHover={false}
-                className="mt-4 md:mt-6 text-base md:text-lg text-amber-300"
+                className="mt-4 md:mt-6 text-base md:text-lg text-amber-300 break-keep"
               >
                 인스타는 너무 평범해서 홈페이지 직접 만듦
               </GlitchText>
