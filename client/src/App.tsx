@@ -52,6 +52,23 @@ function LegacyProjectsRedirect() {
 export default function App() {
   const location = useLocation()
 
+  // 홈 초기 진입 시에는 사이드바 공간을 예약하지 않다가, 스크롤로 reveal되면 여백을 부여
+  const [homeReveal, setHomeReveal] = useState<number>(() => {
+    if (typeof window === 'undefined') return 1
+    const root = getComputedStyle(document.documentElement).getPropertyValue('--home-reveal')
+    return Number(root || 0) || 0
+  })
+  useEffect(() => {
+    const onReveal = (e: Event) => {
+      try {
+        const detail = (e as CustomEvent<number>).detail
+        if (typeof detail === 'number') setHomeReveal(detail)
+      } catch {}
+    }
+    window.addEventListener('home:reveal', onReveal as any)
+    return () => window.removeEventListener('home:reveal', onReveal as any)
+  }, [])
+
   // ✅ A안: 첫 마운트 시 3D 모델 갤러리 모듈을 사전 프리페치(캐시에 올려둠)
   useEffect(() => {
     import('./pages/ModelGallery').catch(() => {})
@@ -62,8 +79,11 @@ export default function App() {
       {/* Navbar는 포털로 body에 그려지므로 여기선 그냥 사용 */}
       <Navbar />
 
-      {/* 본문: 사이드바 폭만큼 여백 + 보이는 영역만 페인트 */}
-      <div className="md:pl-64" style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 800px' }}>
+      {/* 본문: 홈 초기에는 여백 없이 풀블리드, reveal 후(또는 홈 외 페이지)에는 사이드바 폭만큼 여백 */}
+      <div
+        className={(location.pathname === '/' ? (homeReveal > 0.02 ? 'md:pl-64' : '') : 'md:pl-64')}
+        style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 800px' }}
+      >
         <Suspense fallback={<div className="p-6 text-sm text-white/70">로딩중…</div>}>
           <AnimatePresence mode="wait" initial={false}>
             <Routes location={location} key={location.pathname}>
