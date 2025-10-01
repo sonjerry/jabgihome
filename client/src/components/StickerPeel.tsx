@@ -427,42 +427,69 @@ export default function AutoStickers() {
     return () => ro.disconnect()
   }, [])
 
-  // 랜덤 배치 파라미터
+  // 배치 파라미터 (가장자리 고정 배치) + 모바일 대응
   const margin = 8
-  const minW = 140
-  const maxW = 260
-  const rotMin = -12
-  const rotMax = 12
+  const isMobile = box.w > 0 && box.w <= 640
+  const minW = isMobile ? 110 : 140
+  const maxW = isMobile ? 180 : 260
+  const safeTopHeight = isMobile ? 120 : 80
+  const safeBottomHeight = isMobile ? 280 : 220 // 하단 UI(사운드 버튼 등) 안전 영역 높이
+  const safeLeftWidth = isMobile ? 16 : 420 // 좌측 콘텐츠 폭 근처 회피 (모바일에서는 가장자리만 사용)
 
   const items: StickerItem[] = useMemo(() => {
     if (!box.h || urls.length === 0) return []
 
+    const patternWidths = isMobile
+      ? [150, 130, 170, 120, 160, 140]
+      : [200, 160, 220, 180, 240, 150, 210, 170]
+    const patternRot = isMobile
+      ? [-6, 5, -3, 7, -4, 4]
+      : [-8, 6, -4, 10, -6, 4, 0, 8]
+    const baseSlotSize = isMobile ? 190 : 160
+    const minSlots = isMobile ? 3 : 4
+    const slots = Math.min(urls.length, Math.max(minSlots, Math.floor(box.h / baseSlotSize)))
+    const usableHeight = Math.max(0, box.h - safeBottomHeight - margin)
+    const edgeYOffset = isMobile ? 28 : 40
+
+    const slotYs: number[] = []
+    for (let i = 0; i < slots; i++) {
+      const t = (i + 1) / (slots + 1)
+      const y = clamp(edgeYOffset + t * (usableHeight - edgeYOffset), 0, usableHeight)
+      slotYs.push(y)
+    }
+
     const res: StickerItem[] = []
     urls.forEach((url, i) => {
-      const width = rand(minW, maxW)
-      const leftSide = (i % 2 === 0) === (Math.random() < 0.6)
+      const width = patternWidths[i % patternWidths.length]
+      const rotate = patternRot[i % patternRot.length]
+      const leftSide = isMobile ? (i % 2 === 0) : (i % 2 === 0)
       const x = leftSide ? margin : Math.max(margin, box.w - width - margin)
-      const y = clamp(rand(0, box.h - width), 0, Math.max(0, box.h - Math.min(maxW, box.h)))
-      const rotate = rand(rotMin, rotMax)
-      const peelDirection = leftSide ? 0 : 0 // 필요 시 좌우마다 각도 지정 가능
+      let y = slotYs[i % slotYs.length] - width / 2
+
+      // 상단 안전영역
+      if (y < safeTopHeight) {
+        y = safeTopHeight
+      }
+
+      // 하단 안전영역 침범 방지
+      if (y + width > box.h - safeBottomHeight) {
+        y = Math.max(0, box.h - safeBottomHeight - width - margin)
+      }
+
+      // 좌측 콘텐츠 폭 영역은 가능한 피하기 (데스크톱만 적용)
+      if (!isMobile && leftSide && x < safeLeftWidth) {
+        // 좌측 가장자리에 붙이되, y만 유지
+      }
+
+      const peelDirection = 0
       res.push({ url, width, rotate, x, y, peelDirection })
     })
-
-    // y 간격 벌리기
-    res.sort((a, b) => a.y - b.y)
-    for (let i = 1; i < res.length; i++) {
-      const prev = res[i - 1]
-      const cur = res[i]
-      if (Math.abs(cur.y - prev.y) < 56) {
-        cur.y = clamp(prev.y + 64, 0, Math.max(0, box.h - cur.width))
-      }
-    }
 
     return res
   }, [box.w, box.h, urls])
 
   return (
-    <div ref={ref} className="pointer-events-none absolute inset-0 overflow-visible z-[2000]">
+    <div ref={ref} className="pointer-events-none absolute inset-0 overflow-visible z-[5]">
       {items.map((it, idx) => (
         <StickerPeel
           key={`${it.url}-${idx}`}
@@ -475,7 +502,7 @@ export default function AutoStickers() {
           lightingIntensity={0.12}
           initialPosition={{ x: it.x, y: it.y }}
           peelDirection={it.peelDirection}
-          className="pointer-events-auto z-[2100]"
+          className="pointer-events-auto z-[6]"
         />
       ))}
     </div>
