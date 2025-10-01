@@ -20,14 +20,14 @@ const Projects = lazy(() => import('./pages/Projects'))
 
 const transition = { duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }
 
-function Page({ children }: { children: React.ReactNode }) {
+function Page({ children, disableTransform = false }: { children: React.ReactNode; disableTransform?: boolean }) {
   const [pe, setPe] = useState<'none' | 'auto'>('none')
   return (
     <motion.div
       style={{ pointerEvents: pe, contain: 'content' }}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
+      initial={disableTransform ? { opacity: 0 } : { opacity: 0, y: 10 }}
+      animate={disableTransform ? { opacity: 1 } : { opacity: 1, y: 0 }}
+      exit={disableTransform ? { opacity: 0 } : { opacity: 0, y: -10 }}
       transition={transition}
       onAnimationStart={() => setPe('none')}
       onAnimationComplete={() => setPe('auto')}
@@ -87,8 +87,8 @@ export default function App() {
         <Suspense fallback={<div className="p-6 text-sm text-white/70">로딩중…</div>}>
           <AnimatePresence mode="wait" initial={false}>
             <Routes location={location} key={location.pathname}>
-              {/* 홈 */}
-              <Route path="/" element={<Page><Home /></Page>} />
+              {/* 홈: transform 비활성화(고정 요소가 뷰포트 기준을 유지하도록) */}
+              <Route path="/" element={<Page disableTransform><Home /></Page>} />
 
               {/* 블로그 목록 */}
               <Route path="/blog" element={<Page><Blog /></Page>} />

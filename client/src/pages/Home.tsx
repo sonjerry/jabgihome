@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import djVideo from '../assets/media/dj.mp4'
 import { Link } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
+import BlurText from "../components/BlurText";  
 
 export default function Home() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -11,6 +12,7 @@ export default function Home() {
   const [showMuteButton, setShowMuteButton] = useState(false)
   const [loadProgress, setLoadProgress] = useState(0)
   const [isVideoReady, setIsVideoReady] = useState(false)
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const [revealProgress, setRevealProgress] = useState(0) // 0~1: 네비/카드 등장, 비디오 리레이아웃
   const revealTargetRef = useRef(0)
   const rafRevealRef = useRef(0)
@@ -57,8 +59,11 @@ export default function Home() {
     const onLoadedMeta = () => { updateProgress() }
     const onProgress = () => { updateProgress() }
     const onCanPlayThrough = () => { setIsVideoReady(true); setLoadProgress(100) }
-    const onWaiting = () => { setIsVideoReady(false) }
-    const onPlaying = () => { if (loadProgress >= 100) setIsVideoReady(true) }
+    const onWaiting = () => { setIsVideoReady(false); setIsVideoPlaying(false) }
+    const onPlaying = () => {
+      if (loadProgress >= 100) setIsVideoReady(true)
+      setIsVideoPlaying(true)
+    }
 
     vid.addEventListener('loadedmetadata', onLoadedMeta)
     vid.addEventListener('progress', onProgress)
@@ -254,17 +259,27 @@ export default function Home() {
           />
         </div>
 
-        {/* 히어로 콘텐츠 (제목) - 상단~중앙 심미적 배치 */}
-        <div className="absolute inset-x-0 top-[18vh] md:top-[22vh] z-10 px-4 md:px-8">
-          <div className="mx-auto w-full max-w-5xl text-center">
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg">
-              잡다한 기록 홈페이지
-            </h1>
-            <p className="mt-4 md:mt-6 text-base md:text-lg text-amber-300">
-              인스타는 너무 평범해서 홈페이지 직접 만듦
-            </p>
+        {/* 히어로 콘텐츠 (제목) - 로딩 중 숨김, 재생 시작 후 BlurText로 출현 */}
+        {(isVideoReady && isVideoPlaying) && (
+          <div className="absolute inset-x-0 top-[18vh] md:top-[22vh] z-10 px-4 md:px-8">
+            <div className="mx-auto w-full max-w-5xl text-center">
+              <BlurText
+                text="잡다한 기록 홈페이지"
+                animateBy="letters"
+                className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg"
+                delay={20}
+                direction="top"
+              />
+              <BlurText
+                text="인스타는 너무 평범해서 홈페이지 직접 만듦"
+                animateBy="words"
+                className="mt-4 md:mt-6 text-base md:text-lg text-amber-300"
+                delay={80}
+                direction="bottom"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 중앙 음소거 버튼 (클릭 시 자연스럽게 페이드 아웃) */}
         {showMuteButton && (
@@ -321,32 +336,8 @@ export default function Home() {
           {/* 상단 헤더 제거 → 히어로로 이동 */}
 
           {/* 메인 컨텐츠 그리드 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
-            {/* 좌측 카드: 소개 및 내비게이션 */}
-            <div
-              style={{
-                transform: `translate(${(-24 * (1 - revealProgress)).toFixed(2)}px, ${(8 * (1 - revealProgress)).toFixed(2)}px)`,
-                transition: 'transform 380ms ease'
-              }}
-            >
-            <GlassCard className="p-6 md:p-8 flex flex-col justify-between order-2 lg:order-1 pointer-events-auto">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-semibold text-amber-300">
-                  컨텐츠
-                </h2>
-                <p className="mt-4 text-sm md:text-base text-white/90 leading-relaxed">
-                   
-                </p>
-              </div>
-              <nav className="mt-6 grid grid-cols-3 gap-3 pointer-events-auto">
-                <CTA to="/blog" title="블로그" />
-                <CTA to="/gallery" title="갤러리" />
-                <CTA to="/projects" title="프로젝트" />
-              </nav>
-            </GlassCard>
-            </div>
-
-            {/* 우측 카드: 연락처 정보 */}
+          <div className="grid grid-cols-1 gap-4 w-full">
+            {/* 연락처 정보 카드만 유지 */}
             <div
               style={{
                 transform: `translate(${(24 * (1 - revealProgress)).toFixed(2)}px, ${(8 * (1 - revealProgress)).toFixed(2)}px)`,
