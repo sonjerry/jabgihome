@@ -155,6 +155,8 @@ export default function Home() {
           dangerouslySetInnerHTML={{
             __html: `
             @keyframes heroSlowZoom { 0% { transform: scale(1) } 100% { transform: scale(1.03) } }
+            @keyframes homeArrowBlink { 0%, 80%, 100% { opacity: .2 } 40% { opacity: 1 } }
+            @keyframes homeArrowFloat { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(2px) } }
           `,
           }}
         />
@@ -177,6 +179,35 @@ export default function Home() {
             zIndex: 0 as any
           }}
         />
+
+        {/* 스크롤 힌트: 하단 중앙 글라스 화살표 3개 (blink) */}
+        <div
+          className="absolute inset-x-0 bottom-[12vh] z-20 flex justify-center pointer-events-none"
+          style={{
+            opacity: Math.max(0, 1 - revealProgress * 1.2),
+            transition: 'opacity 300ms ease'
+          }}
+        >
+          <div className="pointer-events-auto rounded-2xl border border-white/20 bg-white/10 backdrop-blur px-2.5 py-2 shadow-glass">
+            <div className="flex flex-col items-center gap-1">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                   style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '0ms' }}
+                   aria-hidden>
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                   style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '150ms' }}
+                   aria-hidden>
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                   style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '300ms' }}
+                   aria-hidden>
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          </div>
+        </div>
 
         {/* 로딩 바 (비디오 중앙, 준비 완료 시 페이드 아웃) */}
         <div
