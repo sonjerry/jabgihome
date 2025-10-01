@@ -37,7 +37,7 @@ export default function Home() {
           {/* 상단 헤더 및 소개 섹션 */}
           <header className="flex flex-col md:flex-row md:items-end md:justify-between mb-6 md:mb-10">
             <div className="text-left md:text-left mb-4 md:mb-0">
-              <h1 className="text-4xl md:text-4xl font-extrabold tracking-tight leading-tight drop-shadow-lg">
+              <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg">
                 잡다한 기록 홈페이지
               </h1>
               <p className="mt-6 text-md md:text-lg text-amber-300">
@@ -52,7 +52,7 @@ export default function Home() {
             <GlassCard className="p-6 md:p-8 flex flex-col justify-between order-2 lg:order-1 pointer-events-auto">
               <div>
                 <h2 className="text-2xl md:text-3xl font-semibold text-amber-300">
-                  컨텐츠츠
+                  컨텐츠
                 </h2>
                 <p className="mt-4 text-sm md:text-base text-white/90 leading-relaxed">
                    
