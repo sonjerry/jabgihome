@@ -20,6 +20,7 @@ export default function Home() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [overlaysVisible, setOverlaysVisible] = useState(false) // 모바일: 힌트 클릭 시 표시
+  const [videoMuteOverride, setVideoMuteOverride] = useState<null | 'forceUnmute'>(null) // 음악 자동 음소거 무시
   const [revealProgress, setRevealProgress] = useState(0) // 0~1: 네비/카드 등장, 비디오 리레이아웃
   const [isInitialLoad, setIsInitialLoad] = useState(true) // 초기 로딩 상태
   const revealTargetRef = useRef(0)
@@ -121,14 +122,24 @@ export default function Home() {
         const isPlaying = (e as CustomEvent<boolean>).detail
         const v = videoRef.current
         if (v) {
-          v.muted = isPlaying
-          setIsMuted(isPlaying)
+          if (isPlaying) {
+            if (videoMuteOverride !== 'forceUnmute') {
+              v.muted = true
+              setIsMuted(true)
+            }
+          } else {
+            // 음악이 멈춘 경우, 사용자가 강제 해제했었다면 그 상태 유지
+            if (videoMuteOverride === 'forceUnmute') {
+              v.muted = false
+              setIsMuted(false)
+            }
+          }
         }
       } catch {}
     }
     window.addEventListener('music:playing', onMusicPlaying as any)
     return () => window.removeEventListener('music:playing', onMusicPlaying as any)
-  }, [])
+  }, [videoMuteOverride])
 
   // iOS 밴딩 효과 방지 및 스크롤 제어
   useEffect(() => {
@@ -166,8 +177,11 @@ export default function Home() {
 
   // 패럴랙스 효과 제거 - 영상은 고정
 
-  // 스크롤/영상 종료에 따른 등장 애니메이션 트리거 + 부드러운 보간
+  // 스크롤/영상 종료에 따른 등장 애니메이션 트리거 + 부드러운 보간 (모바일은 스크롤 기반 리빌 비활성화)
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
+      return
+    }
     const onScroll = () => {
       const y = window.scrollY
       revealTargetRef.current = y > 40 ? 1 : 0
@@ -269,18 +283,26 @@ export default function Home() {
           }}
         />
 
-        {/* 스크롤 힌트: 화면 중앙 (음소거 버튼 표시 중에는 숨김) */}
-        {showHint && hasUnmuted && (
+        {/* 스크롤 힌트: 모바일에서는 스크롤 영향 없이 고정 표시 */}
+        {hasUnmuted && (
           <div
             className="absolute inset-x-0 bottom-[20vh] z-20 flex items-center justify-center"
             style={{
-              opacity: Math.max(0, 1 - revealProgress * 1.2),
+              opacity: 1,
               transition: 'opacity 300ms ease'
             }}
           >
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); setOverlaysVisible(true) }}
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                setOverlaysVisible(true);
+                // 네비바/컨택트 도크 즉시 표시되도록 reveal=1 브로드캐스트
+                try {
+                  document.documentElement.style.setProperty('--home-reveal', '1')
+                  window.dispatchEvent(new CustomEvent('home:reveal', { detail: 1 }))
+                } catch {}
+              }}
               className="pointer-events-auto rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass"
             >
               <div className="flex items-center gap-3">
@@ -316,7 +338,7 @@ export default function Home() {
               spinDuration={20}
               className="text-white/95"
             />
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+            <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
               <button
                 type="button"
                 onClick={(e) => {
@@ -324,6 +346,7 @@ export default function Home() {
                   const next = false
                   setIsMuted(next)
                   setHasUnmuted(true)
+                  setVideoMuteOverride('forceUnmute')
                   const v = videoRef.current
                   if (v) {
                     v.muted = next
@@ -345,13 +368,15 @@ export default function Home() {
         {/* 로딩 후에도 클릭 전까지 하단 음소거 버튼 유지 */}
         {isVideoReady && !hasUnmuted && (
           <div className="pointer-events-none absolute inset-0 z-30">
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+            <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation()
                   const next = false
                   setIsMuted(next)
                   setHasUnmuted(true)
+                  setVideoMuteOverride('forceUnmute')
                   const v = videoRef.current
                   if (v) {
                     v.muted = next
