@@ -1,5 +1,6 @@
 import React from 'react'
 import { createPortal } from 'react-dom'
+import djVideo from '../assets/media/dj.mp4'
 
 type Props = {
   open: boolean
@@ -84,7 +85,7 @@ export default function FullscreenVideoModal({ open, onClose, src }: Props) {
 
         {/* 비디오 (예시) */}
         <video
-          src={src || '/media/dj.mp4'}
+          src={src || djVideo}
           autoPlay
           controls
           playsInline

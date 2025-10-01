@@ -295,7 +295,7 @@ export default function Blog() {
                   <motion.div
                     role="dialog"
                     aria-modal="true"
-                    className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-[#0b0b0b]/95 border-t border-white/10"
+                    className="fixed inset-x-0 bottom-0 z-[60] rounded-t-2xl bg-[#0b0b0b]/95 border-t border-white/10"
                     initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                     transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
                   >
