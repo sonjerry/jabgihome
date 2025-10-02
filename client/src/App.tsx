@@ -19,18 +19,25 @@ const Editor = lazy(() => import('./pages/Editor'))
 const Projects = lazy(() => import('./pages/Projects'))
 
 
-const transition = { duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }
+const transition = { duration: 0.15, ease: [0.22, 0.61, 0.36, 1] } // 애니메이션 시간 단축
 
 function Page({ children, disableTransform = false }: { children: React.ReactNode; disableTransform?: boolean }) {
-  const [pe, setPe] = useState<'none' | 'auto'>('none')
+  const [pe, setPe] = useState<'auto'>('auto') // 기본값을 auto로 변경
+  const location = useLocation()
+  
+  // 라우트 변경 시 포인터 이벤트 즉시 활성화
+  useEffect(() => {
+    setPe('auto')
+  }, [location.pathname])
+  
   return (
     <motion.div
       style={{ pointerEvents: pe, contain: 'content' }}
-      initial={disableTransform ? { opacity: 0 } : { opacity: 0, y: 10 }}
+      initial={disableTransform ? { opacity: 0 } : { opacity: 0, y: 5 }} // y 값 감소
       animate={disableTransform ? { opacity: 1 } : { opacity: 1, y: 0 }}
-      exit={disableTransform ? { opacity: 0 } : { opacity: 0, y: -10 }}
+      exit={disableTransform ? { opacity: 0 } : { opacity: 0, y: -5 }} // y 값 감소
       transition={transition}
-      onAnimationStart={() => setPe('none')}
+      onAnimationStart={() => setPe('auto')} // 애니메이션 시작 시에도 auto 유지
       onAnimationComplete={() => setPe('auto')}
       className="min-h-screen"
     >
@@ -99,7 +106,7 @@ export default function App() {
         style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 800px' }}
       >
         <Suspense fallback={<div className="p-6 text-sm text-white/70">로딩중…</div>}>
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence mode="popLayout" initial={false}>
             <Routes location={location} key={location.pathname}>
               {/* 홈: transform 비활성화(고정 요소가 뷰포트 기준을 유지하도록) */}
               <Route path="/" element={<Page disableTransform><Home /></Page>} />

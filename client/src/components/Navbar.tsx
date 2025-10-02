@@ -156,9 +156,29 @@ function SidebarContent({
   groupOpen: Record<string, boolean>
   setGroupOpen: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
 }) {
+  const [isNavigating, setIsNavigating] = useState(false)
+  
+  const handleNavigation = (callback: () => void) => {
+    if (isNavigating) return // 이미 네비게이션 중이면 무시
+    setIsNavigating(true)
+    callback()
+    // 짧은 시간 후 네비게이션 상태 해제
+    setTimeout(() => setIsNavigating(false), 300)
+  }
+  
   return (
     <div className="flex h-full flex-col">
-      <Link to="/" className="px-3 md:px-5 py-4 border-b border-white/10 flex items-center">
+      <Link 
+        to="/" 
+        className="px-3 md:px-5 py-4 border-b border-white/10 flex items-center"
+        onClick={(e) => {
+          if (isNavigating) {
+            e.preventDefault()
+            return
+          }
+          handleNavigation(() => {})
+        }}
+      >
         <span className="font-bold text-amber-400 text-lg md:text-xl">
           잡기홈
         </span>
@@ -167,11 +187,24 @@ function SidebarContent({
         {navItems.map(item => {
           if (!isGroup(item)) {
             return (
-              <NavLink key={item.path} to={item.path} end={item.path === '/'} className="block">
+              <NavLink 
+                key={item.path} 
+                to={item.path} 
+                end={item.path === '/'} 
+                className="block"
+                onClick={(e) => {
+                  if (isNavigating) {
+                    e.preventDefault()
+                    return
+                  }
+                  handleNavigation(() => {})
+                }}
+              >
                 {({ isActive }) => (
                   <div className={[
-                    'relative select-none px-3 md:px-5 py-2 md:py-2.5 before:absolute before:inset-y-1 before:left-0 before:w-[3px]',
+                    'relative select-none px-3 md:px-5 py-2 md:py-2.5 before:absolute before:inset-y-1 before:left-0 before:w-[3px] transition-colors duration-150',
                     isActive ? 'bg-white/15 text-white font-semibold before:bg-white/70' : 'text-cream/90 hover:bg-white/10 hover:text-white hover:before:bg-white/50',
+                    isNavigating ? 'pointer-events-none opacity-70' : ''
                   ].join(' ')}>{item.label}</div>
                 )}
               </NavLink>
@@ -200,11 +233,22 @@ function SidebarContent({
                 <ul id={`submenu-${item.label}`} className="pl-4 md:pl-6 py-1 space-y-[2px]">
                   {item.children.map(child => (
                     <li key={child.path}>
-                      <NavLink to={child.path} className="block">
+                      <NavLink 
+                        to={child.path} 
+                        className="block"
+                        onClick={(e) => {
+                          if (isNavigating) {
+                            e.preventDefault()
+                            return
+                          }
+                          handleNavigation(() => {})
+                        }}
+                      >
                         {({ isActive }) => (
                           <div className={[
-                            'relative select-none px-3 md:px-5 py-2 md:py-2.5 text-sm md:text-[15px] before:absolute before:inset-y-1 before:left-0 before:w-[3px]',
+                            'relative select-none px-3 md:px-5 py-2 md:py-2.5 text-sm md:text-[15px] before:absolute before:inset-y-1 before:left-0 before:w-[3px] transition-colors duration-150',
                             isActive ? 'bg-white/15 text-white font-semibold before:bg-white/70' : 'text-cream/90 hover:bg-white/10 hover:text-white hover:before:bg-white/50',
+                            isNavigating ? 'pointer-events-none opacity-70' : ''
                           ].join(' ')}>{child.label}</div>
                         )}
                       </NavLink>

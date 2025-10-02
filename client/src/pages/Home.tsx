@@ -287,6 +287,9 @@ export default function Home() {
           ['--home-reveal' as any]: String(revealProgress),
           overscrollBehavior: 'none',
           background: 'transparent',
+          // iOS Safari 상태바 영역까지 확장
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
         {/* 스타일: 슬로우 줌 키프레임 */}

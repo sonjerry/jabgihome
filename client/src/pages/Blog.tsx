@@ -239,7 +239,7 @@ export default function Blog() {
           {!inProgressMode && (
             <aside className="lg:col-span-1">
               <div className="lg:sticky lg:top-20">
-                <div className="rounded-2xl bg-white/5 border border-white/10 shadow-glass p-4">
+                <GlassCard>
                   <h3 className="text-lg md:text-xl font-semibold mb-3">달력</h3>
                   <Calendar
                     selectRange={false}
@@ -267,7 +267,7 @@ export default function Blog() {
                       선택: <button className="underline" onClick={() => setActiveDate(null)}>{formatDateYMD(activeDate)} ✕</button>
                     </div>
                   )}
-                </div>
+                </GlassCard>
               </div>
             </aside>
           )}
@@ -278,7 +278,7 @@ export default function Blog() {
           <>
             <button
               onClick={() => setSheetOpen(true)}
-              className="sm:hidden fixed bottom-4 right-4 z-50 rounded-full px-4 py-3 bg-white/20 backdrop-blur border border-white/30 shadow"
+              className="sm:hidden fixed bottom-4 right-4 z-50 rounded-full px-4 py-3 bg-white/10 backdrop-blur-xl border border-white/20 shadow-glass"
               aria-label="필터 열기"
             >
               필터
@@ -296,7 +296,7 @@ export default function Blog() {
                   <motion.div
                     role="dialog"
                     aria-modal="true"
-                    className="fixed inset-x-0 bottom-0 z-[60] rounded-t-2xl bg-[#0b0b0b]/95 border-t border-white/10"
+                    className="fixed inset-x-0 bottom-0 z-[60] rounded-t-2xl bg-white/10 backdrop-blur-xl border-t border-white/20 shadow-glass"
                     initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                     transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
                   >

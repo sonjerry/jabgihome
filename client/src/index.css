@@ -24,8 +24,17 @@
     'Noto Sans KR', 'Apple SD Gothic Neo', 'Helvetica Neue', Arial, 'Malgun Gothic', '맑은 고딕', sans-serif;
 }
 
-/* 루트 높이 */
-html, body, #root { min-height: 100%; }
+/* 루트 높이 및 배경 */
+html, body, #root { 
+  min-height: 100%; 
+}
+
+html {
+  background: #1a1a1a; /* iOS Safari 주소창/하단바 영역 색상 */
+  /* iOS Safari safe area 지원 */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
 
 /* 모바일 애니메이션 */
 @keyframes slideInFromLeft {
@@ -91,7 +100,7 @@ html, body, #root { min-height: 100%; }
 /* 전역 배경/타이포 */
 body {
   @apply text-cream font-rokaf;
-  background: #000000; /* 단순한 검은색 배경 */
+  background: #1a1a1a; /* Silk 배경과 유사한 어두운 회색 */
   isolation: isolate;
 }
 
