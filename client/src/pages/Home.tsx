@@ -19,7 +19,6 @@ export default function Home() {
   const [isVideoReady, setIsVideoReady] = useState(false)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const [showHint, setShowHint] = useState(false)
-  // const [overlaysVisible, setOverlaysVisible] = useState(false) // 더 이상 사용하지 않음 - 스크롤 기반으로 변경
   const [videoMuteOverride, setVideoMuteOverride] = useState<null | 'forceUnmute'>(null) // 음악 자동 음소거 무시
   const videoMuteOverrideRef = useRef<null | 'forceUnmute'>(null)
   const justUnmutedAtRef = useRef<number>(0)
@@ -117,6 +116,7 @@ export default function Home() {
     }
     setShowHint(false)
   }, [isVideoReady])
+
   // 음소거 해제 시 바로 카드가 등장하도록 리빌 트리거
   useEffect(() => {
     if (hasUnmuted) {
@@ -167,31 +167,6 @@ export default function Home() {
     ;(html.style as any).WebkitOverflowScrolling = 'touch'
     ;(body.style as any).WebkitOverflowScrolling = 'touch'
     
-    // iOS Safari 주소창 확장 시 레이아웃 고정을 위한 함수
-    let handleResize: (() => void) | null = null
-    
-    // iOS Safari 스크롤 최적화 (영상 고정 + 스크롤 허용)
-    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-      // iOS에서 주소창 숨김/표시 시 레이아웃 변경 방지
-      const viewport = document.querySelector('meta[name=viewport]')
-      if (viewport) {
-        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no')
-      }
-      
-      // iOS Safari 주소창 확장 시 레이아웃 고정
-      handleResize = () => {
-        const vh = window.innerHeight * 0.01
-        document.documentElement.style.setProperty('--vh', `${vh}px`)
-      }
-      handleResize()
-      window.addEventListener('resize', handleResize)
-      window.addEventListener('orientationchange', handleResize)
-      
-      // iOS에서 스크롤은 허용하되 영상 고정을 위한 설정
-      html.style.height = '100%'
-      body.style.height = '100%'
-      // position: fixed는 제거하여 스크롤 허용
-    }
     
     if (isInitialLoad) {
       const prevHtml = html.style.overflow
@@ -206,13 +181,6 @@ export default function Home() {
         ;(html.style as any).WebkitOverflowScrolling = ''
         ;(body.style as any).WebkitOverflowScrolling = ''
         
-        // iOS 설정 복원
-        if (/iPad|iPhone|iPod/.test(navigator.userAgent) && handleResize) {
-          html.style.height = ''
-          body.style.height = ''
-          window.removeEventListener('resize', handleResize)
-          window.removeEventListener('orientationchange', handleResize)
-        }
       }
     }
     
@@ -222,13 +190,6 @@ export default function Home() {
       ;(html.style as any).WebkitOverflowScrolling = ''
       ;(body.style as any).WebkitOverflowScrolling = ''
       
-      // iOS 설정 복원
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent) && handleResize) {
-        html.style.height = ''
-        body.style.height = ''
-        window.removeEventListener('resize', handleResize)
-        window.removeEventListener('orientationchange', handleResize)
-      }
     }
   }, [isInitialLoad])
 
@@ -326,26 +287,6 @@ export default function Home() {
           ['--home-reveal' as any]: String(revealProgress),
           overscrollBehavior: 'none',
           background: 'transparent',
-          // iOS Safari 완전 고정을 위한 추가 스타일
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: 'calc(var(--vh, 1vh) * 100)',
-          minWidth: '100vw',
-          minHeight: 'calc(var(--vh, 1vh) * 100)',
-          maxHeight: 'calc(var(--vh, 1vh) * 100)',
-          zIndex: -1,
-          // iOS 하드웨어 가속 및 고정 최적화
-          transform: 'translate3d(0, 0, 0)',
-          backfaceVisibility: 'hidden',
-          perspective: 1000,
-          // iOS 터치 이벤트 최적화
-          touchAction: 'manipulation',
-          WebkitTransform: 'translate3d(0, 0, 0)',
-          WebkitBackfaceVisibility: 'hidden',
-          // iOS Safari 주소창 확장 방지
-          overflow: 'hidden'
         }}
       >
         {/* 스타일: 슬로우 줌 키프레임 */}
@@ -394,29 +335,10 @@ export default function Home() {
             animation: 'heroSlowZoom 28s linear infinite alternate',
             filter: 'brightness(0.9) saturate(0.9) contrast(1.05)',
             zIndex: 0 as any,
-            // iOS Safari 완전 고정을 위한 추가 스타일
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: 'calc(var(--vh, 1vh) * 100)',
-            minWidth: '100vw',
-            minHeight: 'calc(var(--vh, 1vh) * 100)',
-            maxWidth: '100vw',
-            maxHeight: 'calc(var(--vh, 1vh) * 100)',
-            // iOS에서 비디오가 스크롤되는 것을 방지
-            transform: 'translate3d(0, 0, 0)',
-            backfaceVisibility: 'hidden',
-            perspective: 1000,
-            // iOS 터치 스크롤 방지
-            touchAction: 'none',
-            pointerEvents: 'none',
-            // iOS Safari 주소창 확장 시에도 비디오가 완전히 덮도록
-            objectPosition: 'center center'
           }}
         />
 
-        {/* 스크롤 힌트: 모바일에서도 스크롤 기반으로 동작 */}
+        {/* 스크롤 힌트: 클릭 기능 없이 시각적 표시만 */}
         {hasUnmuted && revealProgress < 0.1 && (
           <div
             className="absolute inset-x-0 bottom-[20vh] z-20 flex items-center justify-center"
@@ -496,49 +418,6 @@ export default function Home() {
         )}
 
 
-        {/* 글래스모피즘 강화를 위한 다층 오버레이 */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* 컬러 글로우 레이어: 글래스모피즘 대비 강화 */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'radial-gradient(1000px 700px at 10% 5%, rgba(99,102,241,0.25), rgba(0,0,0,0) 65%),\
-radial-gradient(900px 600px at 90% 10%, rgba(236,72,153,0.20), rgba(0,0,0,0) 60%),\
-radial-gradient(800px 500px at 50% 20%, rgba(139,92,246,0.15), rgba(0,0,0,0) 70%),\
-radial-gradient(700px 400px at 30% 90%, rgba(245,158,11,0.18), rgba(0,0,0,0) 65%),\
-radial-gradient(600px 400px at 80% 95%, rgba(6,182,212,0.12), rgba(0,0,0,0) 60%)',
-              filter: 'blur(20px)',
-              mixBlendMode: 'screen',
-            }}
-          />
-          {/* 부드러운 그라데이션 오버레이 */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/60" />
-          {/* 글래스모피즘 강화를 위한 소프트 라이트 */}
-          <div className="absolute inset-0 mix-blend-soft-light bg-gradient-to-br from-purple-300/15 via-pink-300/10 to-cyan-300/15" />
-          {/* 비네트 효과 */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,0.4) 100%)',
-              mixBlendMode: 'multiply',
-            }}
-          />
-          {/* 미세 그레인 텍스처 */}
-          <div
-            aria-hidden
-            className="absolute inset-0 opacity-[0.12]"
-            style={{
-              backgroundImage:
-                'radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), radial-gradient(rgba(0,0,0,0.04) 1px, transparent 1px)',
-              backgroundPosition: '0 0, 2px 2px',
-              backgroundSize: '4px 4px, 4px 4px',
-              backgroundRepeat: 'repeat',
-              mixBlendMode: 'overlay',
-              pointerEvents: 'none',
-            }}
-          />
-        </div>
 
         {/* 히어로 콘텐츠 (제목) - 로딩 중 숨김, 재생 시작 후 BlurText로 출현 */}
         {(isVideoReady && isVideoPlaying) && (
