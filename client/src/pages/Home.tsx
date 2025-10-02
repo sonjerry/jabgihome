@@ -175,7 +175,7 @@ export default function Home() {
                   tabIndex={0}
                   onClick={handleUnmute}
                   onMouseDown={handleUnmute}
-                  className="mt-6 pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 hover:bg-white/15 transition-all duration-200 backdrop-blur-xl px-6 py-3 shadow-glass transform hover:scale-105 active:scale-95"
+                  className="mt-16 md:mt-24 lg:mt-28 pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 hover:bg-white/15 transition-all duration-200 backdrop-blur-xl px-6 py-3 shadow-glass transform hover:scale-105 active:scale-95"
                   style={{ animation: 'bounceIn 0.8s ease-out 0.3s both' }}
                 >
                   <span className="opacity-90 text-sm md:text-base font-medium whitespace-nowrap">음소거 해제</span>
