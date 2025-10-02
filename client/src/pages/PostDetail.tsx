@@ -1,5 +1,5 @@
 // client/src/pages/PostDetail.tsx
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
 import type { Post } from '../types'
@@ -10,6 +10,7 @@ import remarkGfm from 'remark-gfm'
 import type { Components } from 'react-markdown'
 import clsx from 'clsx'
 import { useAuth } from '../state/auth'
+import { StickerPeel } from '../components/StickerPeel'
 
 /* ───── 유틸 ───── */
 function formatFullDate(s: string) {
@@ -218,8 +219,9 @@ export default function PostDetail() {
         )}
       </div>
 
-      <GlassCard>
-        <article className="p-5 md:p-8">
+      <div className="relative">
+        <GlassCard>
+          <article className="p-5 md:p-8">
           {/* 헤더 */}
           <header className="mb-6">
             <h1 className="text-3xl md:text-4xl font-bold leading-tight">{title}</h1>
@@ -256,8 +258,10 @@ export default function PostDetail() {
               {post.content}
             </ReactMarkdown>
           </div>
-        </article>
-      </GlassCard>
+          </article>
+        </GlassCard>
+        <SideStickers />
+      </div>
 
       {/* 댓글 */}
       <section className="mt-12 space-y-6">
@@ -265,4 +269,105 @@ export default function PostDetail() {
       </section>
     </div>
   )
+}
+
+/* ───── 사이드 스티커 오버레이 ───── */
+function SideStickers() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [box, setBox] = useState({ w: 0, h: 0 })
+
+  // 스티커 png 자동 수집
+  const urls = useMemo(() => {
+    const mods = import.meta.glob('../assets/sticker/*.png', {
+      eager: true,
+      query: '?url',
+      import: 'default',
+    })
+    return Object.values(mods) as string[]
+  }, [])
+
+  // 컨테이너 사이즈 추적
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => {
+      const r = entry.contentRect
+      setBox({ w: r.width, h: r.height })
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  type Item = { url: string; width: number; rotate: number; x: number; y: number; peelDirection: number }
+
+  const items: Item[] = useMemo(() => {
+    if (!box.h || urls.length === 0) return []
+
+    const isMobile = box.w > 0 && box.w <= 640
+    const countBase = Math.max(2, Math.floor(box.h / (isMobile ? 340 : 280)))
+    const count = Math.min(isMobile ? 3 : 6, countBase)
+
+    const pick = (arr: string[], n: number) => {
+      const tmp = [...arr]
+      for (let i = tmp.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[tmp[i], tmp[j]] = [tmp[j], tmp[i]]
+      }
+      return tmp.slice(0, n)
+    }
+
+    const chosen = pick(urls, count)
+    const topPad = isMobile ? 12 : 16
+    const bottomPad = isMobile ? 12 : 16
+    const usableH = Math.max(0, box.h - topPad - bottomPad)
+
+    const results: Item[] = []
+    for (let i = 0; i < chosen.length; i++) {
+      const url = chosen[i]
+      const width = isMobile ? rand(90, 130) : rand(130, 200)
+      const rotate = rand(-8, 8)
+      const t = (i + 1) / (chosen.length + 1)
+      const jitter = rand(-24, 24)
+      let y = topPad + Math.round(t * usableH) + jitter - Math.round(width / 2)
+      y = clamp(y, topPad, Math.max(topPad, box.h - bottomPad - width))
+
+      const leftSide = i % 2 === 0
+      const peelDirection = 0
+      const leftX = -Math.round(width * (isMobile ? 0.35 : 0.42))
+      const rightX = Math.round(box.w - width * (isMobile ? 0.65 : 0.58))
+      const x = leftSide ? leftX : rightX
+
+      results.push({ url, width, rotate, x, y, peelDirection })
+    }
+    return results
+  }, [box.w, box.h, urls])
+
+  if (items.length === 0) return null
+
+  return (
+    <div ref={ref} className="pointer-events-none absolute inset-0 overflow-visible z-[5]">
+      {items.map((it, idx) => (
+        <StickerPeel
+          key={`${it.url}-${idx}`}
+          imageSrc={it.url}
+          width={it.width}
+          rotate={it.rotate}
+          peelBackHoverPct={18}
+          peelBackActivePct={36}
+          shadowIntensity={0.6}
+          lightingIntensity={0.12}
+          initialPosition={{ x: it.x, y: it.y }}
+          peelDirection={it.peelDirection}
+          className="pointer-events-auto"
+        />
+      ))}
+    </div>
+  )
+}
+
+function rand(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+function clamp(n: number, min: number, max: number) {
+  return Math.min(Math.max(n, min), max)
 }

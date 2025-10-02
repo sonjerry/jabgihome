@@ -9,7 +9,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import '../styles/calendar.css'
-import Stickers from '../components/StickerPeel'
 
 /* ───────────── 상수(프로젝트 태그/이름 매핑) ───────────── */
 const PROJECT_TAGS = ['p1', 'p2', 'p3'] as const
@@ -376,10 +375,6 @@ export default function Blog() {
           </>
         )}
       </section>
-      {/* 스티커: 화면 전체 오버레이 (블로그 전용) */}
-      <div className="fixed inset-0 z-[30] pointer-events-none origin-top-left">
-        <Stickers />
-      </div>
     </main>
   )
 }
