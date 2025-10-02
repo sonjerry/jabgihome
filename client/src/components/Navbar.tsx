@@ -46,12 +46,18 @@ export default function Navbar() {
     const onReveal = (e: Event) => {
       try {
         const detail = (e as CustomEvent<number>).detail
-        if (typeof detail === 'number') setReveal(detail)
+        if (typeof detail === 'number') {
+          setReveal(detail)
+          // 홈에서 reveal이 0이 되면 모바일 드로어도 닫기
+          if (pathname === '/' && detail === 0) {
+            setMobileOpen(false)
+          }
+        }
       } catch {}
     }
     window.addEventListener('home:reveal', onReveal as any)
     return () => window.removeEventListener('home:reveal', onReveal as any)
-  }, [])
+  }, [pathname])
 
   return (
     <>
@@ -73,11 +79,16 @@ export default function Navbar() {
         )
       })()}
 
-      {/* 모바일 버튼 - 홈에서는 숨김 */}
-      {pathname !== '/' && (
+      {/* 모바일 버튼 - 홈에서는 reveal > 0일 때만 표시 */}
+      {(pathname !== '/' || (pathname === '/' && reveal > 0)) && (
         <button
           type="button" aria-label="Open sidebar" onClick={() => setMobileOpen(true)}
-          className="fixed top-3 left-3 z-[101] md:hidden rounded-full border border-white/15 bg-white/10 backdrop-blur px-2.5 py-2"
+          className="fixed top-3 left-3 z-[101] md:hidden rounded-full border border-white/15 bg-white/10 backdrop-blur px-2.5 py-2 transform transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-white/15 hover:border-white/25"
+          style={pathname === '/' ? {
+            opacity: reveal,
+            transform: `translateX(${(-20 * (1 - reveal || 0)).toFixed(2)}px) scale(1)`,
+            transition: 'transform 300ms ease, opacity 300ms ease'
+          } : undefined}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -88,14 +99,41 @@ export default function Navbar() {
       {/* 모바일 드로어 */}
       {mobileOpen && (
         <>
-          <div className="fixed inset-0 z-[101] bg-black/40 md:hidden" onClick={() => setMobileOpen(false)} />
+          <div 
+            className="fixed inset-0 z-[101] bg-black/40 md:hidden" 
+            style={{
+              animation: 'fadeInBackdrop 0.3s ease-out'
+            }}
+            onClick={() => {
+              setMobileOpen(false)
+              // 홈에서는 reveal도 0으로 설정
+              if (pathname === '/') {
+                try {
+                  document.documentElement.style.setProperty('--home-reveal', '0')
+                  window.dispatchEvent(new CustomEvent('home:reveal', { detail: 0 }))
+                } catch {}
+              }
+            }} 
+          />
           <aside
-            className="fixed left-0 top-0 h-screen z-[102] md:hidden glass border-r border-white/10 w-[33vw] min-w-[260px] max-w-[360px]"
+            className="fixed left-0 top-0 h-screen z-[102] md:hidden glass border-r border-white/10 w-[33vw] min-w-[260px] max-w-[360px] animate-slide-in-left"
             role="dialog" aria-modal="true"
+            style={{
+              animation: 'slideInFromLeft 0.3s ease-out'
+            }}
           >
             <button
-              type="button" aria-label="Close sidebar" onClick={() => setMobileOpen(false)}
-              className="absolute right-[-14px] top-1/2 -translate-y-1/2 z-[103] rounded-full border border-white/25 bg-white/20 px-2.5 py-2"
+              type="button" aria-label="Close sidebar" onClick={() => {
+                setMobileOpen(false)
+                // 홈에서는 reveal도 0으로 설정
+                if (pathname === '/') {
+                  try {
+                    document.documentElement.style.setProperty('--home-reveal', '0')
+                    window.dispatchEvent(new CustomEvent('home:reveal', { detail: 0 }))
+                  } catch {}
+                }
+              }}
+              className="absolute right-[-14px] top-1/2 -translate-y-1/2 z-[103] rounded-full border border-white/25 bg-white/20 px-2.5 py-2 transform transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-white/30 hover:border-white/40"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

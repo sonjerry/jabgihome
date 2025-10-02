@@ -272,14 +272,12 @@ export default function Home() {
         background: 'transparent'
       }}
       onClick={(e) => {
-        if (isMobile) {
+        if (isMobile && overlaysVisible) {
           // 영상 영역 클릭 시 오버레이 숨김 및 네비 닫기
-          if (overlaysVisible) {
-            try {
-              document.documentElement.style.setProperty('--home-reveal', '0')
-              window.dispatchEvent(new CustomEvent('home:reveal', { detail: 0 }))
-            } catch {}
-          }
+          try {
+            document.documentElement.style.setProperty('--home-reveal', '0')
+            window.dispatchEvent(new CustomEvent('home:reveal', { detail: 0 }))
+          } catch {}
           setOverlaysVisible(false)
         }
       }}
@@ -302,6 +300,26 @@ export default function Home() {
             @keyframes heroSlowZoom { 0% { transform: scale(1) } 100% { transform: scale(1.03) } }
             @keyframes homeArrowBlink { 0%, 80%, 100% { opacity: .2 } 40% { opacity: 1 } }
             @keyframes homeArrowFloat { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(2px) } }
+            @keyframes hintSlideUp { 
+              0% { 
+                opacity: 0; 
+                transform: translateY(30px) scale(0.9); 
+              } 
+              100% { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+              } 
+            }
+            @keyframes overlayFadeIn {
+              0% { 
+                opacity: 0; 
+                backdrop-filter: blur(0px);
+              }
+              100% { 
+                opacity: 1; 
+                backdrop-filter: blur(20px);
+              }
+            }
           `,
           }}
         />
@@ -330,7 +348,8 @@ export default function Home() {
             className="absolute inset-x-0 bottom-[20vh] z-20 flex items-center justify-center"
             style={{
               opacity: 1,
-              transition: 'opacity 300ms ease'
+              transition: 'opacity 300ms ease, transform 300ms ease',
+              animation: 'hintSlideUp 0.6s ease-out'
             }}
           >
             <button
@@ -344,7 +363,7 @@ export default function Home() {
                   window.dispatchEvent(new CustomEvent('home:reveal', { detail: 1 }))
                 } catch {}
               }}
-              className="pointer-events-auto rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass"
+              className="pointer-events-auto rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass transform transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-white/15 hover:border-white/30"
             >
               <div className="flex items-center gap-3">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
@@ -383,36 +402,33 @@ export default function Home() {
 
         {/* 로딩 후에도 클릭 전까지 하단 음소거 버튼 유지 */}
         {isVideoReady && !hasUnmuted && (
-          <div className="fixed inset-0 z-[100000] pointer-events-auto">
-            <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}>
+          <div 
+            className="fixed inset-0 z-[100000] pointer-events-auto"
+            style={{
+              animation: 'fadeInBackdrop 0.5s ease-out'
+            }}
+          >
+            <div 
+              className="absolute left-1/2 transform -translate-x-1/2" 
+              style={{ 
+                bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)',
+                animation: 'bounceIn 0.8s ease-out 0.3s both'
+              }}
+            >
               <button
                 type="button"
                 role="button"
                 tabIndex={0}
                 onClick={handleUnmute}
                 onMouseDown={handleUnmute}
-                className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/40 hover:bg-black/50 transition backdrop-blur-md px-7 py-3.5 shadow-glass"
+                className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/40 hover:bg-black/50 transition-all duration-200 backdrop-blur-md px-7 py-3.5 shadow-glass transform hover:scale-105 active:scale-95"
               >
-                <span className="opacity-90 text-base font-medium whitespace-nowrap">이곳을 눌러 음소거를 해제해주세요</span>
+                <span className="opacity-90 text-sm md:text-base font-medium whitespace-nowrap">이곳을 눌러 음소거를 해제해주세요</span>
               </button>
             </div>
           </div>
         )}
 
-        {/* 모바일: 네비바가 열린 상태에서 바깥 클릭 시 닫히도록 투명 백드롭 */}
-        {isMobile && overlaysVisible && (
-          <div
-            className="fixed inset-0 z-[99]"
-            onClick={(e) => {
-              e.stopPropagation()
-              try {
-                document.documentElement.style.setProperty('--home-reveal', '0')
-                window.dispatchEvent(new CustomEvent('home:reveal', { detail: 0 }))
-              } catch {}
-              setOverlaysVisible(false)
-            }}
-          />
-        )}
 
         {/* 글래스모피즘 강화를 위한 다층 오버레이 */}
         <div className="absolute inset-0 pointer-events-none">

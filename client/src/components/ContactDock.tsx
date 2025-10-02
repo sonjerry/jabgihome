@@ -31,7 +31,7 @@ export default function ContactDock() {
 
   return createPortal(
     <aside
-      className="hidden md:block fixed right-0 bottom-0 z-[11] w-full p-4 md:p-8 pointer-events-none"
+      className="fixed right-0 bottom-0 z-[11] w-full p-4 md:p-8 pointer-events-none"
       aria-label="Contact dock"
       style={{
         opacity: reveal,
@@ -40,25 +40,31 @@ export default function ContactDock() {
       }}
     >
       <div className="ml-auto w-[min(92%,360px)] pointer-events-none">
-        <GlassCard className="p-6 md:p-6 flex flex-col justify-end pointer-events-auto">
+        <GlassCard 
+          className="flex flex-col justify-end pointer-events-auto"
+          style={{
+            animation: reveal > 0.5 ? 'scaleIn 0.4s ease-out' : undefined,
+            padding: '1rem'
+          }}
+        >
           <div className="mt-auto">
-              <h2 className="text-lg md:text-xl font-semibold text-white/80 mb-3">Contact Me</h2>
+              <h2 className="text-base md:text-lg lg:text-xl font-semibold text-white/80 mb-3">Contact Me</h2>
               <div className="flex flex-col gap-2">
                 <a
                   href="https://github.com/sonjerry"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block rounded-2xl border border-white/15 bg-white/10 hover:bg-white/20 backdrop-blur px-3 py-2 transition pointer-events-auto"
+                  className="block rounded-2xl border border-white/15 bg-white/10 hover:bg-white/20 backdrop-blur px-3 py-2 transition-all duration-200 pointer-events-auto transform hover:scale-105 active:scale-95"
                 >
                   <div className="text-[10px] md:text-xs text-white/70">GitHub</div>
-                  <div className="text-sm md:text-base font-semibold">sonjerry</div>
+                  <div className="text-xs md:text-sm lg:text-base font-semibold">sonjerry</div>
                 </a>
                 <a
                   href="mailto:qh.e.720@icloud.com"
-                  className="block rounded-2xl border border-white/15 bg-white/10 hover:bg-white/20 backdrop-blur px-3 py-2 transition pointer-events-auto"
+                  className="block rounded-2xl border border-white/15 bg-white/10 hover:bg-white/20 backdrop-blur px-3 py-2 transition-all duration-200 pointer-events-auto transform hover:scale-105 active:scale-95"
                 >
                   <div className="text-[10px] md:text-xs text-white/70">Email</div>
-                  <div className="text-sm md:text-base font-semibold">qh.e.720@icloud.com</div>
+                  <div className="text-xs md:text-sm lg:text-base font-semibold">qh.e.720@icloud.com</div>
                 </a>
               </div>
             </div>
