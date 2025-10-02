@@ -223,9 +223,9 @@ export default function Home() {
         <div style={{ height: '90vh' }} />
       </main>
 
-      {/* 스크롤 시 나타나는 카드들 - 영상 위에 포개짐 (언뮤트 이후, BodyPortal로 고정 레이어 보장) */}
+      {/* 스크롤 시 나타나는 카드들 - 영상 위에 포개짐 (언뮤트 이후 + 스크롤 임계값 충족, BodyPortal) */}
       <BodyPortal>
-      {hasUnmuted && (
+      {hasUnmuted && revealProgress >= 0.1 && (
       <div className="fixed inset-0 z-30 pointer-events-none" style={{ pointerEvents: 'none' }}>
         {/* 왼쪽 상단 카드 - 왼쪽 위에서 슬라이드 */}
         <div 
@@ -236,14 +236,17 @@ export default function Home() {
             transition: 'opacity 600ms ease-out, transform 600ms ease-out'
           }}
         >
-          <GlassCard className="p-3 md:p-4 w-48 md:w-64">{null}</GlassCard>
-          <div className="absolute inset-0 pointer-events-auto" style={{ padding: '12px' }}>
-            <div className="p-0">
-              <h3 className="text-base md:text-lg font-bold mb-2 text-white">블로그</h3>
-              <p className="text-white/70 mb-3 text-xs md:text-sm">개발 이야기와 일상</p>
-              <CTA to="/blog" title="보러가기" />
+          <GlassCard className="p-0 w-48 md:w-64 overflow-hidden relative">
+            <div className="absolute -inset-0.5 bg-gradient-to-br from-white/15 via-white/5 to-white/0 rounded-2xl blur-xl" aria-hidden="true" />
+            <div className="relative p-4 md:p-5 flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-white/90">
+                <div className="size-7 md:size-8 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center backdrop-blur">🏷️</div>
+                <h3 className="text-base md:text-lg font-semibold">블로그</h3>
+              </div>
+              <p className="text-white/70 text-xs md:text-sm leading-relaxed">쓸데없는 생각 정리</p>
+              <div className="pt-1"><CTA to="/blog" title="보러가기" /></div>
             </div>
-          </div>
+          </GlassCard>
         </div>
 
         {/* 오른쪽 상단 카드 - 오른쪽 위에서 슬라이드 */}
@@ -256,14 +259,17 @@ export default function Home() {
             transitionDelay: '100ms'
           }}
         >
-          <GlassCard className="p-3 md:p-4 w-48 md:w-64">{null}</GlassCard>
-          <div className="absolute inset-0 pointer-events-auto" style={{ padding: '12px' }}>
-            <div className="p-0">
-              <h3 className="text-base md:text-lg font-bold mb-2 text-white">프로젝트</h3>
-              <p className="text-white/70 mb-3 text-xs md:text-sm">만들어온 것들</p>
-              <CTA to="/projects" title="보러가기" />
+          <GlassCard className="p-0 w-48 md:w-64 overflow-hidden relative">
+            <div className="absolute -inset-0.5 bg-gradient-to-br from-white/15 via-white/5 to-white/0 rounded-2xl blur-xl" aria-hidden="true" />
+            <div className="relative p-4 md:p-5 flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-white/90">
+                <div className="size-7 md:size-8 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center backdrop-blur">🧩</div>
+                <h3 className="text-base md:text-lg font-semibold">프로젝트</h3>
+              </div>
+              <p className="text-white/70 text-xs md:text-sm leading-relaxed">토이 프로젝트 정리</p>
+              <div className="pt-1"><CTA to="/projects" title="보러가기" /></div>
             </div>
-          </div>
+          </GlassCard>
         </div>
 
         {/* 왼쪽 하단 카드 - 왼쪽 아래에서 슬라이드 */}
@@ -276,14 +282,17 @@ export default function Home() {
             transitionDelay: '200ms'
           }}
         >
-          <GlassCard className="p-3 md:p-4 w-48 md:w-64">{null}</GlassCard>
-          <div className="absolute inset-0 pointer-events-auto" style={{ padding: '12px' }}>
-            <div className="p-0">
-              <h3 className="text-base md:text-lg font-bold mb-2 text-white">AI 갤러리</h3>
-              <p className="text-white/70 mb-3 text-xs md:text-sm">AI 그림 컬렉션</p>
-              <CTA to="/gallery" title="보러가기" />
+          <GlassCard className="p-0 w-48 md:w-64 overflow-hidden relative">
+            <div className="absolute -inset-0.5 bg-gradient-to-br from-white/15 via-white/5 to-white/0 rounded-2xl blur-xl" aria-hidden="true" />
+            <div className="relative p-4 md:p-5 flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-white/90">
+                <div className="size-7 md:size-8 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center backdrop-blur">🎨</div>
+                <h3 className="text-base md:text-lg font-semibold">AI 갤러리</h3>
+              </div>
+              <p className="text-white/70 text-xs md:text-sm leading-relaxed">AI로 만든 애니 캐릭터 갤러리 </p>
+              <div className="pt-1"><CTA to="/gallery" title="보러가기" /></div>
             </div>
-          </div>
+          </GlassCard>
         </div>
 
         {/* 오른쪽 하단 카드 - 오른쪽 아래에서 슬라이드 */}
@@ -296,14 +305,17 @@ export default function Home() {
             transitionDelay: '300ms'
           }}
         >
-          <GlassCard className="p-3 md:p-4 w-48 md:w-64">{null}</GlassCard>
-          <div className="absolute inset-0 pointer-events-auto" style={{ padding: '12px' }}>
-            <div className="p-0">
-              <h3 className="text-base md:text-lg font-bold mb-2 text-white">3D 모델</h3>
-              <p className="text-white/70 mb-3 text-xs md:text-sm">3D 모델 갤러리</p>
-              <CTA to="/modelgallery" title="보러가기" />
+          <GlassCard className="p-0 w-48 md:w-64 overflow-hidden relative">
+            <div className="absolute -inset-0.5 bg-gradient-to-br from-white/15 via-white/5 to-white/0 rounded-2xl blur-xl" aria-hidden="true" />
+            <div className="relative p-4 md:p-5 flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-white/90">
+                <div className="size-7 md:size-8 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center backdrop-blur">📦</div>
+                <h3 className="text-base md:text-lg font-semibold">3D 모델 갤러리리</h3>
+              </div>
+              <p className="text-white/70 text-xs md:text-sm leading-relaxed">AI로 만든 3D 모델 갤러리 </p>
+              <div className="pt-1"><CTA to="/modelgallery" title="보러가기" /></div>
             </div>
-          </div>
+          </GlassCard>
         </div>
       </div>
       )}
