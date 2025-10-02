@@ -7,6 +7,7 @@ import Navbar from './components/Navbar'
 import NotFound from './pages/NotFound'
 import RequireAdmin from './routes/RequireAdmin'
 import AudioProvider from './lib/audio/AudioProvider'
+import Silk from './components/Silk'
 
 // 지연 로딩(무거운 페이지 우선 분리)
 const Home = lazy(() => import('./pages/Home'))
@@ -76,6 +77,19 @@ export default function App() {
 
   return (
     <AudioProvider>
+      {/* Home 페이지가 아닌 경우에만 Silk 배경 효과 적용 */}
+      {location.pathname !== '/' && (
+        <div className="fixed inset-0 z-[-1]">
+          <Silk
+            speed={5}
+            scale={1}
+            color="#7B7481"
+            noiseIntensity={1.5}
+            rotation={0}
+          />
+        </div>
+      )}
+
       {/* Navbar는 포털로 body에 그려지므로 여기선 그냥 사용 */}
       <Navbar />
 

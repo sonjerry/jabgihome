@@ -390,30 +390,25 @@ export default function Home() {
         {/* 로딩 후에도 클릭 전까지 하단 음소거 버튼 유지 */}
         {isVideoReady && !hasUnmuted && (
           <div 
-            className="fixed inset-0 z-[100000] pointer-events-auto"
+            className="fixed inset-0 z-[100000] pointer-events-none flex items-end justify-center"
             style={{
-              animation: 'fadeInBackdrop 0.5s ease-out'
+              animation: 'fadeInBackdrop 0.5s ease-out',
+              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 120px)' // ContactDock과 겹치지 않도록 더 위로 이동
             }}
           >
-            <div 
-              className="absolute left-1/2 transform -translate-x-1/2" 
-              style={{ 
-                bottom: 'calc(env(safe-area-inset-bottom, 0px) + 120px)', // ContactDock과 겹치지 않도록 더 위로 이동
-                animation: 'bounceIn 0.8s ease-out 0.3s both',
-                zIndex: 100001 // ContactDock보다 위에 표시
+            <button
+              type="button"
+              role="button"
+              tabIndex={0}
+              onClick={handleUnmute}
+              onMouseDown={handleUnmute}
+              className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 hover:bg-white/15 transition-all duration-200 backdrop-blur-xl px-7 py-3.5 shadow-glass transform hover:scale-105 active:scale-95"
+              style={{
+                animation: 'bounceIn 0.8s ease-out 0.3s both'
               }}
             >
-              <button
-                type="button"
-                role="button"
-                tabIndex={0}
-                onClick={handleUnmute}
-                onMouseDown={handleUnmute}
-                className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/25 bg-black/40 hover:bg-black/50 transition-all duration-200 backdrop-blur-md px-7 py-3.5 shadow-glass transform hover:scale-105 active:scale-95"
-              >
-                <span className="opacity-90 text-sm md:text-base font-medium whitespace-nowrap">이곳을 눌러 음소거를 해제해주세요</span>
-              </button>
-            </div>
+              <span className="opacity-90 text-sm md:text-base font-medium whitespace-nowrap">이곳을 눌러 음소거를 해제해주세요</span>
+            </button>
           </div>
         )}
 

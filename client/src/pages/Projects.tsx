@@ -145,51 +145,12 @@ function ProjectCard({
         </div>
 
         <div className="flex gap-2 shrink-0">
-          <ButtonLink href={project.linkUrl} variant="primary">소개 링크</ButtonLink>
+          
           <ButtonLink href={project.repoUrl} variant="ghost">깃허브</ButtonLink>
         </div>
       </header>
 
-      {/* 타임라인 */}
-      <section className="mt-6 relative">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-base md:text-lg font-semibold tracking-tight">최근 업데이트</h4>
       
-        </div>
-
-        {top.length === 0 ? (
-          <p className="mt-3 text-white/50 text-sm">아직 표시할 업데이트가 없습니다.</p>
-        ) : (
-          <ol className="relative pl-6 space-y-3">
-            {/* 세로 라인 */}
-            <div className="absolute left-2 top-1 bottom-1 w-px bg-white/10 pointer-events-none" />
-            {top.map((post) => (
-              <li key={post.id} className="group">
-                <div className="flex items-start gap-3">
-                  {/* 도트 */}
-                  <span className="mt-1.5 inline-block w-2.5 h-2.5 rounded-full bg-white/35 ring-4 ring-white/5 group-hover:bg-white/70 transition-colors" />
-                  <div className="min-w-0">
-                    <Link
-                      to={postLink(post)}
-                      className="block text-sm md:text-[15px] leading-snug text-white/90 hover:text-white truncate"
-                      title={post.title}
-                    >
-                      {post.title}
-                    </Link>
-                    {post.createdAt && (
-                      <time className="block text-[11px] text-white/50 mt-0.5">
-                        {new Date(post.createdAt).toLocaleDateString(undefined, {
-                          year: 'numeric', month: '2-digit', day: '2-digit'
-                        })}
-                      </time>
-                    )}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
 
       {/* 하단 액션: 진행사항 보기 */}
       <footer className="mt-6">
