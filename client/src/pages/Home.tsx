@@ -167,13 +167,25 @@ export default function Home() {
     ;(html.style as any).WebkitOverflowScrolling = 'touch'
     ;(body.style as any).WebkitOverflowScrolling = 'touch'
     
+    // iOS Safari 주소창 확장 시 레이아웃 고정을 위한 함수
+    let handleResize: (() => void) | null = null
+    
     // iOS Safari 스크롤 최적화 (영상 고정 + 스크롤 허용)
     if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
       // iOS에서 주소창 숨김/표시 시 레이아웃 변경 방지
       const viewport = document.querySelector('meta[name=viewport]')
       if (viewport) {
-        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover')
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no')
       }
+      
+      // iOS Safari 주소창 확장 시 레이아웃 고정
+      handleResize = () => {
+        const vh = window.innerHeight * 0.01
+        document.documentElement.style.setProperty('--vh', `${vh}px`)
+      }
+      handleResize()
+      window.addEventListener('resize', handleResize)
+      window.addEventListener('orientationchange', handleResize)
       
       // iOS에서 스크롤은 허용하되 영상 고정을 위한 설정
       html.style.height = '100%'
@@ -195,9 +207,11 @@ export default function Home() {
         ;(body.style as any).WebkitOverflowScrolling = ''
         
         // iOS 설정 복원
-        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent) && handleResize) {
           html.style.height = ''
           body.style.height = ''
+          window.removeEventListener('resize', handleResize)
+          window.removeEventListener('orientationchange', handleResize)
         }
       }
     }
@@ -209,9 +223,11 @@ export default function Home() {
       ;(body.style as any).WebkitOverflowScrolling = ''
       
       // iOS 설정 복원
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent) && handleResize) {
         html.style.height = ''
         body.style.height = ''
+        window.removeEventListener('resize', handleResize)
+        window.removeEventListener('orientationchange', handleResize)
       }
     }
   }, [isInitialLoad])
@@ -295,8 +311,9 @@ export default function Home() {
         overscrollBehavior: 'none',
         WebkitOverflowScrolling: 'touch',
         minHeight: '200vh', // 모바일에서도 스크롤 가능하도록 높이 설정
-        // overflowY: isMobile ? 'hidden' : undefined, // 모바일에서도 스크롤 허용
-        background: 'transparent'
+        background: 'transparent',
+        // 스크롤 시 배경이 보이지 않도록 완전 투명
+        backgroundColor: 'transparent'
       }}
       // onClick 핸들러 제거 - 스크롤 기반으로 변경
     >
@@ -304,7 +321,7 @@ export default function Home() {
       {createPortal(
       <section
         ref={heroRef}
-        className="fixed inset-0 w-full h-[100lvh] overflow-hidden"
+        className="fixed inset-0 w-full overflow-hidden"
         style={{ 
           ['--home-reveal' as any]: String(revealProgress),
           overscrollBehavior: 'none',
@@ -314,9 +331,10 @@ export default function Home() {
           top: 0,
           left: 0,
           width: '100vw',
-          height: '100vh',
+          height: 'calc(var(--vh, 1vh) * 100)',
           minWidth: '100vw',
-          minHeight: '100vh',
+          minHeight: 'calc(var(--vh, 1vh) * 100)',
+          maxHeight: 'calc(var(--vh, 1vh) * 100)',
           zIndex: -1,
           // iOS 하드웨어 가속 및 고정 최적화
           transform: 'translate3d(0, 0, 0)',
@@ -325,7 +343,9 @@ export default function Home() {
           // iOS 터치 이벤트 최적화
           touchAction: 'manipulation',
           WebkitTransform: 'translate3d(0, 0, 0)',
-          WebkitBackfaceVisibility: 'hidden'
+          WebkitBackfaceVisibility: 'hidden',
+          // iOS Safari 주소창 확장 방지
+          overflow: 'hidden'
         }}
       >
         {/* 스타일: 슬로우 줌 키프레임 */}
@@ -379,18 +399,20 @@ export default function Home() {
             top: 0,
             left: 0,
             width: '100vw',
-            height: '100vh',
+            height: 'calc(var(--vh, 1vh) * 100)',
             minWidth: '100vw',
-            minHeight: '100vh',
+            minHeight: 'calc(var(--vh, 1vh) * 100)',
             maxWidth: '100vw',
-            maxHeight: '100vh',
+            maxHeight: 'calc(var(--vh, 1vh) * 100)',
             // iOS에서 비디오가 스크롤되는 것을 방지
             transform: 'translate3d(0, 0, 0)',
             backfaceVisibility: 'hidden',
             perspective: 1000,
             // iOS 터치 스크롤 방지
             touchAction: 'none',
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            // iOS Safari 주소창 확장 시에도 비디오가 완전히 덮도록
+            objectPosition: 'center center'
           }}
         />
 
@@ -454,8 +476,9 @@ export default function Home() {
             <div 
               className="absolute left-1/2 transform -translate-x-1/2" 
               style={{ 
-                bottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)',
-                animation: 'bounceIn 0.8s ease-out 0.3s both'
+                bottom: 'calc(env(safe-area-inset-bottom, 0px) + 120px)', // ContactDock과 겹치지 않도록 더 위로 이동
+                animation: 'bounceIn 0.8s ease-out 0.3s both',
+                zIndex: 100001 // ContactDock보다 위에 표시
               }}
             >
               <button

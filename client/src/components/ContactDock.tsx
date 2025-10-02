@@ -36,10 +36,17 @@ export default function ContactDock() {
       style={{
         opacity: reveal,
         transform: `translateY(${(48 * (1 - reveal || 0)).toFixed(2)}px)`,
-        transition: 'transform 360ms ease, opacity 300ms ease'
+        transition: 'transform 360ms ease, opacity 300ms ease',
+        // 모바일에서는 더 작게 표시하고 위치 조정
+        ...(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches ? {
+          bottom: '20px',
+          right: '20px',
+          width: 'auto',
+          padding: '8px'
+        } : {})
       }}
     >
-      <div className="ml-auto w-[min(92%,360px)] pointer-events-none">
+      <div className="ml-auto w-[min(92%,360px)] md:w-[min(92%,360px)] sm:w-[280px] pointer-events-none">
         <GlassCard 
           className="flex flex-col justify-end pointer-events-auto"
           style={{
