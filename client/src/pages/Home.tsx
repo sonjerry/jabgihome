@@ -19,7 +19,7 @@ export default function Home() {
   const [isVideoReady, setIsVideoReady] = useState(false)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const [showHint, setShowHint] = useState(false)
-  const [overlaysVisible, setOverlaysVisible] = useState(false) // 모바일: 힌트 클릭 시 표시
+  // const [overlaysVisible, setOverlaysVisible] = useState(false) // 더 이상 사용하지 않음 - 스크롤 기반으로 변경
   const [videoMuteOverride, setVideoMuteOverride] = useState<null | 'forceUnmute'>(null) // 음악 자동 음소거 무시
   const videoMuteOverrideRef = useRef<null | 'forceUnmute'>(null)
   const justUnmutedAtRef = useRef<number>(0)
@@ -161,11 +161,25 @@ export default function Home() {
     const html = document.documentElement
     const body = document.body
     
-    // iOS 밴딩 효과 방지
+    // iOS 밴딩 효과 방지 및 스크롤 최적화
     html.style.overscrollBehavior = 'none'
     body.style.overscrollBehavior = 'none'
     ;(html.style as any).WebkitOverflowScrolling = 'touch'
     ;(body.style as any).WebkitOverflowScrolling = 'touch'
+    
+    // iOS Safari 스크롤 최적화 (영상 고정 + 스크롤 허용)
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+      // iOS에서 주소창 숨김/표시 시 레이아웃 변경 방지
+      const viewport = document.querySelector('meta[name=viewport]')
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover')
+      }
+      
+      // iOS에서 스크롤은 허용하되 영상 고정을 위한 설정
+      html.style.height = '100%'
+      body.style.height = '100%'
+      // position: fixed는 제거하여 스크롤 허용
+    }
     
     if (isInitialLoad) {
       const prevHtml = html.style.overflow
@@ -179,6 +193,12 @@ export default function Home() {
         body.style.overscrollBehavior = ''
         ;(html.style as any).WebkitOverflowScrolling = ''
         ;(body.style as any).WebkitOverflowScrolling = ''
+        
+        // iOS 설정 복원
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+          html.style.height = ''
+          body.style.height = ''
+        }
       }
     }
     
@@ -187,16 +207,23 @@ export default function Home() {
       body.style.overscrollBehavior = ''
       ;(html.style as any).WebkitOverflowScrolling = ''
       ;(body.style as any).WebkitOverflowScrolling = ''
+      
+      // iOS 설정 복원
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        html.style.height = ''
+        body.style.height = ''
+      }
     }
   }, [isInitialLoad])
 
   // 패럴랙스 효과 제거 - 영상은 고정
 
-  // 스크롤/영상 종료에 따른 등장 애니메이션 트리거 + 부드러운 보간 (모바일은 스크롤 기반 리빌 비활성화)
+  // 스크롤/영상 종료에 따른 등장 애니메이션 트리거 + 부드러운 보간 (모바일에서도 활성화)
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
-      return
-    }
+    // 모바일에서도 스크롤 기반 애니메이션 활성화
+    // if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
+    //   return
+    // }
     const onScroll = () => {
       const y = window.scrollY
       revealTargetRef.current = y > 40 ? 1 : 0
@@ -267,20 +294,11 @@ export default function Home() {
       style={{ 
         overscrollBehavior: 'none',
         WebkitOverflowScrolling: 'touch',
-        minHeight: isMobile ? '100dvh' : '200vh',
-        overflowY: isMobile ? 'hidden' : undefined,
+        minHeight: '200vh', // 모바일에서도 스크롤 가능하도록 높이 설정
+        // overflowY: isMobile ? 'hidden' : undefined, // 모바일에서도 스크롤 허용
         background: 'transparent'
       }}
-      onClick={(e) => {
-        if (isMobile && overlaysVisible) {
-          // 영상 영역 클릭 시 오버레이 숨김 및 네비 닫기
-          try {
-            document.documentElement.style.setProperty('--home-reveal', '0')
-            window.dispatchEvent(new CustomEvent('home:reveal', { detail: 0 }))
-          } catch {}
-          setOverlaysVisible(false)
-        }
-      }}
+      // onClick 핸들러 제거 - 스크롤 기반으로 변경
     >
       {/* 히어로 섹션: 고정된 배경 비디오 (포털로 body에 렌더링하여 어느 상위 transform 영향도 받지 않도록) */}
       {createPortal(
@@ -290,7 +308,24 @@ export default function Home() {
         style={{ 
           ['--home-reveal' as any]: String(revealProgress),
           overscrollBehavior: 'none',
-          background: 'transparent'
+          background: 'transparent',
+          // iOS Safari 완전 고정을 위한 추가 스타일
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          minWidth: '100vw',
+          minHeight: '100vh',
+          zIndex: -1,
+          // iOS 하드웨어 가속 및 고정 최적화
+          transform: 'translate3d(0, 0, 0)',
+          backfaceVisibility: 'hidden',
+          perspective: 1000,
+          // iOS 터치 이벤트 최적화
+          touchAction: 'manipulation',
+          WebkitTransform: 'translate3d(0, 0, 0)',
+          WebkitBackfaceVisibility: 'hidden'
         }}
       >
         {/* 스타일: 슬로우 줌 키프레임 */}
@@ -323,7 +358,7 @@ export default function Home() {
           `,
           }}
         />
-        {/* 배경 비디오 - 고정된 배경 */}
+        {/* 배경 비디오 - iOS 완전 고정 */}
         <video
           ref={videoRef}
           src={djVideo}
@@ -334,55 +369,63 @@ export default function Home() {
           // @ts-ignore
           webkit-playsinline="true"
           preload="metadata"
-          className="fixed inset-0 w-full h-full object-cover will-change-transform"
+          className="absolute inset-0 w-full h-full object-cover will-change-transform"
           style={{
             animation: 'heroSlowZoom 28s linear infinite alternate',
             filter: 'brightness(0.9) saturate(0.9) contrast(1.05)',
-            zIndex: 0 as any
+            zIndex: 0 as any,
+            // iOS Safari 완전 고정을 위한 추가 스타일
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            minWidth: '100vw',
+            minHeight: '100vh',
+            maxWidth: '100vw',
+            maxHeight: '100vh',
+            // iOS에서 비디오가 스크롤되는 것을 방지
+            transform: 'translate3d(0, 0, 0)',
+            backfaceVisibility: 'hidden',
+            perspective: 1000,
+            // iOS 터치 스크롤 방지
+            touchAction: 'none',
+            pointerEvents: 'none'
           }}
         />
 
-        {/* 스크롤 힌트: 모바일에서는 스크롤 영향 없이 고정 표시 */}
-        {hasUnmuted && !overlaysVisible && (
+        {/* 스크롤 힌트: 모바일에서도 스크롤 기반으로 동작 */}
+        {hasUnmuted && revealProgress < 0.1 && (
           <div
             className="absolute inset-x-0 bottom-[20vh] z-20 flex items-center justify-center"
             style={{
-              opacity: 1,
+              opacity: 1 - revealProgress * 10, // 스크롤 시 서서히 사라짐
               transition: 'opacity 300ms ease, transform 300ms ease',
               animation: 'hintSlideUp 0.6s ease-out'
             }}
           >
-            <button
-              type="button"
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                setOverlaysVisible(true);
-                // 네비바/컨택트 도크 즉시 표시되도록 reveal=1 브로드캐스트
-                try {
-                  document.documentElement.style.setProperty('--home-reveal', '1')
-                  window.dispatchEvent(new CustomEvent('home:reveal', { detail: 1 }))
-                } catch {}
-              }}
-              className="pointer-events-auto rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass transform transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-white/15 hover:border-white/30"
-            >
-              <div className="flex items-center gap-3">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                     style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '0ms' }}
-                     aria-hidden>
-                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                     style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '150ms' }}
-                     aria-hidden>
-                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                     style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '300ms' }}
-                     aria-hidden>
-                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+            <div className="text-center">
+              <div className="text-white/80 text-sm mb-3">아래로 스크롤하세요</div>
+              <div className="pointer-events-none rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass">
+                <div className="flex items-center gap-3">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                       style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '0ms' }}
+                       aria-hidden>
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                       style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '150ms' }}
+                       aria-hidden>
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                       style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '300ms' }}
+                       aria-hidden>
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
               </div>
-            </button>
+            </div>
           </div>
         )}
 
