@@ -38,8 +38,7 @@ export default function Navbar() {
   const [reveal, setReveal] = useState<number>(() => {
     if (typeof window === 'undefined') return 0
     const root = getComputedStyle(document.documentElement).getPropertyValue('--home-reveal')
-    const body = getComputedStyle(document.body).getPropertyValue('--home-reveal')
-    return Number(root || body || 0) || 0
+    return Number(root || 0) || 0
   })
 
   useEffect(() => {
@@ -55,8 +54,8 @@ export default function Navbar() {
         }
       } catch {}
     }
-    window.addEventListener('home:reveal', onReveal as any)
-    return () => window.removeEventListener('home:reveal', onReveal as any)
+    window.addEventListener('home:reveal', onReveal as EventListener)
+    return () => window.removeEventListener('home:reveal', onReveal as EventListener)
   }, [pathname])
 
   return (

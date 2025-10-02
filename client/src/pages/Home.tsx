@@ -1,5 +1,5 @@
 // client/src/pages/Home.tsx
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import djVideo from '../assets/media/dj.mp4'
 import { Link } from 'react-router-dom'
@@ -7,262 +7,22 @@ import GlassCard from '../components/GlassCard'
 import ContactDock from '../components/ContactDock'
 import BlurText from "../components/BlurText"
 import CircularText from '../components/CircularText'
+import { useScrollReveal } from '../hooks/useScrollReveal'
  
 
 
 export default function Home() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
-  const heroRef = useRef<HTMLDivElement | null>(null)
   const [isMuted, setIsMuted] = useState(true)
   const [hasUnmuted, setHasUnmuted] = useState(false)
-  const [loadProgress, setLoadProgress] = useState(0)
   const [isVideoReady, setIsVideoReady] = useState(false)
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false)
-  const [showHint, setShowHint] = useState(false)
-  const [videoMuteOverride, setVideoMuteOverride] = useState<null | 'forceUnmute'>(null) // 음악 자동 음소거 무시
-  const videoMuteOverrideRef = useRef<null | 'forceUnmute'>(null)
-  const justUnmutedAtRef = useRef<number>(0)
-  const [revealProgress, setRevealProgress] = useState(0) // 0~1: 네비/카드 등장, 비디오 리레이아웃
-  const [isInitialLoad, setIsInitialLoad] = useState(true) // 초기 로딩 상태
-  const revealTargetRef = useRef(0)
-  const rafRevealRef = useRef(0)
-
-  // 뷰포트 진입 시 재생, 이탈 시 일시정지
-  useEffect(() => {
-    const el = heroRef.current
-    const vid = videoRef.current
-    if (!el || !vid) return
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            vid.play().catch(() => {})
-          } else {
-            vid.pause()
-          }
-        }
-      },
-      { threshold: 0.15 }
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [])
-
-  // 비디오 로딩 진행률 추적 (buffered 기반)
-  useEffect(() => {
-    const vid = videoRef.current
-    if (!vid) return
-
-    const updateProgress = () => {
-      try {
-        if (!vid.duration || vid.duration === Infinity) return
-        const ranges = vid.buffered
-        if (!ranges || ranges.length === 0) return
-        const end = ranges.end(ranges.length - 1)
-        const pct = Math.max(0, Math.min(100, Math.round((end / vid.duration) * 100)))
-        setLoadProgress(pct)
-        // 5%만 로딩되어도 바로 준비 완료로 처리하여 재생을 진행
-        if (pct >= 5) {
-          // 스크롤 차단 즉시 해제 (페이지 이동 가능하도록)
-          setIsInitialLoad(false)
-          if (!isVideoReady) {
-            setIsVideoReady(true)
-            try { void vid.play() } catch {}
-          }
-        }
-        if (pct >= 100) setIsVideoReady(true)
-      } catch {}
-    }
-
-    const onLoadedMeta = () => { 
-      updateProgress()
-      setIsInitialLoad(false) // 메타데이터 로딩 시 스크롤 차단 해제
-    }
-    const onLoadedData = () => { 
-      setIsVideoReady(true)
-      setIsInitialLoad(false) // 스크롤 차단 해제
-    }
-    const onCanPlay = () => { 
-      setIsVideoReady(true)
-      setIsInitialLoad(false) // 스크롤 차단 해제
-    }
-    const onProgress = () => { updateProgress() }
-    const onWaiting = () => { /* 대기 중에도 준비 상태를 유지 */ }
-    const onPlaying = () => {
-      setIsVideoReady(true)
-      setIsVideoPlaying(true)
-      setIsInitialLoad(false) // 스크롤 차단 해제
-    }
-
-    vid.addEventListener('loadedmetadata', onLoadedMeta)
-    vid.addEventListener('loadeddata', onLoadedData)
-    vid.addEventListener('canplay', onCanPlay)
-    vid.addEventListener('progress', onProgress)
-    vid.addEventListener('waiting', onWaiting)
-    vid.addEventListener('playing', onPlaying)
-
-    // 초기 한번 계산
-    updateProgress()
-
-    return () => {
-      vid.removeEventListener('loadedmetadata', onLoadedMeta)
-      vid.removeEventListener('loadeddata', onLoadedData)
-      vid.removeEventListener('canplay', onCanPlay)
-      vid.removeEventListener('progress', onProgress)
-      vid.removeEventListener('waiting', onWaiting)
-      vid.removeEventListener('playing', onPlaying)
-    }
-  }, [])
-
-  // 초기 상태: 아직 음소거 해제하지 않음
-  useEffect(() => { setHasUnmuted(false) }, [])
-
-  // 로딩 완료 3초 후 힌트 표시, 그 전에는 숨김
-  useEffect(() => {
-    if (isVideoReady) {
-      const t = setTimeout(() => setShowHint(true), 3000)
-      return () => clearTimeout(t)
-    }
-    setShowHint(false)
-  }, [isVideoReady])
-
-  // PC와 동일한 경험: 음소거 해제 후에도 스크롤해야만 네비바 노출
-  // (자동 reveal 로직 제거)
-
-  // 뮤직 플레이어 재생 시 영상 자동 음소거 (레퍼런스로 레이스 방지)
-  useEffect(() => {
-    videoMuteOverrideRef.current = videoMuteOverride
-  }, [videoMuteOverride])
-
-  useEffect(() => {
-    const onMusicPlaying = (e: Event) => {
-      try {
-        const isPlaying = (e as CustomEvent<boolean>).detail
-        const v = videoRef.current
-        const override = videoMuteOverrideRef.current
-        const now = Date.now()
-        // 언뮤트 직후 짧은 시간(800ms) 동안은 재음소거 무시
-        const withinGrace = now - (justUnmutedAtRef.current || 0) < 800
-        if (!v) return
-        if (isPlaying) {
-          if (override !== 'forceUnmute' && !withinGrace) {
-            v.muted = true
-            setIsMuted(true)
-          }
-        } else {
-          if (override === 'forceUnmute') {
-            v.muted = false
-            setIsMuted(false)
-          }
-        }
-      } catch {}
-    }
-    window.addEventListener('music:playing', onMusicPlaying as any)
-    return () => window.removeEventListener('music:playing', onMusicPlaying as any)
-  }, [])
-
-  // iOS 밴딩 효과 방지 및 스크롤 제어
-  useEffect(() => {
-    const html = document.documentElement
-    const body = document.body
-    
-    // iOS 밴딩 효과 방지 및 스크롤 최적화
-    html.style.overscrollBehavior = 'none'
-    body.style.overscrollBehavior = 'none'
-    ;(html.style as any).WebkitOverflowScrolling = 'touch'
-    ;(body.style as any).WebkitOverflowScrolling = 'touch'
-    
-    
-    if (isInitialLoad) {
-      const prevHtml = html.style.overflow
-      const prevBody = body.style.overflow
-      html.style.overflow = 'hidden'
-      body.style.overflow = 'hidden'
-      return () => {
-        html.style.overflow = prevHtml
-        body.style.overflow = prevBody
-        html.style.overscrollBehavior = ''
-        body.style.overscrollBehavior = ''
-        ;(html.style as any).WebkitOverflowScrolling = ''
-        ;(body.style as any).WebkitOverflowScrolling = ''
-        
-      }
-    }
-    
-    return () => {
-      html.style.overscrollBehavior = ''
-      body.style.overscrollBehavior = ''
-      ;(html.style as any).WebkitOverflowScrolling = ''
-      ;(body.style as any).WebkitOverflowScrolling = ''
-      
-    }
-  }, [isInitialLoad])
-
-  // 패럴랙스 효과 제거 - 영상은 고정
-
-  // 스크롤/영상 종료에 따른 등장 애니메이션 트리거 + 부드러운 보간 (모바일에서도 활성화)
-  useEffect(() => {
-    // 모바일에서도 스크롤 기반 애니메이션 활성화
-    // if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
-    //   return
-    // }
-    const onScroll = () => {
-      const y = window.scrollY
-      revealTargetRef.current = y > 40 ? 1 : 0
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    onScroll()
-
-    const animate = () => {
-      const current = revealProgress
-      const target = revealTargetRef.current
-      // 모바일에서는 더 부드러운 애니메이션을 위해 보간 속도 조정
-      const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches
-      const lerpSpeed = isMobile ? 0.08 : 0.12 // 모바일에서는 더 느리게
-      const next = current + (target - current) * lerpSpeed
-      if (Math.abs(next - current) > 0.002) {
-        setRevealProgress(next)
-        try {
-          document.documentElement.style.setProperty('--home-reveal', String(next))
-          window.dispatchEvent(new CustomEvent('home:reveal', { detail: next }))
-        } catch {}
-      }
-      rafRevealRef.current = requestAnimationFrame(animate)
-    }
-    rafRevealRef.current = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(rafRevealRef.current)
-  }, [revealProgress])
-
-  // 비디오 진행이 끝나가면 자동으로 등장
-  useEffect(() => {
-    const vid = videoRef.current
-    if (!vid) return
-    const onTime = () => {
-      try {
-        if (!vid.duration || vid.duration === Infinity) return
-        const ratio = vid.currentTime / vid.duration
-        if (ratio >= 0.9) revealTargetRef.current = 1
-      } catch {}
-    }
-    const onEnded = () => { revealTargetRef.current = 1 }
-    vid.addEventListener('timeupdate', onTime)
-    vid.addEventListener('ended', onEnded)
-    return () => {
-      vid.removeEventListener('timeupdate', onTime)
-      vid.removeEventListener('ended', onEnded)
-    }
-  }, [])
-
-  const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches
+  const revealProgress = useScrollReveal(10)
+  
 
   const handleUnmute = (e: React.SyntheticEvent) => {
     e.stopPropagation()
     const v = videoRef.current
     setHasUnmuted(true)
-    setVideoMuteOverride('forceUnmute')
-    videoMuteOverrideRef.current = 'forceUnmute'
-    justUnmutedAtRef.current = Date.now()
     setIsMuted(false)
     if (v) {
       try { v.removeAttribute('muted') } catch {}
@@ -270,35 +30,17 @@ export default function Home() {
       v.volume = 1
       try { void v.play() } catch {}
     }
-    // 음악과의 겹침 방지: 오디오 일시정지 이벤트 브로드캐스트
-    try { window.dispatchEvent(new CustomEvent('home:video-unmuted')) } catch {}
   }
 
   return (
-    <main 
-      className="relative overflow-x-hidden text-white"
-      style={{ 
-        overscrollBehavior: 'none',
-        WebkitOverflowScrolling: 'touch',
-        minHeight: '200vh', // 모바일에서도 스크롤 가능하도록 높이 설정
-        background: 'transparent',
-        // 스크롤 시 배경이 보이지 않도록 완전 투명
-        backgroundColor: 'transparent'
-      }}
-      // onClick 핸들러 제거 - 스크롤 기반으로 변경
-    >
-      {/* 히어로 섹션: 고정된 배경 비디오 (포털로 body에 렌더링하여 어느 상위 transform 영향도 받지 않도록) */}
-      {createPortal(
+    <>
+      {/* 고정된 배경 비디오 - 스크롤과 완전히 독립 (body 포털) */}
+      <BodyPortal>
       <section
-        ref={heroRef}
-        className="fixed inset-0 w-full overflow-hidden"
+        className="video-container overflow-hidden"
         style={{ 
-          ['--home-reveal' as any]: String(revealProgress),
           overscrollBehavior: 'none',
-          background: 'transparent',
-          // iOS Safari 상태바 영역까지 확장
-          paddingTop: 'env(safe-area-inset-top, 0px)',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          background: 'transparent'
         }}
       >
         {/* 스타일: 슬로우 줌 키프레임 */}
@@ -308,6 +50,27 @@ export default function Home() {
             @keyframes heroSlowZoom { 0% { transform: scale(1) } 100% { transform: scale(1.03) } }
             @keyframes homeArrowBlink { 0%, 80%, 100% { opacity: .2 } 40% { opacity: 1 } }
             @keyframes homeArrowFloat { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(2px) } }
+            
+            /* 영상 완전 고정을 위한 강제 스타일 */
+            .video-container {
+              position: fixed !important;
+              top: 0 !important;
+              left: 0 !important;
+              width: 100vw !important;
+              height: 100vh !important;
+              z-index: 0 !important;
+              transform: translateZ(0) !important;
+            }
+            
+            .video-element {
+              position: absolute !important;
+              top: 0 !important;
+              left: 0 !important;
+              width: 100% !important;
+              height: 100% !important;
+              object-fit: cover !important;
+              transform: translateZ(0) !important;
+            }
             @keyframes hintSlideUp { 
               0% { 
                 opacity: 0; 
@@ -331,7 +94,7 @@ export default function Home() {
           `,
           }}
         />
-        {/* 배경 비디오 - iOS 완전 고정 */}
+        {/* 배경 비디오 - 완전 고정 */}
         <video
           ref={videoRef}
           src={djVideo}
@@ -342,20 +105,77 @@ export default function Home() {
           // @ts-ignore
           webkit-playsinline="true"
           preload="metadata"
-          className="absolute inset-0 w-full h-full object-cover will-change-transform"
+          onCanPlay={() => setIsVideoReady(true)}
+          onPlaying={() => setIsVideoReady(true)}
+          className="video-element"
           style={{
+            objectPosition: 'center center',
             animation: 'heroSlowZoom 28s linear infinite alternate',
             filter: 'brightness(0.9) saturate(0.9) contrast(1.05)',
-            zIndex: 0 as any,
+            backfaceVisibility: 'hidden',
+            willChange: 'transform'
           }}
         />
 
-        {/* 스크롤 힌트: 클릭 기능 없이 시각적 표시만 */}
+
+        {/* 로딩 오버레이 */}
+        {!isVideoReady && (
+          <div
+            className={`absolute inset-0 z-[100] flex flex-col items-center justify-center gap-6 px-4 bg-black transition-opacity duration-300`}
+          >
+            <CircularText
+              text={"로딩중*로딩중*로딩중*"}
+              onHover="speedUp"
+              spinDuration={20}
+              className="text-white/95"
+            />
+          </div>
+        )}
+
+
+
+        {/* 히어로 콘텐츠 (제목/서브타이틀/언뮤트) */}
+        {isVideoReady && (
+          <div className="absolute inset-0 z-10 px-4 md:px-8 flex items-center justify-center" style={{ transform: 'translateY(-15vh)' }}>
+            <div className="w-full max-w-5xl flex flex-col items-center text-center">
+              <BlurText
+                text="잡다한 기록 홈페이지"
+                animateBy="letters"
+                className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg break-keep whitespace-nowrap"
+                delay={20}
+                direction="top"
+                noWrap
+              />
+              <BlurText
+                text="인스타는 너무 평범해서 홈페이지 직접 만듦"
+                animateBy="words"
+                className="mt-4 md:mt-6 text-base md:text-lg text-amber-300 break-keep"
+                delay={80}
+                direction="bottom"
+              />
+              {!hasUnmuted && (
+                <button
+                  type="button"
+                  role="button"
+                  tabIndex={0}
+                  onClick={handleUnmute}
+                  onMouseDown={handleUnmute}
+                  className="mt-6 pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 hover:bg-white/15 transition-all duration-200 backdrop-blur-xl px-6 py-3 shadow-glass transform hover:scale-105 active:scale-95"
+                  style={{ animation: 'bounceIn 0.8s ease-out 0.3s both' }}
+                >
+                  <span className="opacity-90 text-sm md:text-base font-medium whitespace-nowrap">음소거 해제</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 스크롤 힌트 - 음소거 해제 후 표시 */}
         {hasUnmuted && revealProgress < 0.1 && (
           <div
             className="absolute inset-x-0 bottom-[20vh] z-20 flex items-center justify-center"
             style={{
-              opacity: 1 - revealProgress * 10, // 스크롤 시 서서히 사라짐
+              opacity: 1 - revealProgress * 10,
               transition: 'opacity 300ms ease, transform 300ms ease',
               animation: 'hintSlideUp 0.6s ease-out'
             }}
@@ -385,92 +205,133 @@ export default function Home() {
           </div>
         )}
 
-        {/* 로딩 오버레이: 중앙 CircularText + 하단 음소거 해제 버튼 */}
-        {(!isVideoReady || isInitialLoad) && (
-          <div
-            className={`absolute inset-0 z-[100] flex flex-col items-center justify-center gap-6 px-4 bg-black transition-opacity duration-300`}
-          >
-            <CircularText
-              text={"로딩중*로딩중*로딩중*"}
-              onHover="speedUp"
-              spinDuration={20}
-              className="text-white/95"
-            />
-          </div>
-        )}
-
-        {/* 로딩 후에도 클릭 전까지 하단 음소거 버튼 유지 */}
-        {isVideoReady && !hasUnmuted && (
-          <div 
-            className="fixed inset-0 z-[100000] pointer-events-none flex items-end justify-center"
-            style={{
-              animation: 'fadeInBackdrop 0.5s ease-out',
-              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 120px)' // ContactDock과 겹치지 않도록 더 위로 이동
-            }}
-          >
-            <button
-              type="button"
-              role="button"
-              tabIndex={0}
-              onClick={handleUnmute}
-              onMouseDown={handleUnmute}
-              className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 hover:bg-white/15 transition-all duration-200 backdrop-blur-xl px-7 py-3.5 shadow-glass transform hover:scale-105 active:scale-95"
-              style={{
-                animation: 'bounceIn 0.8s ease-out 0.3s both'
-              }}
-            >
-              <span className="opacity-90 text-sm md:text-base font-medium whitespace-nowrap">이곳을 눌러 음소거를 해제해주세요</span>
-            </button>
-          </div>
-        )}
-
-
-
-        {/* 히어로 콘텐츠 (제목) - 로딩 중 숨김, 재생 시작 후 BlurText로 출현 */}
-        {(isVideoReady && isVideoPlaying) && (
-          <div className="absolute inset-0 z-10 px-4 md:px-8 flex items-center justify-center" style={{ transform: 'translateY(-6vh)' }}>
-            <div className="w-full max-w-5xl flex flex-col items-center text-center">
-              <BlurText
-                text="잡다한 기록 홈페이지"
-                animateBy="letters"
-                className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg break-keep whitespace-nowrap"
-                delay={20}
-                direction="top"
-                noWrap
-              />
-              <BlurText
-                text="인스타는 너무 평범해서 홈페이지 직접 만듦"
-                animateBy="words"
-                className="mt-4 md:mt-6 text-base md:text-lg text-amber-300 break-keep"
-                delay={80}
-                direction="bottom"
-              />
-            </div>
-          </div>
-        )}
-
         {/* 중앙 음소거 버튼 블록은 로딩 오버레이에서 처리하므로 별도 노출 없음 */}
 
-      </section>, document.body)}
+      </section>
+      </BodyPortal>
+
+      {/* 스크롤 가능한 메인 컨테이너 */}
+      <main 
+        className="relative z-10 text-white"
+        style={{ 
+          minHeight: '160vh',
+          background: 'transparent'
+        }}
+      >
+        {/* 카드 등장 트리거 공간 */}
+        <div style={{ height: '70vh' }} />
+        <div style={{ height: '90vh' }} />
+      </main>
+
+      {/* 스크롤 시 나타나는 카드들 - 영상 위에 포개짐 (언뮤트 이후, BodyPortal로 고정 레이어 보장) */}
+      <BodyPortal>
+      {hasUnmuted && (
+      <div className="fixed inset-0 z-30 pointer-events-none" style={{ pointerEvents: 'none' }}>
+        {/* 왼쪽 상단 카드 - 왼쪽 위에서 슬라이드 */}
+        <div 
+          className="absolute top-4 left-4 md:top-8 md:left-8"
+          style={{
+            opacity: Math.max(0, Math.min(1, revealProgress)),
+            transform: `translate(${-100 * (1 - revealProgress)}px, ${-50 * (1 - revealProgress)}px)`,
+            transition: 'opacity 600ms ease-out, transform 600ms ease-out'
+          }}
+        >
+          <GlassCard className="p-3 md:p-4 w-48 md:w-64">{null}</GlassCard>
+          <div className="absolute inset-0 pointer-events-auto" style={{ padding: '12px' }}>
+            <div className="p-0">
+              <h3 className="text-base md:text-lg font-bold mb-2 text-white">블로그</h3>
+              <p className="text-white/70 mb-3 text-xs md:text-sm">개발 이야기와 일상</p>
+              <CTA to="/blog" title="보러가기" />
+            </div>
+          </div>
+        </div>
+
+        {/* 오른쪽 상단 카드 - 오른쪽 위에서 슬라이드 */}
+        <div 
+          className="absolute top-4 right-4 md:top-8 md:right-8"
+          style={{
+            opacity: Math.max(0, Math.min(1, revealProgress)),
+            transform: `translate(${100 * (1 - revealProgress)}px, ${-50 * (1 - revealProgress)}px)`,
+            transition: 'opacity 600ms ease-out, transform 600ms ease-out',
+            transitionDelay: '100ms'
+          }}
+        >
+          <GlassCard className="p-3 md:p-4 w-48 md:w-64">{null}</GlassCard>
+          <div className="absolute inset-0 pointer-events-auto" style={{ padding: '12px' }}>
+            <div className="p-0">
+              <h3 className="text-base md:text-lg font-bold mb-2 text-white">프로젝트</h3>
+              <p className="text-white/70 mb-3 text-xs md:text-sm">만들어온 것들</p>
+              <CTA to="/projects" title="보러가기" />
+            </div>
+          </div>
+        </div>
+
+        {/* 왼쪽 하단 카드 - 왼쪽 아래에서 슬라이드 */}
+        <div 
+          className="absolute bottom-20 left-4 md:bottom-8 md:left-8"
+          style={{
+            opacity: Math.max(0, Math.min(1, revealProgress)),
+            transform: `translate(${-100 * (1 - revealProgress)}px, ${50 * (1 - revealProgress)}px)`,
+            transition: 'opacity 600ms ease-out, transform 600ms ease-out',
+            transitionDelay: '200ms'
+          }}
+        >
+          <GlassCard className="p-3 md:p-4 w-48 md:w-64">{null}</GlassCard>
+          <div className="absolute inset-0 pointer-events-auto" style={{ padding: '12px' }}>
+            <div className="p-0">
+              <h3 className="text-base md:text-lg font-bold mb-2 text-white">AI 갤러리</h3>
+              <p className="text-white/70 mb-3 text-xs md:text-sm">AI 그림 컬렉션</p>
+              <CTA to="/gallery" title="보러가기" />
+            </div>
+          </div>
+        </div>
+
+        {/* 오른쪽 하단 카드 - 오른쪽 아래에서 슬라이드 */}
+        <div 
+          className="absolute bottom-20 right-4 md:bottom-8 md:right-8"
+          style={{
+            opacity: Math.max(0, Math.min(1, revealProgress)),
+            transform: `translate(${100 * (1 - revealProgress)}px, ${50 * (1 - revealProgress)}px)`,
+            transition: 'opacity 600ms ease-out, transform 600ms ease-out',
+            transitionDelay: '300ms'
+          }}
+        >
+          <GlassCard className="p-3 md:p-4 w-48 md:w-64">{null}</GlassCard>
+          <div className="absolute inset-0 pointer-events-auto" style={{ padding: '12px' }}>
+            <div className="p-0">
+              <h3 className="text-base md:text-lg font-bold mb-2 text-white">3D 모델</h3>
+              <p className="text-white/70 mb-3 text-xs md:text-sm">3D 모델 갤러리</p>
+              <CTA to="/modelgallery" title="보러가기" />
+            </div>
+          </div>
+        </div>
+      </div>
+      )}
+      </BodyPortal>
 
       {/* Contact Dock: 언뮤트 전에는 포인터 이벤트 차단하여 버튼과 충돌 방지 */}
       <div
         style={{
           pointerEvents: (isVideoReady && !hasUnmuted) ? 'none' : undefined,
           zIndex: (isVideoReady && !hasUnmuted) ? 10 as any : undefined,
-          position: 'relative'
+          position: 'fixed',
+          bottom: 0,
+          right: 0
         }}
       >
         <ContactDock />
       </div>
-
-
-      {/* 스티커 오버레이 홈에서는 제거됨 */}
-    </main>
+    </>
   )
 }
 
 /* ───────────────────── 보조 컴포넌트 ───────────────────── */
+
+// body 포털: 변환(transform)된 조상 컨텍스트의 영향을 피하기 위해 직접 body로 렌더링
+function BodyPortal({ children }: { children: React.ReactNode }) {
+  if (typeof document === 'undefined') return null as any
+  return createPortal(children, document.body)
+}
 
 // CTA
 function CTA({ to, title }: { to: string; title: string }) {
