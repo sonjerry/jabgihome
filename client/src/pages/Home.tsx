@@ -236,11 +236,10 @@ export default function Home() {
             transition: 'opacity 600ms ease-out, transform 600ms ease-out'
           }}
         >
-          <GlassCard className="p-0 w-48 md:w-64 overflow-hidden relative">
-            <div className="absolute -inset-0.5 bg-gradient-to-br from-white/15 via-white/5 to-white/0 rounded-2xl blur-xl" aria-hidden="true" />
+          <GlassCard className="p-0 w-64 md:w-80 overflow-hidden relative bg-white/15 border-white/30 backdrop-blur-2xl shadow-2xl shadow-white/10">
+            <div className="absolute -inset-1 bg-gradient-to-br from-white/30 via-white/10 to-white/0 rounded-2xl blur-2xl" aria-hidden="true" />
             <div className="relative p-4 md:p-5 flex flex-col gap-2">
               <div className="flex items-center gap-2 text-white/90">
-                <div className="size-7 md:size-8 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center backdrop-blur">🏷️</div>
                 <h3 className="text-base md:text-lg font-semibold">블로그</h3>
               </div>
               <p className="text-white/70 text-xs md:text-sm leading-relaxed">쓸데없는 생각 정리</p>
@@ -259,11 +258,10 @@ export default function Home() {
             transitionDelay: '100ms'
           }}
         >
-          <GlassCard className="p-0 w-48 md:w-64 overflow-hidden relative">
-            <div className="absolute -inset-0.5 bg-gradient-to-br from-white/15 via-white/5 to-white/0 rounded-2xl blur-xl" aria-hidden="true" />
+          <GlassCard className="p-0 w-64 md:w-80 overflow-hidden relative bg-white/15 border-white/30 backdrop-blur-2xl shadow-2xl shadow-white/10">
+            <div className="absolute -inset-1 bg-gradient-to-br from-white/30 via-white/10 to-white/0 rounded-2xl blur-2xl" aria-hidden="true" />
             <div className="relative p-4 md:p-5 flex flex-col gap-2">
               <div className="flex items-center gap-2 text-white/90">
-                <div className="size-7 md:size-8 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center backdrop-blur">🧩</div>
                 <h3 className="text-base md:text-lg font-semibold">프로젝트</h3>
               </div>
               <p className="text-white/70 text-xs md:text-sm leading-relaxed">토이 프로젝트 정리</p>
@@ -282,11 +280,10 @@ export default function Home() {
             transitionDelay: '200ms'
           }}
         >
-          <GlassCard className="p-0 w-48 md:w-64 overflow-hidden relative">
-            <div className="absolute -inset-0.5 bg-gradient-to-br from-white/15 via-white/5 to-white/0 rounded-2xl blur-xl" aria-hidden="true" />
+          <GlassCard className="p-0 w-64 md:w-80 overflow-hidden relative bg-white/15 border-white/30 backdrop-blur-2xl shadow-2xl shadow-white/10">
+            <div className="absolute -inset-1 bg-gradient-to-br from-white/30 via-white/10 to-white/0 rounded-2xl blur-2xl" aria-hidden="true" />
             <div className="relative p-4 md:p-5 flex flex-col gap-2">
               <div className="flex items-center gap-2 text-white/90">
-                <div className="size-7 md:size-8 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center backdrop-blur">🎨</div>
                 <h3 className="text-base md:text-lg font-semibold">AI 갤러리</h3>
               </div>
               <p className="text-white/70 text-xs md:text-sm leading-relaxed">AI로 만든 애니 캐릭터 갤러리 </p>
@@ -305,11 +302,10 @@ export default function Home() {
             transitionDelay: '300ms'
           }}
         >
-          <GlassCard className="p-0 w-48 md:w-64 overflow-hidden relative">
-            <div className="absolute -inset-0.5 bg-gradient-to-br from-white/15 via-white/5 to-white/0 rounded-2xl blur-xl" aria-hidden="true" />
+          <GlassCard className="p-0 w-64 md:w-80 overflow-hidden relative bg-white/15 border-white/30 backdrop-blur-2xl shadow-2xl shadow-white/10">
+            <div className="absolute -inset-1 bg-gradient-to-br from-white/30 via-white/10 to-white/0 rounded-2xl blur-2xl" aria-hidden="true" />
             <div className="relative p-4 md:p-5 flex flex-col gap-2">
               <div className="flex items-center gap-2 text-white/90">
-                <div className="size-7 md:size-8 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center backdrop-blur">📦</div>
                 <h3 className="text-base md:text-lg font-semibold">3D 모델 갤러리리</h3>
               </div>
               <p className="text-white/70 text-xs md:text-sm leading-relaxed">AI로 만든 3D 모델 갤러리 </p>
