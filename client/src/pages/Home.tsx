@@ -64,9 +64,10 @@ export default function Home() {
         setLoadProgress(pct)
         // 5%만 로딩되어도 바로 준비 완료로 처리하여 재생을 진행
         if (pct >= 5) {
+          // 스크롤 차단 즉시 해제 (페이지 이동 가능하도록)
+          setIsInitialLoad(false)
           if (!isVideoReady) {
             setIsVideoReady(true)
-            setIsInitialLoad(false)
             try { void vid.play() } catch {}
           }
         }
@@ -74,15 +75,24 @@ export default function Home() {
       } catch {}
     }
 
-    const onLoadedMeta = () => { updateProgress() }
-    const onLoadedData = () => { setIsVideoReady(true); setIsInitialLoad(false) }
-    const onCanPlay = () => { setIsVideoReady(true); setIsInitialLoad(false) }
+    const onLoadedMeta = () => { 
+      updateProgress()
+      setIsInitialLoad(false) // 메타데이터 로딩 시 스크롤 차단 해제
+    }
+    const onLoadedData = () => { 
+      setIsVideoReady(true)
+      setIsInitialLoad(false) // 스크롤 차단 해제
+    }
+    const onCanPlay = () => { 
+      setIsVideoReady(true)
+      setIsInitialLoad(false) // 스크롤 차단 해제
+    }
     const onProgress = () => { updateProgress() }
     const onWaiting = () => { /* 대기 중에도 준비 상태를 유지 */ }
     const onPlaying = () => {
       setIsVideoReady(true)
       setIsVideoPlaying(true)
-      setIsInitialLoad(false)
+      setIsInitialLoad(false) // 스크롤 차단 해제
     }
 
     vid.addEventListener('loadedmetadata', onLoadedMeta)
@@ -117,12 +127,8 @@ export default function Home() {
     setShowHint(false)
   }, [isVideoReady])
 
-  // 음소거 해제 시 바로 카드가 등장하도록 리빌 트리거
-  useEffect(() => {
-    if (hasUnmuted) {
-      revealTargetRef.current = 1
-    }
-  }, [hasUnmuted])
+  // PC와 동일한 경험: 음소거 해제 후에도 스크롤해야만 네비바 노출
+  // (자동 reveal 로직 제거)
 
   // 뮤직 플레이어 재생 시 영상 자동 음소거 (레퍼런스로 레이스 방지)
   useEffect(() => {
@@ -211,7 +217,10 @@ export default function Home() {
     const animate = () => {
       const current = revealProgress
       const target = revealTargetRef.current
-      const next = current + (target - current) * 0.12
+      // 모바일에서는 더 부드러운 애니메이션을 위해 보간 속도 조정
+      const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches
+      const lerpSpeed = isMobile ? 0.08 : 0.12 // 모바일에서는 더 느리게
+      const next = current + (target - current) * lerpSpeed
       if (Math.abs(next - current) > 0.002) {
         setRevealProgress(next)
         try {

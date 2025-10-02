@@ -70,7 +70,7 @@ export default function Navbar() {
         style={pathname === '/' ? {
           opacity: reveal,
           transform: `translateX(${(-20 * (1 - reveal || 0)).toFixed(2)}px)`,
-          transition: 'transform 300ms ease, opacity 300ms ease'
+          transition: 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1), opacity 400ms cubic-bezier(0.4, 0, 0.2, 1)'
         } : undefined}
         role="navigation" aria-label="사이드바"
       >
@@ -87,7 +87,7 @@ export default function Navbar() {
           style={pathname === '/' ? {
             opacity: reveal,
             transform: `translateX(${(-20 * (1 - reveal || 0)).toFixed(2)}px) scale(1)`,
-            transition: 'transform 300ms ease, opacity 300ms ease'
+            transition: 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1), opacity 400ms cubic-bezier(0.4, 0, 0.2, 1)'
           } : undefined}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
