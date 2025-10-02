@@ -1,9 +1,9 @@
 // client/src/pages/Home.tsx
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import djVideo from '../assets/media/dj.mp4'
 import { Link } from 'react-router-dom'
-import GlassCard from '../components/GlassCard'
+import GlassCard, { GlassTitle, GlassText } from '../components/GlassCard'
 import ContactDock from '../components/ContactDock'
 import BlurText from "../components/BlurText"
 import CircularText from '../components/CircularText'
@@ -18,6 +18,21 @@ export default function Home() {
   const [isVideoReady, setIsVideoReady] = useState(false)
   const revealProgress = useScrollReveal(10)
   
+  // iOS 밴딩(바운스) 효과 최소화
+  useEffect(() => {
+    try {
+      const html = document.documentElement
+      const body = document.body
+      const prevHtml = html.style.overscrollBehavior
+      const prevBody = body.style.overscrollBehavior
+      html.style.overscrollBehavior = 'none'
+      body.style.overscrollBehavior = 'none'
+      return () => {
+        html.style.overscrollBehavior = prevHtml
+        body.style.overscrollBehavior = prevBody
+      }
+    } catch {}
+  }, [])
 
   const handleUnmute = (e: React.SyntheticEvent) => {
     e.stopPropagation()
@@ -238,13 +253,11 @@ export default function Home() {
             transition: 'opacity 600ms ease-out, transform 600ms ease-out'
           }}
         >
-          <GlassCard className="pointer-events-auto p-0 w-64 md:w-80 overflow-hidden relative bg-white/30 border-white/40 backdrop-blur-[18px] shadow-2xl shadow-white/10">
-            <div className="absolute -inset-1 bg-gradient-to-br from-white/50 via-white/20 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
+          <GlassCard className="pointer-events-auto p-0 w-64 md:w-80 overflow-hidden relative bg-white/60 border-white/60 backdrop-blur-[22px] shadow-2xl shadow-black/30">
+            <div className="absolute -inset-1 bg-gradient-to-br from-white/80 via-white/40 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
             <div className="relative p-4 md:p-5 flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-white/90">
-                <h3 className="text-base md:text-lg font-semibold">블로그</h3>
-              </div>
-              <p className="text-white/70 text-xs md:text-sm leading-relaxed">쓸데없는 생각 정리</p>
+              <GlassTitle className="text-base md:text-lg">블로그</GlassTitle>
+              <GlassText className="text-xs md:text-sm leading-relaxed">쓸데없는 생각 정리</GlassText>
               <div className="pt-1"><CTA to="/blog" title="보러가기" /></div>
             </div>
           </GlassCard>
@@ -260,13 +273,11 @@ export default function Home() {
             transitionDelay: '100ms'
           }}
         >
-          <GlassCard className="pointer-events-auto p-0 w-64 md:w-80 overflow-hidden relative bg-white/30 border-white/40 backdrop-blur-[18px] shadow-2xl shadow-white/10">
-            <div className="absolute -inset-1 bg-gradient-to-br from-white/50 via-white/20 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
+          <GlassCard className="pointer-events-auto p-0 w-64 md:w-80 overflow-hidden relative bg-white/60 border-white/60 backdrop-blur-[22px] shadow-2xl shadow-black/30">
+            <div className="absolute -inset-1 bg-gradient-to-br from-white/80 via-white/40 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
             <div className="relative p-4 md:p-5 flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-white/90">
-                <h3 className="text-base md:text-lg font-semibold">프로젝트</h3>
-              </div>
-              <p className="text-white/70 text-xs md:text-sm leading-relaxed">토이 프로젝트 정리</p>
+              <GlassTitle className="text-base md:text-lg">프로젝트</GlassTitle>
+              <GlassText className="text-xs md:text-sm leading-relaxed">토이 프로젝트 정리</GlassText>
               <div className="pt-1"><CTA to="/projects" title="보러가기" /></div>
             </div>
           </GlassCard>
@@ -282,13 +293,11 @@ export default function Home() {
             transitionDelay: '200ms'
           }}
         >
-          <GlassCard className="pointer-events-auto p-0 w-64 md:w-80 overflow-hidden relative bg-white/30 border-white/40 backdrop-blur-[18px] shadow-2xl shadow-white/10">
-            <div className="absolute -inset-1 bg-gradient-to-br from-white/50 via-white/20 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
+          <GlassCard className="pointer-events-auto p-0 w-64 md:w-80 overflow-hidden relative bg-white/60 border-white/60 backdrop-blur-[22px] shadow-2xl shadow-black/30">
+            <div className="absolute -inset-1 bg-gradient-to-br from-white/80 via-white/40 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
             <div className="relative p-4 md:p-5 flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-white/90">
-                <h3 className="text-base md:text-lg font-semibold">AI 갤러리</h3>
-              </div>
-              <p className="text-white/70 text-xs md:text-sm leading-relaxed">AI로 만든 애니 캐릭터 갤러리 </p>
+              <GlassTitle className="text-base md:text-lg">AI 갤러리</GlassTitle>
+              <GlassText className="text-xs md:text-sm leading-relaxed">AI로 만든 애니 캐릭터 갤러리 </GlassText>
               <div className="pt-1"><CTA to="/gallery" title="보러가기" /></div>
             </div>
           </GlassCard>
@@ -304,13 +313,11 @@ export default function Home() {
             transitionDelay: '300ms'
           }}
         >
-          <GlassCard className="pointer-events-auto p-0 w-64 md:w-80 overflow-hidden relative bg-white/30 border-white/40 backdrop-blur-[18px] shadow-2xl shadow-white/10">
-            <div className="absolute -inset-1 bg-gradient-to-br from-white/50 via-white/20 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
+          <GlassCard className="pointer-events-auto p-0 w-64 md:w-80 overflow-hidden relative bg-white/60 border-white/60 backdrop-blur-[22px] shadow-2xl shadow-black/30">
+            <div className="absolute -inset-1 bg-gradient-to-br from-white/80 via-white/40 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
             <div className="relative p-4 md:p-5 flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-white/90">
-                <h3 className="text-base md:text-lg font-semibold">3D 모델 갤러리리</h3>
-              </div>
-              <p className="text-white/70 text-xs md:text-sm leading-relaxed">AI로 만든 3D 모델 갤러리 </p>
+              <GlassTitle className="text-base md:text-lg">3D 모델 갤러리리</GlassTitle>
+              <GlassText className="text-xs md:text-sm leading-relaxed">AI로 만든 3D 모델 갤러리 </GlassText>
               <div className="pt-1"><CTA to="/modelgallery" title="보러가기" /></div>
             </div>
           </GlassCard>
@@ -323,11 +330,11 @@ export default function Home() {
             className="self-start"
             style={{ opacity: revealProgress, transform: `translateY(${20 * (1 - revealProgress)}px)`, transition: 'opacity 500ms ease-out, transform 500ms ease-out' }}
           >
-            <GlassCard className="pointer-events-auto p-0 w-64 overflow-hidden relative bg-white/30 border-white/40 backdrop-blur-[18px] shadow-2xl shadow-white/10">
-              <div className="absolute -inset-1 bg-gradient-to-br from-white/50 via-white/20 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
+            <GlassCard className="pointer-events-auto p-0 w-64 overflow-hidden relative bg-white/60 border-white/60 backdrop-blur-[22px] shadow-2xl shadow-black/30">
+              <div className="absolute -inset-1 bg-gradient-to-br from-white/80 via-white/40 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
               <div className="relative p-4 flex flex-col gap-2">
-                <h3 className="text-base font-semibold text-white/90">블로그</h3>
-                <p className="text-white/70 text-xs leading-relaxed">쓸데없는 생각 정리</p>
+                <GlassTitle className="text-base text-white/90">블로그</GlassTitle>
+                <GlassText className="text-xs leading-relaxed">쓸데없는 생각 정리</GlassText>
                 <div className="pt-1"><CTA to="/blog" title="보러가기" /></div>
               </div>
             </GlassCard>
@@ -336,11 +343,11 @@ export default function Home() {
             className="self-end"
             style={{ opacity: revealProgress, transform: `translateY(${20 * (1 - revealProgress)}px)`, transition: 'opacity 500ms ease-out, transform 500ms ease-out', transitionDelay: '80ms' }}
           >
-            <GlassCard className="pointer-events-auto p-0 w-64 overflow-hidden relative bg-white/30 border-white/40 backdrop-blur-[18px] shadow-2xl shadow-white/10">
-              <div className="absolute -inset-1 bg-gradient-to-br from-white/50 via-white/20 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
+            <GlassCard className="pointer-events-auto p-0 w-64 overflow-hidden relative bg-white/60 border-white/60 backdrop-blur-[22px] shadow-2xl shadow-black/30">
+              <div className="absolute -inset-1 bg-gradient-to-br from-white/80 via-white/40 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
               <div className="relative p-4 flex flex-col gap-2">
-                <h3 className="text-base font-semibold text-white/90">프로젝트</h3>
-                <p className="text-white/70 text-xs leading-relaxed">토이 프로젝트 정리</p>
+                <GlassTitle className="text-base text-white/90">프로젝트</GlassTitle>
+                <GlassText className="text-xs leading-relaxed">토이 프로젝트 정리</GlassText>
                 <div className="pt-1"><CTA to="/projects" title="보러가기" /></div>
               </div>
             </GlassCard>
@@ -349,11 +356,11 @@ export default function Home() {
             className="self-start"
             style={{ opacity: revealProgress, transform: `translateY(${20 * (1 - revealProgress)}px)`, transition: 'opacity 500ms ease-out, transform 500ms ease-out', transitionDelay: '160ms' }}
           >
-            <GlassCard className="pointer-events-auto p-0 w-64 overflow-hidden relative bg-white/30 border-white/40 backdrop-blur-[18px] shadow-2xl shadow-white/10">
-              <div className="absolute -inset-1 bg-gradient-to-br from-white/50 via-white/20 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
+            <GlassCard className="pointer-events-auto p-0 w-64 overflow-hidden relative bg-white/60 border-white/60 backdrop-blur-[22px] shadow-2xl shadow-black/30">
+              <div className="absolute -inset-1 bg-gradient-to-br from-white/80 via-white/40 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
               <div className="relative p-4 flex flex-col gap-2">
-                <h3 className="text-base font-semibold text-white/90">AI 갤러리</h3>
-                <p className="text-white/70 text-xs leading-relaxed">AI로 만든 애니 캐릭터 갤러리 </p>
+                <GlassTitle className="text-base text-white/90">AI 그림 갤러리</GlassTitle>
+                <GlassText className="text-xs leading-relaxed">AI로 만든 그림 갤러리 </GlassText>
                 <div className="pt-1"><CTA to="/gallery" title="보러가기" /></div>
               </div>
             </GlassCard>
@@ -362,11 +369,11 @@ export default function Home() {
             className="self-end"
             style={{ opacity: revealProgress, transform: `translateY(${20 * (1 - revealProgress)}px)`, transition: 'opacity 500ms ease-out, transform 500ms ease-out', transitionDelay: '240ms' }}
           >
-            <GlassCard className="pointer-events-auto p-0 w-64 overflow-hidden relative bg-white/30 border-white/40 backdrop-blur-[18px] shadow-2xl shadow-white/10">
-              <div className="absolute -inset-1 bg-gradient-to-br from-white/50 via-white/20 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
+            <GlassCard className="pointer-events-auto p-0 w-64 overflow-hidden relative bg-white/60 border-white/60 backdrop-blur-[22px] shadow-2xl shadow-black/30">
+              <div className="absolute -inset-1 bg-gradient-to-br from-white/80 via-white/40 to-white/0 rounded-2xl blur-[28px]" aria-hidden="true" />
               <div className="relative p-4 flex flex-col gap-2">
-                <h3 className="text-base font-semibold text-white/90">3D 모델 갤러리리</h3>
-                <p className="text-white/70 text-xs leading-relaxed">AI로 만든 3D 모델 갤러리 </p>
+                <GlassTitle className="text-base text-white/90">3D 모델 갤러리</GlassTitle>
+                <GlassText className="text-xs leading-relaxed">AI로 만든 3D 모델 갤러리 </GlassText>
                 <div className="pt-1"><CTA to="/modelgallery" title="보러가기" /></div>
               </div>
             </GlassCard>
