@@ -166,6 +166,13 @@ function ProjectCard({
         </Link>
       </footer>
 
+      {/* WAKAWAKA 미디어 섹션: 진행사항 버튼 아래 */}
+      {project.id === 'p1' && (
+        <div className="mt-5">
+          <WakaWakaMedia />
+        </div>
+      )}
+
       {/* 은은한 배경 하이라이트 */}
       <div
         className="
@@ -176,6 +183,66 @@ function ProjectCard({
         aria-hidden
       />
     </GlassCard>
+  )
+}
+
+/** ====== WAKAWAKA 미디어 컴포넌트 ====== */
+function WakaWakaMedia() {
+  const carImg = '/media/wakawaka-car.jpg'
+  const uiImg = '/media/wakawaka-ui.jpg'
+  return (
+    <div
+      className="
+        relative grid gap-3 md:gap-4
+        grid-cols-1 md:grid-cols-[1.25fr_1fr]
+      "
+    >
+      {/* 좌측: 실물 사진 (비율 유지 카드) */}
+      <div
+        className="
+          relative overflow-hidden rounded-2xl
+          border border-white/15 bg-white/5
+          backdrop-blur-xl shadow-glass
+          aspect-[4/3]
+        "
+      >
+        <img
+          src={carImg}
+          alt="WAKAWAKA 실물"
+          className="w-full h-full object-cover"
+          loading="lazy"
+          onError={(e: any) => { e.currentTarget.style.display = 'none' }}
+        />
+        {/* 상단 라벨 */}
+        <div className="absolute left-3 top-3 px-2.5 py-1 rounded-lg text-[11px] bg-white/20 text-black/90 font-semibold">
+          hardware
+        </div>
+        {/* 유리 하이라이트 */}
+        <div className="pointer-events-none absolute -right-10 -top-10 size-36 rounded-full bg-white/30 blur-3xl opacity-20" aria-hidden />
+      </div>
+
+      {/* 우측: UI 스크린샷 (세로 카드) */}
+      <div
+        className="
+          relative overflow-hidden rounded-2xl
+          border border-white/15 bg-white/5
+          backdrop-blur-xl shadow-glass
+          aspect-[5/4]
+        "
+      >
+        <img
+          src={uiImg}
+          alt="WAKAWAKA UI"
+          className="w-full h-full object-cover"
+          loading="lazy"
+          onError={(e: any) => { e.currentTarget.style.display = 'none' }}
+        />
+        <div className="absolute left-3 top-3 px-2.5 py-1 rounded-lg text-[11px] bg-white/20 text-black/90 font-semibold">
+          software
+        </div>
+        <div className="pointer-events-none absolute -left-10 -bottom-10 size-36 rounded-full bg-white/30 blur-3xl opacity-20" aria-hidden />
+      </div>
+    </div>
   )
 }
 

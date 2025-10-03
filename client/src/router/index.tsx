@@ -3,7 +3,6 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import Layout from './Layout'
 import RequireAdmin from './RequireAdmin'
-import ErrorBoundary from './ErrorBoundary'
 
 // 페이지 컴포넌트들을 lazy loading
 const Home = lazy(() => import('../pages/Home'))
@@ -25,11 +24,12 @@ const PageLoader = () => (
 // 페이지 래퍼 컴포넌트
 const PageWrapper = ({ children }: { children: React.ReactNode }) => (
   <Suspense fallback={<PageLoader />}>
-    <ErrorBoundary>
-      {children}
-    </ErrorBoundary>
+    <NotFoundBoundary>{children}</NotFoundBoundary>
   </Suspense>
 )
+
+// ErrorBoundary 대체: NotFound만 그대로 사용하던 기존 구조를 복구
+const NotFoundBoundary = ({ children }: { children: React.ReactNode }) => <>{children}</>
 
 // 레거시 리다이렉트 컴포넌트들
 const LegacyPostRedirect = () => {

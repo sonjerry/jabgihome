@@ -11,6 +11,23 @@ import { useScrollReveal } from '../hooks/useScrollReveal'
  
 
 
+// 네비게이션 카드 공통 스타일 (네 장을 한꺼번에 조정할 수 있도록)
+const NAV_CARD_BASE =
+  "pointer-events-auto p-0 overflow-hidden relative transition-all duration-200 " +
+  "transform hover:scale-105 active:scale-95 " +
+  "!bg-white/15!border-white/20 hover:!bg-white/40 " +
+  "backdrop-blur-[28px] backdrop-contrast-125 backdrop-saturate-150";
+
+// 네비 카드 타이포/레이아웃 공통 클래스
+const NAV_INNER_BASE = "relative flex flex-col gap-3";
+const NAV_INNER_PAD_DESKTOP = "p-5 md:p-6";
+const NAV_INNER_PAD_MOBILE = "p-5";
+const NAV_TITLE_DESKTOP = "text-3xl md:text-4xl text-white";
+const NAV_TEXT_DESKTOP = "text-lg md:text-xl leading-relaxed !text-amber-300";
+const NAV_TITLE_MOBILE = "text-2xl text-white";
+const NAV_TEXT_MOBILE = "text-lg leading-relaxed !text-amber-300";
+
+
 export default function Home() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [isMuted, setIsMuted] = useState(true)
@@ -253,11 +270,11 @@ export default function Home() {
             transition: 'opacity 600ms ease-out, transform 600ms ease-out'
           }}
         >
-          <GlassCard variant="strong" className="pointer-events-auto p-0 w-[22rem] md:w-[26rem] overflow-hidden relative transition-all duration-200 transform hover:scale-105 active:scale-95" style={{ animation: 'bounceIn 0.8s ease-out 0s both' }}>
-            <div className="relative p-4 md:p-5 flex flex-col gap-2">
-              <GlassTitle className="text-base md:text-lg">블로그</GlassTitle>
-              <GlassText className="text-xs md:text-sm leading-relaxed">쓸데없는 생각 정리</GlassText>
-              <div className="pt-1"><CTA to="/blog" title="보러가기" /></div>
+          <GlassCard className={NAV_CARD_BASE + " w-[22rem] md:w-[26rem]"} style={{ animation: 'bounceIn 0.8s ease-out 0s both' }}>
+              <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_DESKTOP} min-h-[9rem] md:min-h-[10rem]`}>
+              <GlassTitle className={NAV_TITLE_DESKTOP}>블로그</GlassTitle>
+              <GlassText className={NAV_TEXT_DESKTOP}>쓸데없는 생각 정리</GlassText>
+              <div className="pt-3 md:pt-4"><CTA to="/blog" title="보러가기" /></div>
             </div>
           </GlassCard>
         </div>
@@ -272,11 +289,11 @@ export default function Home() {
             transitionDelay: '100ms'
           }}
         >
-          <GlassCard variant="strong" className="pointer-events-auto p-0 w-[22rem] md:w-[26rem] overflow-hidden relative transition-all duration-200 transform hover:scale-105 active:scale-95" style={{ animation: 'bounceIn 0.8s ease-out 0.1s both' }}>
-            <div className="relative p-4 md:p-5 flex flex-col gap-2">
-              <GlassTitle className="text-base md:text-lg">프로젝트</GlassTitle>
-              <GlassText className="text-xs md:text-sm leading-relaxed">토이 프로젝트 정리</GlassText>
-              <div className="pt-1"><CTA to="/projects" title="보러가기" /></div>
+          <GlassCard className={NAV_CARD_BASE + " w-[22rem] md:w-[26rem]"} style={{ animation: 'bounceIn 0.8s ease-out 0.1s both' }}>
+              <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_DESKTOP} min-h-[9rem] md:min-h-[10rem]`}>
+              <GlassTitle className={NAV_TITLE_DESKTOP}>프로젝트</GlassTitle>
+              <GlassText className={NAV_TEXT_DESKTOP}>토이 프로젝트 정리</GlassText>
+              <div className="pt-3 md:pt-4"><CTA to="/projects" title="보러가기" /></div>
             </div>
           </GlassCard>
         </div>
@@ -291,11 +308,11 @@ export default function Home() {
             transitionDelay: '200ms'
           }}
         >
-          <GlassCard variant="strong" className="pointer-events-auto p-0 w-[22rem] md:w-[26rem] overflow-hidden relative transition-all duration-200 transform hover:scale-105 active:scale-95" style={{ animation: 'bounceIn 0.8s ease-out 0.2s both' }}>
-            <div className="relative p-4 md:p-5 flex flex-col gap-2">
-              <GlassTitle className="text-base md:text-lg">AI 갤러리</GlassTitle>
-              <GlassText className="text-xs md:text-sm leading-relaxed">AI로 만든 애니 캐릭터 갤러리 </GlassText>
-              <div className="pt-1"><CTA to="/gallery" title="보러가기" /></div>
+          <GlassCard className={NAV_CARD_BASE + " w-[22rem] md:w-[26rem]"} style={{ animation: 'bounceIn 0.8s ease-out 0.2s both' }}>
+              <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_DESKTOP} min-h-[9rem] md:min-h-[10rem]`}>
+              <GlassTitle className={NAV_TITLE_DESKTOP}>AI 갤러리</GlassTitle>
+              <GlassText className={NAV_TEXT_DESKTOP}>AI로 만든 애니 캐릭터 갤러리 </GlassText>
+              <div className="pt-3 md:pt-4"><CTA to="/gallery" title="보러가기" /></div>
             </div>
           </GlassCard>
         </div>
@@ -310,11 +327,11 @@ export default function Home() {
             transitionDelay: '300ms'
           }}
         >
-          <GlassCard variant="strong" className="pointer-events-auto p-0 w-[22rem] md:w-[26rem] overflow-hidden relative transition-all duration-200 transform hover:scale-105 active:scale-95" style={{ animation: 'bounceIn 0.8s ease-out 0.3s both' }}>
-            <div className="relative p-4 md:p-5 flex flex-col gap-2">
-              <GlassTitle className="text-base md:text-lg">3D 모델 갤러리리</GlassTitle>
-              <GlassText className="text-xs md:text-sm leading-relaxed">AI로 만든 3D 모델 갤러리 </GlassText>
-              <div className="pt-1"><CTA to="/modelgallery" title="보러가기" /></div>
+          <GlassCard className={NAV_CARD_BASE + " w-[22rem] md:w-[26rem]"} style={{ animation: 'bounceIn 0.8s ease-out 0.3s both' }}>
+              <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_DESKTOP} min-h-[9rem] md:min-h-[10rem]`}>
+              <GlassTitle className={NAV_TITLE_DESKTOP}>3D 모델 갤러리</GlassTitle>
+              <GlassText className={NAV_TEXT_DESKTOP}>AI로 만든 3D 모델 갤러리 </GlassText>
+              <div className="pt-3 md:pt-4"><CTA to="/modelgallery" title="보러가기" /></div>
             </div>
           </GlassCard>
         </div>
@@ -324,45 +341,45 @@ export default function Home() {
         <div className="absolute inset-0 h-screen grid grid-rows-4 gap-2 px-3 py-3">
           {/* 1 */}
           <div className="h-full"
-               style={{ opacity: revealProgress, transform: `translateX(${(-40 * (1 - revealProgress)).toFixed(2)}px)`, transition: 'opacity 450ms ease-out, transform 450ms ease-out' }}>
-            <GlassCard variant="strong" className="pointer-events-auto p-0 w-full h-full overflow-hidden relative transition-all duration-200 transform hover:scale-105 active:scale-95" style={{ animation: 'bounceIn 0.8s ease-out 0s both' }}>
-              <div className="relative p-4 flex flex-col gap-2">
-                <GlassTitle className="text-base text-white/90">블로그</GlassTitle>
-                <GlassText className="text-xs leading-relaxed">쓸데없는 생각 정리</GlassText>
-                <div className="pt-1"><CTA to="/blog" title="보러가기" /></div>
+               style={{ opacity: revealProgress, transform: `translateX(${(-60 * (1 - revealProgress)).toFixed(2)}px)`, transition: 'opacity 500ms cubic-bezier(0.22, 0.61, 0.36, 1), transform 500ms cubic-bezier(0.22, 0.61, 0.36, 1)' }}>
+            <GlassCard className={NAV_CARD_BASE + " w-full h-full"} style={{ animation: 'bounceIn 0.8s ease-out 0s both' }}>
+              <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_MOBILE}`}> 
+                <GlassTitle className={NAV_TITLE_MOBILE}>블로그</GlassTitle>
+                <GlassText className={NAV_TEXT_MOBILE}>쓸데없는 생각 정리</GlassText>
+                <div className="pt-3"><CTA to="/blog" title="보러가기" /></div>
               </div>
             </GlassCard>
           </div>
           {/* 2 */}
           <div className="h-full"
-               style={{ opacity: revealProgress, transform: `translateX(${(40 * (1 - revealProgress)).toFixed(2)}px)`, transition: 'opacity 450ms ease-out, transform 450ms ease-out', transitionDelay: '80ms' }}>
-            <GlassCard variant="strong" className="pointer-events-auto p-0 w-full h-full overflow-hidden relative transition-all duration-200 transform hover:scale-105 active:scale-95" style={{ animation: 'bounceIn 0.8s ease-out 0.08s both' }}>
-              <div className="relative p-4 flex flex-col gap-2">
-                <GlassTitle className="text-base text-white/90">프로젝트</GlassTitle>
-                <GlassText className="text-xs leading-relaxed">토이 프로젝트 정리</GlassText>
-                <div className="pt-1"><CTA to="/projects" title="보러가기" /></div>
+               style={{ opacity: revealProgress, transform: `translateX(${(60 * (1 - revealProgress)).toFixed(2)}px)`, transition: 'opacity 500ms cubic-bezier(0.22, 0.61, 0.36, 1), transform 500ms cubic-bezier(0.22, 0.61, 0.36, 1)', transitionDelay: '60ms' }}>
+            <GlassCard className={NAV_CARD_BASE + " w-full h-full"} style={{ animation: 'bounceIn 0.8s ease-out 0.08s both' }}>
+              <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_MOBILE}`}>
+                <GlassTitle className={NAV_TITLE_MOBILE}>프로젝트</GlassTitle>
+                <GlassText className={NAV_TEXT_MOBILE}>토이 프로젝트 정리</GlassText>
+                <div className="pt-3"><CTA to="/projects" title="보러가기" /></div>
               </div>
             </GlassCard>
           </div>
           {/* 3 */}
           <div className="h-full"
-               style={{ opacity: revealProgress, transform: `translateX(${(-40 * (1 - revealProgress)).toFixed(2)}px)`, transition: 'opacity 450ms ease-out, transform 450ms ease-out', transitionDelay: '160ms' }}>
-            <GlassCard variant="strong" className="pointer-events-auto p-0 w-full h-full overflow-hidden relative">
-              <div className="relative h-full flex flex-col items-start justify-center p-4 gap-2">
-                <GlassTitle className="text-base text-white/90">AI 그림 갤러리</GlassTitle>
-                <GlassText className="text-xs leading-relaxed">AI로 만든 그림 갤러리 </GlassText>
-                <div className="pt-1"><CTA to="/gallery" title="보러가기" /></div>
+               style={{ opacity: revealProgress, transform: `translateX(${(-60 * (1 - revealProgress)).toFixed(2)}px)`, transition: 'opacity 500ms cubic-bezier(0.22, 0.61, 0.36, 1), transform 500ms cubic-bezier(0.22, 0.61, 0.36, 1)', transitionDelay: '120ms' }}>
+            <GlassCard className={NAV_CARD_BASE + " w-full h-full"}>
+              <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_MOBILE}`}>
+                <GlassTitle className={NAV_TITLE_MOBILE}>AI 그림 갤러리</GlassTitle>
+                <GlassText className={NAV_TEXT_MOBILE}>AI로 만든 그림 갤러리 </GlassText>
+                <div className="pt-3"><CTA to="/gallery" title="보러가기" /></div>
               </div>
             </GlassCard>
           </div>
           {/* 4 */}
           <div className="h-full"
-               style={{ opacity: revealProgress, transform: `translateX(${(40 * (1 - revealProgress)).toFixed(2)}px)`, transition: 'opacity 450ms ease-out, transform 450ms ease-out', transitionDelay: '240ms' }}>
-            <GlassCard variant="strong" className="pointer-events-auto p-0 w-full h-full overflow-hidden relative">
-              <div className="relative h-full flex flex-col items-start justify-center p-4 gap-2">
-                <GlassTitle className="text-base text-white/90">3D 모델 갤러리</GlassTitle>
-                <GlassText className="text-xs leading-relaxed">AI로 만든 3D 모델 갤러리 </GlassText>
-                <div className="pt-1"><CTA to="/modelgallery" title="보러가기" /></div>
+               style={{ opacity: revealProgress, transform: `translateX(${(60 * (1 - revealProgress)).toFixed(2)}px)`, transition: 'opacity 500ms cubic-bezier(0.22, 0.61, 0.36, 1), transform 500ms cubic-bezier(0.22, 0.61, 0.36, 1)', transitionDelay: '180ms' }}>
+            <GlassCard className={NAV_CARD_BASE + " w-full h-full"}>
+              <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_MOBILE}`}>
+                <GlassTitle className={NAV_TITLE_MOBILE}>3D 모델 갤러리</GlassTitle>
+                <GlassText className={NAV_TEXT_MOBILE}>AI로 만든 3D 모델 갤러리 </GlassText>
+                <div className="pt-3"><CTA to="/modelgallery" title="보러가기" /></div>
               </div>
             </GlassCard>
           </div>

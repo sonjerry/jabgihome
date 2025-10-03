@@ -16,21 +16,27 @@ const transition = {
 export default function PageTransition({ children, isHomePage }: PageTransitionProps) {
   const [pointerEvents, setPointerEvents] = useState<'auto' | 'none'>('auto')
   const location = useLocation()
-  
+
   // 라우트 변경 시 포인터 이벤트 즉시 활성화
   useEffect(() => {
     setPointerEvents('auto')
   }, [location.pathname])
-  
+
+  const contentInitial = isHomePage ? { opacity: 0 } : { opacity: 0, y: 5 }
+
+  const contentAnimate = isHomePage ? { opacity: 1 } : { opacity: 1, y: 0 }
+
+  const contentExit = isHomePage ? { opacity: 0 } : { opacity: 0, y: -5 }
+
   return (
     <motion.div
       style={{ 
         pointerEvents, 
         contain: 'content' 
       }}
-      initial={isHomePage ? { opacity: 0 } : { opacity: 0, y: 5 }}
-      animate={isHomePage ? { opacity: 1 } : { opacity: 1, y: 0 }}
-      exit={isHomePage ? { opacity: 0 } : { opacity: 0, y: -5 }}
+      initial={contentInitial}
+      animate={contentAnimate}
+      exit={contentExit}
       transition={transition}
       onAnimationStart={() => setPointerEvents('auto')}
       onAnimationComplete={() => setPointerEvents('auto')}

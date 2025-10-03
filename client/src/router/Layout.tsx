@@ -7,6 +7,7 @@ import Navbar from '../components/Navbar'
 import AudioProvider from '../lib/audio/AudioProvider'
 import Silk from '../components/Silk'
 import PageTransition from './PageTransition'
+import ErrorBoundary from './ErrorBoundary'
 
 export default function Layout() {
   const location = useLocation()
@@ -45,11 +46,13 @@ export default function Layout() {
         <Suspense fallback={
           <div className="p-6 text-sm text-white/70">로딩중…</div>
         }>
-          <AnimatePresence mode="wait" initial={false}>
-            <PageTransition key={location.pathname} isHomePage={isHomePage}>
-              <Outlet />
-            </PageTransition>
-          </AnimatePresence>
+          <ErrorBoundary>
+            <AnimatePresence mode="wait" initial={false}>
+              <PageTransition key={location.pathname} isHomePage={isHomePage}>
+                <Outlet />
+              </PageTransition>
+            </AnimatePresence>
+          </ErrorBoundary>
         </Suspense>
       </div>
     </AudioProvider>
