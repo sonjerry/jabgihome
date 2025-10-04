@@ -65,7 +65,7 @@ export default function Navbar() {
         const showMobile = pathname === '/' && (reveal || 0) > 0.02
         return (
       <aside
-        className={`fixed left-0 top-0 h-screen w-64 z-[100] isolate glass border-r border-white/10 ${pathname === '/' ? (showMobile ? 'block' : 'hidden md:block') : 'hidden md:block'}`}
+        className={`fixed left-0 top-0 h-[100dvh] w-64 z-[100] isolate glass border-r border-white/10 ${pathname === '/' ? (showMobile ? 'block' : 'hidden md:block') : 'hidden md:block'}`}
         style={pathname === '/' ? {
           opacity: reveal,
           transform: `translateX(${(-20 * (1 - reveal || 0)).toFixed(2)}px)`,
@@ -115,7 +115,7 @@ export default function Navbar() {
             }} 
           />
           <aside
-            className="fixed left-0 top-0 h-screen z-[102] md:hidden glass border-r border-white/10 w-[33vw] min-w-[260px] max-w-[360px] animate-slide-in-left"
+            className="fixed left-0 top-0 h-[100dvh] z:[102] md:hidden glass border-r border-white/10 w-[33vw] min-w-[260px] max-w-[360px] animate-slide-in-left"
             role="dialog" aria-modal="true"
             style={{
               animation: 'slideInFromLeft 0.3s ease-out'
@@ -260,7 +260,7 @@ function SidebarContent({
         })}
       </nav>
       <div className="px-2 md:px-5 py-6"><AudioDock /></div>
-      <div className="px-3 md:px-5 py-3 border-t border-white/10"><AdminGate /></div>
+      <div className="px-3 md:px-5 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] border-t border-white/10"><AdminGate /></div>
     </div>
   )
 }
