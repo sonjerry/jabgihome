@@ -86,6 +86,10 @@ export async function getPost(id: string): Promise<Post> {
 export async function savePost(p: Post): Promise<Post> {
   return apiPost<Post>('/posts', p)
 }
+export async function updatePost(p: Post): Promise<{ ok: boolean; id: string }> {
+  if (!p.id) throw new Error('id required')
+  return apiPut<{ ok: boolean; id: string }>(`/posts/${p.id}`, p)
+}
 export async function uploadFile(file: File): Promise<Attachment> {
   const fd = new FormData()
   fd.append('file', file)

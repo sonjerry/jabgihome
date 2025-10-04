@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { Post, Attachment } from '../types'
-import { getPost, savePost, uploadFile } from '../lib/api'
+import { getPost, savePost, uploadFile, updatePost } from '../lib/api'
 import PageShell from '../components/PageShell'
 
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
@@ -18,6 +18,7 @@ export default function Editor(){
   const [tagInput,setTagInput]=useState('')
   const [tags,setTags]=useState<string[]>([])
   const [attachments,setAttachments]=useState<Attachment[]>([])
+  const [createdAt, setCreatedAt] = useState<string>('')
   const [loading, setLoading] = useState(isEdit)
 
   const textareaRef = useRef<HTMLTextAreaElement|null>(null)
@@ -32,6 +33,7 @@ export default function Editor(){
         setCategory(p.category || '')
         setTags(p.tags || [])
         setAttachments(p.attachments || [])
+        setCreatedAt(p.createdAt || '')
       })
       .catch(err => {
         console.error(err)
@@ -78,12 +80,16 @@ export default function Editor(){
     const post: Post = {
       id: isEdit ? (id as string) : uid(),
       title, content, category, tags,
-      createdAt: now,
+      createdAt: isEdit ? (createdAt || now) : now,
       updatedAt: isEdit ? now : undefined,
       attachments
     }
     try{
-      await savePost(post)
+      if (isEdit) {
+        await updatePost(post)
+      } else {
+        await savePost(post)
+      }
       nav('/blog')
     }catch(e){
       console.error(e)

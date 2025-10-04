@@ -101,7 +101,6 @@ html {
 body {
   @apply text-cream font-rokaf;
   background: #1a1a1a; /* Silk 배경과 유사한 어두운 회색 */
-  isolation: isolate;
 }
 
 
@@ -110,8 +109,22 @@ body {
   visibility: hidden;
 }
 
-/* 유리 카드 */
-.glass { @apply bg-white/10 border border-white/20 backdrop-blur-xl shadow-glass; }
+/* 유리 카드 - 컴포넌트 레이어에 선언하여 유틸리티 우선순위와 충돌 최소화 */
+@layer components {
+  .glass { @apply bg-white/10 border border-white/20 shadow-glass; position: relative; overflow: hidden; }
+  .glass > * { position: relative; z-index: 1; }
+}
+/* 강건한 글래스 효과: 내부 오버레이로 백드롭 블러 적용 */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255,255,255,0.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35) contrast(1.1);
+  backdrop-filter: blur(18px) saturate(1.35) contrast(1.1);
+  z-index: 0;
+}
 
 /* 멀티 컬럼 깨짐 방지 */
 .break-inside-avoid { break-inside: avoid; }
