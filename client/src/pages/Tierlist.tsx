@@ -90,6 +90,67 @@ export default function Tierlist() {
   const [reviewText, setReviewText] = useState('')
   const [savedReview, setSavedReview] = useState<Review | null>(null)
 
+  // 별점 컴포넌트 (0.5 단위 지원)
+  const StarRating = ({ value, onChange, editable = false }: { value: number; onChange?: (rating: number) => void; editable?: boolean }) => {
+    const [hoverValue, setHoverValue] = useState<number | null>(null)
+    
+    const handleStarClick = (starValue: number) => {
+      if (!editable || !onChange) return
+      onChange(starValue)
+    }
+
+    const handleStarHover = (starValue: number) => {
+      if (!editable) return
+      setHoverValue(starValue)
+    }
+
+    const handleMouseLeave = () => {
+      if (!editable) return
+      setHoverValue(null)
+    }
+
+    const displayValue = hoverValue || value
+
+    const getStarFill = (starIndex: number) => {
+      if (starIndex < displayValue) return '#fbbf24'
+      return 'none'
+    }
+
+    const getStarStroke = (starIndex: number) => {
+      if (starIndex < displayValue) return '#fbbf24'
+      return '#6b7280'
+    }
+
+    return (
+      <div className="flex items-center gap-0.5" onMouseLeave={handleMouseLeave}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            onClick={() => handleStarClick(star)}
+            onMouseEnter={() => handleStarHover(star)}
+            disabled={!editable}
+            className={`transition-colors ${editable ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill={getStarFill(star)}
+              stroke={getStarStroke(star)}
+              strokeWidth={getStarFill(star) === 'none' ? 1 : 0}
+              className="transition-all duration-150"
+            >
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          </button>
+        ))}
+        <span className="ml-3 text-sm text-white/70">
+          {value.toFixed(1)}/5.0
+        </span>
+      </div>
+    )
+  }
+
   const refreshReview = useCallback(async (key: string) => {
     const r = await ReviewAPI.get(key)
     if (r) setSavedReview({ rating: r.rating, text: r.text, updatedAt: r.updatedAt })
@@ -136,12 +197,12 @@ export default function Tierlist() {
   }, [role, storageKey, refreshComments])
 
   const TIERS: { key: Tier; color: string; label: string; desc: string }[] = [
-    { key: 'S', color: 'from-rose-400/40 to-rose-500/40', label: 'S', desc: '강렬한 여운, 완벽한 서사, 흠잡을 곳 없는 작화, 모든걸 아우른' },
+    { key: 'S', color: 'from-rose-400/40 to-rose-500/40', label: 'S', desc: '강렬한 여운, 완벽한 서사, 흠잡을 곳 없는 작화, 모든걸 아우른 1황' },
     { key: 'A', color: 'from-amber-300/40 to-amber-400/40', label: 'A', desc: '걸작. 감동을 주는 작품들' },
-    { key: 'B', color: 'from-blue-300/40 to-blue-400/40', label: 'B', desc: '명작. 뛰어난 개성을 갖고 있는 작품들' },
-    { key: 'C', color: 'from-lime-200/40 to-lime-300/40', label: 'C', desc: '평작. 시간이 아깝지 않은 작품들' },
-    { key: 'D', color: 'from-green-200/40 to-green-300/40', label: 'D', desc: '아쉬운 점들이 더 큰 작품들' },
-    { key: 'F', color: 'from-slate-200/40 to-slate-300/40', label: 'F', desc: '안봐도 되는 작품들' },
+    { key: 'B', color: 'from-blue-300/40 to-blue-400/40', label: 'B', desc: '수작. 뛰어난 개성을 갖고 있는 작품들' },
+    { key: 'C', color: 'from-lime-200/40 to-lime-300/40', label: 'C', desc: '평작. 충분히 재밌다.시간이 아깝지 않은 작품들' },
+    { key: 'D', color: 'from-green-200/40 to-green-300/40', label: 'D', desc: '흠... 그정돈가? 아쉬운 점들이 더 큰 작품들' },
+    { key: 'F', color: 'from-slate-200/40 to-slate-300/40', label: 'F', desc: '굳이 안봐도 되는 작품들' },
   ]
 
   return (
@@ -189,73 +250,192 @@ export default function Tierlist() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur"
           role="dialog" aria-modal="true" onClick={close}
         >
-          <div className="relative w-[92vw] max-w-5xl max-h-[86vh] rounded-xl overflow-hidden bg-black/30 backdrop-blur border border-white/10" onClick={(e) => e.stopPropagation()}>
-            <img src={current.url} alt={current.title} className="block w-full max-h-[56vh] object-contain bg-black/20" />
+          <div className="relative w-[95vw] max-w-6xl max-h-[90vh] rounded-xl overflow-hidden bg-black/30 backdrop-blur border border-white/10 flex" onClick={(e) => e.stopPropagation()}>
+            {/* 왼쪽: 포스터 */}
+            <div className="w-1/2 min-w-0 flex-shrink-0">
+              <img 
+                src={current.url} 
+                alt={current.title} 
+                className="w-full h-full object-contain bg-black/20" 
+              />
+            </div>
 
-            <div className="px-4 py-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-semibold text-white/80">댓글</h3>
-                <div className="max-h-[22vh] overflow-y-auto space-y-2 pr-1 mt-2">
+            {/* 오른쪽: 별점, 리뷰, 댓글 */}
+            <div className="w-1/2 flex flex-col p-6 min-w-0">
+              {/* 제목 */}
+              <div className="mb-4">
+                <h2 className="text-xl font-bold text-white mb-2">{current.title}</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-white/60">티어:</span>
+                  <span className={`px-2 py-1 rounded text-sm font-semibold ${
+                    current.tier === 'S' ? 'bg-rose-500/20 text-rose-300' :
+                    current.tier === 'A' ? 'bg-amber-500/20 text-amber-300' :
+                    current.tier === 'B' ? 'bg-blue-500/20 text-blue-300' :
+                    current.tier === 'C' ? 'bg-lime-500/20 text-lime-300' :
+                    current.tier === 'D' ? 'bg-green-500/20 text-green-300' :
+                    'bg-slate-500/20 text-slate-300'
+                  }`}>
+                    {current.tier}
+                  </span>
+                </div>
+              </div>
+
+              {/* 별점 */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-white/90 mb-3">평점</h3>
+                {savedReview ? (
+                  <div className="space-y-2">
+                    <StarRating value={savedReview.rating} editable={false} />
+                    {role === 'admin' && (
+                      <div className="mt-3">
+                        <label className="block text-sm text-white/70 mb-2">평점 수정</label>
+                        <StarRating value={rating} onChange={setRating} editable={true} />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    {role === 'admin' ? (
+                      <div className="space-y-2">
+                        <label className="block text-sm text-white/70 mb-2">평점 설정</label>
+                        <StarRating value={rating} onChange={setRating} editable={true} />
+                      </div>
+                    ) : (
+                      <p className="text-white/50 text-sm">아직 평점이 없습니다.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 리뷰 */}
+              <div className="mb-6 flex-1 min-h-0">
+                <h3 className="text-lg font-semibold text-white/90 mb-3">리뷰</h3>
+                {savedReview ? (
+                  <div className="space-y-2">
+                    <div className="text-white/80 whitespace-pre-wrap bg-white/5 rounded-lg p-3 min-h-[100px]">
+                      {savedReview.text}
+                    </div>
+                    {savedReview.updatedAt && (
+                      <div className="text-white/40 text-xs">
+                        {new Date(savedReview.updatedAt).toLocaleString()}
+                      </div>
+                    )}
+                    {role === 'admin' && (
+                      <div className="mt-3 space-y-2">
+                        <label className="block text-sm text-white/70">리뷰 수정</label>
+                        <textarea 
+                          value={reviewText} 
+                          onChange={(e) => setReviewText(e.target.value)} 
+                          placeholder="리뷰를 작성하세요..." 
+                          className="w-full min-h-[80px] rounded-md bg-white/10 text-white placeholder:text-white/40 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20" 
+                        />
+                        <div className="flex justify-end">
+                          <button 
+                            onClick={handleSaveReview} 
+                            className="px-4 py-2 rounded-md bg-emerald-500/80 hover:bg-emerald-500 text-white text-sm transition-colors"
+                          >
+                            저장
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    {role === 'admin' ? (
+                      <div className="space-y-2">
+                        <textarea 
+                          value={reviewText} 
+                          onChange={(e) => setReviewText(e.target.value)} 
+                          placeholder="리뷰를 작성하세요..." 
+                          className="w-full min-h-[100px] rounded-md bg-white/10 text-white placeholder:text-white/40 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20" 
+                        />
+                        <div className="flex justify-end">
+                          <button 
+                            onClick={handleSaveReview} 
+                            className="px-4 py-2 rounded-md bg-emerald-500/80 hover:bg-emerald-500 text-white text-sm transition-colors"
+                          >
+                            저장
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-white/50 text-sm bg-white/5 rounded-lg p-3 min-h-[100px] flex items-center justify-center">
+                        아직 리뷰가 없습니다.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 댓글 */}
+              <div className="border-t border-white/10 pt-4">
+                <h3 className="text-lg font-semibold text-white/90 mb-3">댓글</h3>
+                <div className="max-h-[200px] overflow-y-auto space-y-2 mb-3">
                   {comments.length === 0 ? (
-                    <p className="text-xs text-white/50">첫 댓글을 남겨보세요.</p>
+                    <p className="text-xs text-white/50 text-center py-4">첫 댓글을 남겨보세요.</p>
                   ) : (
                     comments.map(c => (
-                      <div key={c.id} className="text-sm flex items-start gap-2">
-                        <div className="flex-1">
-                          <span className="text-white/70 mr-2">{c.nickname}</span>
-                          <span className="text-white/90 break-words align-middle">{c.content}</span>
+                      <div key={c.id} className="text-sm bg-white/5 rounded-lg p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <span className="text-white/70 mr-2 font-medium">{c.nickname}</span>
+                            <span className="text-white/90 break-words">{c.content}</span>
+                          </div>
+                          {role === 'admin' && (
+                            <button 
+                              onClick={() => handleDeleteComment(c.id)} 
+                              className="shrink-0 text-xs px-2 py-1 rounded bg-red-500/20 hover:bg-red-500/30 text-red-200 transition-colors"
+                            >
+                              삭제
+                            </button>
+                          )}
                         </div>
-                        {role === 'admin' && (
-                          <button onClick={() => handleDeleteComment(c.id)} className="shrink-0 text-xs px-2 py-1 rounded bg-red-500/20 hover:bg-red-500/30 text-red-200">삭제</button>
-                        )}
                       </div>
                     ))
                   )}
                 </div>
-                <div className="mt-2 flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddComment() } }}
-                    placeholder="텍스트만 입력..."
+                    placeholder="댓글을 입력하세요..."
                     className="flex-1 rounded-md bg-white/10 text-white placeholder:text-white/40 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20"
                   />
-                  <button onClick={handleAddComment} className="px-3 py-2 rounded-md bg-white/10 hover:bg-white/20 text-white text-sm">남기기</button>
+                  <button 
+                    onClick={handleAddComment} 
+                    className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20 text-white text-sm transition-colors"
+                  >
+                    등록
+                  </button>
                 </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-white/80">리뷰(관리자)</h3>
-                {savedReview ? (
-                  <div className="mt-2 space-y-2">
-                    <div className="text-white/80">평점: <span className="font-semibold">{savedReview.rating}</span>/10</div>
-                    <div className="text-white/80 whitespace-pre-wrap">{savedReview.text}</div>
-                    {savedReview.updatedAt && (
-                      <div className="text-white/40 text-xs">{new Date(savedReview.updatedAt).toLocaleString()}</div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-white/50 mt-1 text-sm">아직 리뷰가 없습니다.</p>
-                )}
-
-                {role === 'admin' && (
-                  <div className="mt-3 space-y-2">
-                    <label className="block text-xs text-white/70">평점(0~10)</label>
-                    <input type="range" min={0} max={10} step={1} value={rating} onChange={(e) => setRating(Number(e.target.value))} className="w-full" />
-                    <div className="text-white/80">{rating}</div>
-                    <textarea value={reviewText} onChange={(e) => setReviewText(e.target.value)} placeholder="코멘트" className="w-full min-h-[90px] rounded-md bg-white/10 text-white placeholder:text-white/40 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20" />
-                    <div className="flex justify-end">
-                      <button onClick={handleSaveReview} className="px-3 py-2 rounded-md bg-emerald-500/80 hover:bg-emerald-500 text-white text-sm">저장</button>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
-            <button onClick={(e) => { e.stopPropagation(); prev() }} aria-label="이전" className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full px-3 py-2 bg-white/10 hover:bg-white/20">◀</button>
-            <button onClick={(e) => { e.stopPropagation(); next() }} aria-label="다음" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full px-3 py-2 bg-white/10 hover:bg-white/20">▶</button>
-            <button onClick={close} aria-label="닫기" className="absolute right-2 top-2 rounded-full px-2 py-1 bg-white/10 hover:bg-white/20">✕</button>
+            {/* 네비게이션 버튼들 */}
+            <button 
+              onClick={(e) => { e.stopPropagation(); prev() }} 
+              aria-label="이전" 
+              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full px-3 py-2 bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              ◀
+            </button>
+            <button 
+              onClick={(e) => { e.stopPropagation(); next() }} 
+              aria-label="다음" 
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full px-3 py-2 bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              ▶
+            </button>
+            <button 
+              onClick={close} 
+              aria-label="닫기" 
+              className="absolute right-2 top-2 rounded-full px-2 py-1 bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              ✕
+            </button>
           </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 // client/src/components/AudioDock.tsx
 import React, { useEffect, useRef, useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import clsx from 'clsx'
 import { useAudio, type Track } from '../lib/audio/AudioProvider'
 
@@ -273,36 +274,27 @@ function PlaylistPopover({
     }
   }, [open])
 
-  return (
-    <div className="relative w-full">
-      <button
-        ref={btnRef}
-        onClick={() => setOpen((v) => !v)}
-        className="w-full h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center gap-2"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-controls="playlist-popover"
-        title="Playlist"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" className="opacity-90" aria-hidden="true">
-          <path fill="currentColor" d="M4 6h16v2H4V6m0 5h10v2H4v-2m0 5h7v2H4v-2Z" />
-        </svg>
-        <span className="text-sm">Playlist</span>
-      </button>
+  // 포털을 사용해서 팝오버를 body에 직접 렌더링
+  const renderPopover = () => {
+    if (!open || !btnRef.current) return null
 
+    const btnRect = btnRef.current.getBoundingClientRect()
+    
+    return createPortal(
       <div
         id="playlist-popover"
         ref={panelRef}
         className={clsx(
-          'absolute top-1/2 -translate-y-1/2 z-50',
-          position === 'right' ? 'left-full ml-2 origin-left' : 'right-full mr-2 origin-right',
+          'fixed z-[110]',
           'w-56 max-h-60 overflow-auto',
           'rounded-xl border border-white/20 bg-white/10 backdrop-blur-xl shadow-xl',
           'transition-all duration-150',
-          open
-            ? 'opacity-100 scale-100 pointer-events-auto'
-            : 'opacity-0 scale-95 pointer-events-none'
+          'opacity-100 scale-100 pointer-events-auto'
         )}
+        style={{
+          left: position === 'right' ? `${btnRect.right + 8}px` : `${btnRect.left - 224 - 8}px`,
+          top: `${btnRect.top + btnRect.height / 2 - 120}px`, // 팝오버 높이의 절반만큼 위로
+        }}
       >
         <ul className="py-1">
           {list.length === 0 && (
@@ -326,7 +318,29 @@ function PlaylistPopover({
             </li>
           ))}
         </ul>
-      </div>
+      </div>,
+      document.body
+    )
+  }
+
+  return (
+    <div className="relative w-full">
+      <button
+        ref={btnRef}
+        onClick={() => setOpen((v) => !v)}
+        className="w-full h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center gap-2"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls="playlist-popover"
+        title="Playlist"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" className="opacity-90" aria-hidden="true">
+          <path fill="currentColor" d="M4 6h16v2H4V6m0 5h10v2H4v-2m0 5h7v2H4v-2Z" />
+        </svg>
+        <span className="text-sm">Playlist</span>
+      </button>
+
+      {renderPopover()}
     </div>
   )
 }
