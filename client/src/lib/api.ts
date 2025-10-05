@@ -179,3 +179,11 @@ export const ReviewAPI = {
   save: (key: string, rating: number, text: string) => apiPut<{ ok: boolean }>(`/reviews/${encodeURIComponent(key)}`, { rating, text }),
   remove: (key: string) => apiDelete<{ ok: boolean }>(`/reviews/${encodeURIComponent(key)}`).then(r => !!r.ok),
 }
+
+/** ─────────── Anime Titles (admin-only) ─────────── */
+export type AnimeTitle = { key: string; title: string; updatedAt: string }
+export const AnimeTitleAPI = {
+  get: (key: string) => apiGet<AnimeTitle | null>(`/anime-titles/${encodeURIComponent(key)}`),
+  save: (key: string, title: string) => apiPut<{ ok: boolean }>(`/anime-titles/${encodeURIComponent(key)}`, { title }),
+  remove: (key: string) => apiDelete<{ ok: boolean }>(`/anime-titles/${encodeURIComponent(key)}`).then(r => !!r.ok),
+}

@@ -737,6 +737,57 @@ app.delete('/api/reviews/:key', requireAdmin, async (req, res) => {
   }
 })
 
+/* ───────────────────── 애니메이션 제목 관리 ───────────────────── */
+app.get('/api/anime-titles/:key', async (req, res) => {
+  try {
+    const key = decodeURIComponent(req.params.key || '')
+    if (!key) return res.status(400).json({ error: 'invalid key' })
+    const { data, error } = await supabase
+      .from('anime_titles')
+      .select('thread_key, title, updated_at')
+      .eq('thread_key', key)
+      .single()
+    if (error) {
+      if (error.code === 'PGRST116') return res.json(null)
+      return res.status(500).json({ error: error.message })
+    }
+    return res.json({ key: data.thread_key, title: data.title, updatedAt: data.updated_at })
+  } catch (e) {
+    console.error('get anime title error', e)
+    res.status(500).json({ error: 'anime title get failed' })
+  }
+})
+
+app.put('/api/anime-titles/:key', requireAdmin, async (req, res) => {
+  try {
+    const key = decodeURIComponent(req.params.key || '')
+    const parsed = ensureObjectBody(req.body)
+    const { title } = parsed || {}
+    if (!key || typeof title !== 'string' || !title.trim()) return res.status(400).json({ ok: false })
+    const nowIso = new Date().toISOString()
+    const { error } = await supabase
+      .from('anime_titles')
+      .upsert({ thread_key: key, title: title.trim(), updated_at: nowIso }, { onConflict: 'thread_key' })
+    if (error) return res.status(500).json({ ok: false, msg: error.message })
+    res.json({ ok: true })
+  } catch (e) {
+    console.error('save anime title error', e)
+    res.status(500).json({ ok: false })
+  }
+})
+
+app.delete('/api/anime-titles/:key', requireAdmin, async (req, res) => {
+  try {
+    const key = decodeURIComponent(req.params.key || '')
+    const { error } = await supabase.from('anime_titles').delete().eq('thread_key', key)
+    if (error) return res.status(500).json({ ok: false })
+    res.json({ ok: true })
+  } catch (e) {
+    console.error('delete anime title error', e)
+    res.status(500).json({ ok: false })
+  }
+})
+
 /* ───────────────────── Prewarm (무료 Supabase 웜업) ───────────────────── */
 const PREWARM_INTERVAL_MS = Number(process.env.PREWARM_INTERVAL_MS || 240_000) // 4분
 if (PREWARM_INTERVAL_MS > 0) {

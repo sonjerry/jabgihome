@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useEffect } from 'react'
 import GlassCard from '../components/GlassCard'
 import { useAuth } from '../state/auth'
-import { ThreadAPI, ReviewAPI } from '../lib/api'
+import { ThreadAPI, ReviewAPI, AnimeTitleAPI } from '../lib/api'
 
 type Poster = {
   title: string
@@ -90,12 +90,19 @@ export default function Tierlist() {
   const [savedComment, setSavedComment] = useState<Review | null>(null)
   const [editingTitle, setEditingTitle] = useState(false)
   const [editedTitle, setEditedTitle] = useState('')
+  const [savedTitle, setSavedTitle] = useState<string | null>(null)
 
 
   const refreshComment = useCallback(async (key: string) => {
     const r = await ReviewAPI.get(key)
     if (r) setSavedComment({ rating: 0, text: r.text, updatedAt: r.updatedAt })
     else setSavedComment(null)
+  }, [])
+
+  const refreshTitle = useCallback(async (key: string) => {
+    const t = await AnimeTitleAPI.get(key)
+    if (t) setSavedTitle(t.title)
+    else setSavedTitle(null)
   }, [])
 
   // ── comments (anonymous) ────────────────────────────
@@ -110,12 +117,13 @@ export default function Tierlist() {
     if (!open || !storageKey) return
     refreshComment(storageKey)
     refreshComments(storageKey)
+    refreshTitle(storageKey)
     setCommentText('')
     setDraft('')
     setEditingTitle(false)
-    if (current) setEditedTitle(current.title)
+    if (current) setEditedTitle(savedTitle || current.title)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, storageKey])
+  }, [open, storageKey, savedTitle, current])
 
   const handleSaveComment = useCallback(async () => {
     if (role !== 'admin' || !storageKey || !commentText.trim()) return
@@ -123,6 +131,13 @@ export default function Tierlist() {
     await refreshComment(storageKey)
     setCommentText('')
   }, [role, storageKey, commentText, refreshComment])
+
+  const handleSaveTitle = useCallback(async () => {
+    if (role !== 'admin' || !storageKey || !editedTitle.trim()) return
+    await AnimeTitleAPI.save(storageKey, editedTitle.trim())
+    await refreshTitle(storageKey)
+    setEditingTitle(false)
+  }, [role, storageKey, editedTitle, refreshTitle])
 
   const handleAddComment = useCallback(async () => {
     const text = draft.trim()
@@ -217,17 +232,14 @@ export default function Tierlist() {
                     />
                     <div className="flex gap-2">
                       <button
-                        onClick={() => {
-                          // TODO: 제목 저장 로직 구현
-                          setEditingTitle(false)
-                        }}
+                        onClick={handleSaveTitle}
                         className="px-3 py-1 bg-emerald-500/80 hover:bg-emerald-500 text-white text-sm rounded transition-colors"
                       >
                         저장
                       </button>
                       <button
                         onClick={() => {
-                          setEditedTitle(current.title)
+                          setEditedTitle(savedTitle || current.title)
                           setEditingTitle(false)
                         }}
                         className="px-3 py-1 bg-gray-500/80 hover:bg-gray-500 text-white text-sm rounded transition-colors"
@@ -239,7 +251,7 @@ export default function Tierlist() {
                 ) : (
                   <div className="flex items-start justify-between">
                     <div>
-                      <h2 className="text-xl font-bold text-white mb-2">{current.title}</h2>
+                      <h2 className="text-xl font-bold text-white mb-2">{savedTitle || current.title}</h2>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-white/60">티어:</span>
                         <span className={`px-2 py-1 rounded text-sm font-semibold ${
