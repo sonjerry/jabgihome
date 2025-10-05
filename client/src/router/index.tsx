@@ -10,6 +10,7 @@ const Blog = lazy(() => import('../pages/Blog'))
 const PostDetail = lazy(() => import('../pages/PostDetail'))
 const Gallery = lazy(() => import('../pages/Gallery'))
 const ModelGallery = lazy(() => import('../pages/ModelGallery'))
+const Tierlist = lazy(() => import('../pages/Tierlist'))
 const Editor = lazy(() => import('../pages/Editor'))
 const Projects = lazy(() => import('../pages/Projects'))
 const NotFound = lazy(() => import('../pages/NotFound'))
@@ -76,6 +77,10 @@ export const router = createBrowserRouter([
       {
         path: 'gallery',
         element: <PageWrapper><Gallery /></PageWrapper>
+      },
+      {
+        path: 'tierlist',
+        element: <PageWrapper><Tierlist /></PageWrapper>
       },
       {
         path: 'modelgallery',

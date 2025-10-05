@@ -150,3 +150,32 @@ export async function deleteComment(
   const data = await apiDelete<{ ok: boolean }>(`/comments/${commentId}`, { password })
   return !!data.ok
 }
+
+/** ─────────── Threaded Comments (gallery/model/tier) ─────────── */
+export type ThreadComment = {
+  id: string
+  threadKey: string
+  nickname: string
+  content: string
+  createdAt: string
+}
+
+export const ThreadAPI = {
+  list: (key: string) => apiGet<ThreadComment[]>(`/threads/${encodeURIComponent(key)}/comments`),
+  create: (key: string, body: { nickname: string; password: string; content: string }) =>
+    apiPost<{ id: string }>(`/threads/${encodeURIComponent(key)}/comments`, body),
+  verify: (cid: string, password: string) =>
+    apiPost<{ ok: boolean }>(`/threads-comments/${cid}/verify`, { password }).then(r => !!r.ok),
+  update: (cid: string, body: { content: string; password?: string }) =>
+    apiPut<{ ok: boolean }>(`/threads-comments/${cid}`, body).then(r => !!r.ok),
+  delete: (cid: string, body?: { password?: string }) =>
+    apiDelete<{ ok: boolean }>(`/threads-comments/${cid}`, body).then(r => !!r.ok),
+}
+
+/** ─────────── Reviews (admin-only) ─────────── */
+export type Review = { key: string; rating: number; text: string; updatedAt: string }
+export const ReviewAPI = {
+  get: (key: string) => apiGet<Review | null>(`/reviews/${encodeURIComponent(key)}`),
+  save: (key: string, rating: number, text: string) => apiPut<{ ok: boolean }>(`/reviews/${encodeURIComponent(key)}`, { rating, text }),
+  remove: (key: string) => apiDelete<{ ok: boolean }>(`/reviews/${encodeURIComponent(key)}`).then(r => !!r.ok),
+}

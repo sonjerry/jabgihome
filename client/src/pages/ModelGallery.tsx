@@ -3,6 +3,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react'
 import GlassCard from '../components/GlassCard'
 import ModelViewer from '../components/ModelViewer'
 import { useAuth } from '../state/auth'
+import { ThreadAPI } from '../lib/api'
 
 type ModelItem = {
   title: string
@@ -119,52 +120,35 @@ export default function ModelGallery() {
     return () => window.removeEventListener('keydown', onKey)
   }, [open, close, next, prev])
 
-  // comments per model url
-  type Comment = { id: string; author: string; text: string; time: number }
+  // comments per model url (server-based)
+  type Comment = { id: string; nickname: string; content: string; createdAt: string }
   const currentKey = visible[idx]?.url ?? ''
   const [comments, setComments] = useState<Comment[]>([])
   const [draft, setDraft] = useState('')
 
-  const loadComments = useCallback((key: string): Comment[] => {
-    try {
-      const raw = localStorage.getItem('comments:' + key)
-      return raw ? (JSON.parse(raw) as Comment[]) : []
-    } catch {
-      return []
-    }
-  }, [])
-  const saveComments = useCallback((key: string, list: Comment[]) => {
-    localStorage.setItem('comments:' + key, JSON.stringify(list))
+  const refreshComments = useCallback(async (key: string) => {
+    const list = await ThreadAPI.list(key)
+    setComments(list.map(c => ({ id: c.id, nickname: c.nickname, content: c.content, createdAt: c.createdAt })))
   }, [])
   useEffect(() => {
     if (open && currentKey) {
-      setComments(loadComments(currentKey))
+      refreshComments(currentKey)
       setDraft('')
     }
-  }, [open, currentKey, loadComments])
-  const handleAddComment = useCallback(() => {
+  }, [open, currentKey, refreshComments])
+  const handleAddComment = useCallback(async () => {
     const text = draft.trim()
     if (!text || !currentKey) return
-    const existing = loadComments(currentKey)
-    const nextIdx = existing.length + 1
-    const newItem: Comment = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-      author: `익명${nextIdx}`,
-      text,
-      time: Date.now(),
-    }
-    const updated = [...existing, newItem]
-    saveComments(currentKey, updated)
-    setComments(updated)
+    await ThreadAPI.create(currentKey, { nickname: '익명', password: 'anon', content: text })
     setDraft('')
-  }, [draft, currentKey, loadComments, saveComments])
+    await refreshComments(currentKey)
+  }, [draft, currentKey, refreshComments])
 
-  const handleDeleteComment = useCallback((id: string) => {
+  const handleDeleteComment = useCallback(async (id: string) => {
     if (role !== 'admin' || !currentKey) return
-    const updated = comments.filter(c => c.id !== id)
-    saveComments(currentKey, updated)
-    setComments(updated)
-  }, [role, currentKey, comments, saveComments])
+    await ThreadAPI.delete(id)
+    await refreshComments(currentKey)
+  }, [role, currentKey, refreshComments])
 
   return (
     <main className="relative min-h-screen overflow-x-hidden">
@@ -316,8 +300,8 @@ export default function ModelGallery() {
                     comments.map(c => (
                       <div key={c.id} className="text-sm flex items-start gap-2">
                         <div className="flex-1">
-                          <span className="text-white/70 mr-2">{c.author}</span>
-                          <span className="text-white/90 break-words align-middle">{c.text}</span>
+                          <span className="text-white/70 mr-2">{c.nickname}</span>
+                          <span className="text-white/90 break-words align-middle">{c.content}</span>
                         </div>
                         {role === 'admin' && (
                           <button

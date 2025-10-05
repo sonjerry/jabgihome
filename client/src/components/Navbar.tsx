@@ -16,6 +16,7 @@ const navItems: Item[] = [
   { label: '갤러리', children: [
     { path: '/gallery', label: 'AI 그림 갤러리' },
     { path: '/modelgallery', label: '3D 모델 갤러리' },
+    { path: '/tierlist', label: '애니 티어리스트' },
     
   ]},
   

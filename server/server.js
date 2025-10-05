@@ -536,6 +536,207 @@ app.delete('/api/comments/:cid', async (req, res) => {
   }
 })
 
+/* ───────────────────── Threads(갤러리/모델/티어) 댓글 ───────────────────── */
+// key는 클라이언트에서 encodeURIComponent 처리하여 전달 (URL 등 포함 가능)
+app.get('/api/threads/:key/comments', async (req, res) => {
+  try {
+    const key = decodeURIComponent(req.params.key || '')
+    if (!key) return res.status(400).json({ error: 'invalid key' })
+    const { data, error } = await supabase
+      .from('threads_comments')
+      .select('id, thread_key, nickname, content, created_at')
+      .eq('thread_key', key)
+      .order('created_at', { ascending: true })
+    if (error) return res.status(500).json({ error: error.message })
+    const list = (data || []).map(c => ({
+      id: c.id,
+      threadKey: c.thread_key,
+      nickname: c.nickname,
+      content: c.content,
+      createdAt: new Date(c.created_at).toISOString(),
+    }))
+    res.json(list)
+  } catch (e) {
+    console.error('threads list comments error', e)
+    res.status(500).json({ error: 'threads comments list failed' })
+  }
+})
+
+app.post('/api/threads/:key/comments', async (req, res) => {
+  try {
+    const parsed = ensureObjectBody(req.body)
+    const key = decodeURIComponent(req.params.key || '')
+    const { nickname, password, content } = parsed || {}
+    if (!key || !nickname || !password || !content) return res.status(400).json({ error: 'invalid body' })
+
+    const id = nanoid12()
+    const passwordHash = await bcrypt.hash(password, 10)
+    const nowIso = new Date().toISOString()
+    const { error } = await supabase.from('threads_comments').insert([
+      { id, thread_key: key, nickname, content, password_hash: passwordHash, created_at: nowIso },
+    ])
+    if (error) return res.status(500).json({ error: error.message })
+    res.json({ id })
+  } catch (e) {
+    console.error('threads create comment error', e)
+    res.status(500).json({ error: 'threads comment create failed' })
+  }
+})
+
+app.post('/api/threads-comments/:cid/verify', async (req, res) => {
+  try {
+    const parsed = ensureObjectBody(req.body)
+    const { password } = parsed || {}
+    const cid = req.params.cid
+    const { data, error } = await supabase
+      .from('threads_comments')
+      .select('password_hash')
+      .eq('id', cid)
+      .single()
+    if (error) {
+      if (error.code === 'PGRST116') return res.status(404).json({ ok: false })
+      return res.status(500).json({ ok: false })
+    }
+    const ok = await bcrypt.compare(password || '', data.password_hash || '')
+    res.json({ ok })
+  } catch (e) {
+    console.error('threads verify comment error', e)
+    res.status(500).json({ ok: false })
+  }
+})
+
+app.put('/api/threads-comments/:cid', async (req, res) => {
+  try {
+    const parsed = ensureObjectBody(req.body)
+    const cid = req.params.cid
+    const { content, password } = parsed || {}
+    if (!content) return res.status(400).json({ ok: false, msg: 'invalid body' })
+
+    // admin bypass
+    let isAdmin = false
+    try {
+      const token = req.cookies?.token
+      if (token) {
+        const payload = jwt.verify(token, JWT_SECRET)
+        isAdmin = payload.role === 'admin'
+      }
+    } catch {}
+
+    if (!isAdmin) {
+      if (!password) return res.status(400).json({ ok: false })
+      const { data: row, error: gErr } = await supabase
+        .from('threads_comments')
+        .select('password_hash')
+        .eq('id', cid)
+        .single()
+      if (gErr) {
+        if (gErr.code === 'PGRST116') return res.status(404).json({ ok: false })
+        return res.status(500).json({ ok: false })
+      }
+      const ok = await bcrypt.compare(password, row.password_hash || '')
+      if (!ok) return res.status(401).json({ ok: false })
+    }
+
+    const { error } = await supabase.from('threads_comments').update({ content }).eq('id', cid)
+    if (error) return res.status(500).json({ ok: false })
+    res.json({ ok: true })
+  } catch (e) {
+    console.error('threads update comment error', e)
+    res.status(500).json({ ok: false })
+  }
+})
+
+app.delete('/api/threads-comments/:cid', async (req, res) => {
+  try {
+    const parsed = ensureObjectBody(req.body)
+    const cid = req.params.cid
+    const { password } = parsed || {}
+
+    // admin bypass
+    let isAdmin = false
+    try {
+      const token = req.cookies?.token
+      if (token) {
+        const payload = jwt.verify(token, JWT_SECRET)
+        isAdmin = payload.role === 'admin'
+      }
+    } catch {}
+
+    if (!isAdmin) {
+      const { data: row, error: gErr } = await supabase
+        .from('threads_comments')
+        .select('password_hash')
+        .eq('id', cid)
+        .single()
+      if (gErr) {
+        if (gErr.code === 'PGRST116') return res.status(404).json({ ok: false })
+        return res.status(500).json({ ok: false })
+      }
+      const ok = await bcrypt.compare(password || '', row.password_hash || '')
+      if (!ok) return res.status(401).json({ ok: false })
+    }
+
+    const { error } = await supabase.from('threads_comments').delete().eq('id', cid)
+    if (error) return res.status(500).json({ ok: false })
+    res.json({ ok: true })
+  } catch (e) {
+    console.error('threads delete comment error', e)
+    res.status(500).json({ ok: false })
+  }
+})
+
+/* ───────────────────── 리뷰/평점(API) ───────────────────── */
+// 항목 key 기준 단일 레코드 upsert
+app.get('/api/reviews/:key', async (req, res) => {
+  try {
+    const key = decodeURIComponent(req.params.key || '')
+    if (!key) return res.status(400).json({ error: 'invalid key' })
+    const { data, error } = await supabase
+      .from('threads_reviews')
+      .select('thread_key, rating, text, updated_at')
+      .eq('thread_key', key)
+      .single()
+    if (error) {
+      if (error.code === 'PGRST116') return res.json(null)
+      return res.status(500).json({ error: error.message })
+    }
+    return res.json({ key: data.thread_key, rating: data.rating, text: data.text, updatedAt: data.updated_at })
+  } catch (e) {
+    console.error('get review error', e)
+    res.status(500).json({ error: 'review get failed' })
+  }
+})
+
+app.put('/api/reviews/:key', requireAdmin, async (req, res) => {
+  try {
+    const key = decodeURIComponent(req.params.key || '')
+    const parsed = ensureObjectBody(req.body)
+    const { rating, text } = parsed || {}
+    if (!key || typeof rating !== 'number') return res.status(400).json({ ok: false })
+    const nowIso = new Date().toISOString()
+    const { error } = await supabase
+      .from('threads_reviews')
+      .upsert({ thread_key: key, rating, text: text || '', updated_at: nowIso }, { onConflict: 'thread_key' })
+    if (error) return res.status(500).json({ ok: false, msg: error.message })
+    res.json({ ok: true })
+  } catch (e) {
+    console.error('save review error', e)
+    res.status(500).json({ ok: false })
+  }
+})
+
+app.delete('/api/reviews/:key', requireAdmin, async (req, res) => {
+  try {
+    const key = decodeURIComponent(req.params.key || '')
+    const { error } = await supabase.from('threads_reviews').delete().eq('thread_key', key)
+    if (error) return res.status(500).json({ ok: false })
+    res.json({ ok: true })
+  } catch (e) {
+    console.error('delete review error', e)
+    res.status(500).json({ ok: false })
+  }
+})
+
 /* ───────────────────── Prewarm (무료 Supabase 웜업) ───────────────────── */
 const PREWARM_INTERVAL_MS = Number(process.env.PREWARM_INTERVAL_MS || 240_000) // 4분
 if (PREWARM_INTERVAL_MS > 0) {
