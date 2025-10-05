@@ -44,15 +44,15 @@ const PROJECTS: Project[] = [
     title: '와카와카',
     summary: 'WI-FI 라즈베리파이 기반 심레이싱 조종 자동차 (와이파이 카)',
     linkUrl: 'http://100.84.162.124:8000/',
-    repoUrl: 'https://github.com/sonjerry/WakaWaka',
+    repoUrl: 'https://github.com/sonjerry/wakawaka2',
     status: 'active',
   },
   {
     id: 'p2',
     title: 'OpenAI 튜링 테스트',
-    summary: '채팅 상대가 사람/AI 구분 불가를 목표로 프롬프트 실험',
+    summary: '현재 LLM 수준으로 사람과 구별 불가능한 페르소나를 만들 수 있을까',
     linkUrl: 'https://example-project2.onrender.com',
-    repoUrl: 'https://github.com/yourname/project2',
+    repoUrl: 'https://github.com/sonjerry/Turing-test',
     status: 'paused',
   },
   {

@@ -69,6 +69,14 @@ export const router = createBrowserRouter([
             )
           },
           {
+            path: 'edit/:id',
+            element: (
+              <RequireAdmin>
+                <PageWrapper><Editor /></PageWrapper>
+              </RequireAdmin>
+            )
+          },
+          {
             path: ':id',
             element: <PageWrapper><PostDetail /></PageWrapper>
           }

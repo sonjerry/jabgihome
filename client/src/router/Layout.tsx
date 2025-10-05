@@ -5,7 +5,7 @@ import { Suspense } from 'react'
 
 import Navbar from '../components/Navbar'
 import AudioProvider from '../lib/audio/AudioProvider'
-import Silk from '../components/Silk'
+import SkyBackground from '../components/SkyBackground'
 import PageTransition from './PageTransition'
 import ErrorBoundary from './ErrorBoundary'
 
@@ -15,18 +15,8 @@ export default function Layout() {
 
   return (
     <AudioProvider>
-      {/* 홈 페이지가 아닌 경우에만 Silk 배경 효과 적용 */}
-      {!isHomePage && (
-        <div className="fixed inset-0 z-[-1]">
-          <Silk
-            speed={5}
-            scale={1}
-            color="#7B7481"
-            noiseIntensity={1.5}
-            rotation={0}
-          />
-        </div>
-      )}
+      {/* 홈 페이지가 아닌 경우에만 하늘색 배경 효과 적용 */}
+      {!isHomePage && <SkyBackground />}
 
       {/* 네비게이션 바 - 홈 페이지에서는 숨김 */}
       {!isHomePage && <Navbar />}

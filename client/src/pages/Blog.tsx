@@ -146,9 +146,23 @@ export default function Blog() {
         {/* 헤더 */}
         <GlassCard className="mb-6 md:mb-8">
           <div className="flex items-center justify-between px-2 py-2">
-            <div>
-              <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">{headerTitle}</h1>
-              <p className="text-sm md:text-base text-white/70 mt-3">{headerSub}</p>
+            <div className="flex items-center gap-4">
+              {inProgressMode && (
+                <Link 
+                  to="/projects" 
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm transition-colors"
+                  aria-label="프로젝트 페이지로 돌아가기"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                  </svg>
+                  뒤로가기
+                </Link>
+              )}
+              <div>
+                <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">{headerTitle}</h1>
+                <p className="text-sm md:text-base text-white/70 mt-3">{headerSub}</p>
+              </div>
             </div>
             {!loading && role === 'admin' && !inProgressMode && (
               <Link to="/blog/new" className="glass px-3 py-2 rounded-xl hover:bg-white/20 text-sm">새 글</Link>
@@ -225,6 +239,47 @@ export default function Blog() {
                             </div>
                           </div>
                         </Link>
+                        
+                        {/* 관리자 전용 수정/삭제 버튼 */}
+                        {!loading && role === 'admin' && (
+                          <div className="absolute top-2 right-2 flex items-center gap-1">
+                            <Link
+                              to={`/blog/edit/${p.id}`}
+                              className="p-1.5 rounded-lg bg-white/10 hover:bg-blue-500/20 text-blue-200 transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                              title="수정"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                              </svg>
+                            </Link>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation()
+                                if (!confirm('정말 삭제할까요? 되돌릴 수 없습니다.')) return
+                                try {
+                                  const API_BASE = import.meta.env.VITE_API_URL || ''
+                                  const res = await fetch(`${API_BASE}/api/posts/${p.id}`, {
+                                    method: 'DELETE',
+                                    credentials: 'include',
+                                  })
+                                  if (!res.ok) throw new Error(await res.text().catch(() => 'delete failed'))
+                                  // 페이지 새로고침으로 목록 업데이트
+                                  window.location.reload()
+                                } catch (err) {
+                                  console.error(err)
+                                  alert('삭제에 실패했습니다.')
+                                }
+                              }}
+                              className="p-1.5 rounded-lg bg-white/10 hover:bg-red-500/20 text-red-200 transition-colors"
+                              title="삭제"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                              </svg>
+                            </button>
+                          </div>
+                        )}
                       </article>
                     </li>
                   )

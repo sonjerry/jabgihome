@@ -209,13 +209,22 @@ export default function PostDetail() {
         </Link>
 
         {!authLoading && role === 'admin' && (
-          <button
-            onClick={onDelete}
-            disabled={deleting}
-            className="glass px-3 py-1.5 rounded-xl text-red-200 hover:bg-red-500/20 disabled:opacity-60"
-          >
-            {deleting ? '삭제 중…' : '삭제'}
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              to={`/blog/edit/${id}`}
+              className="glass px-3 py-1.5 rounded-xl text-blue-200 hover:bg-blue-500/20 transition-colors"
+              aria-label="글 수정"
+            >
+              수정
+            </Link>
+            <button
+              onClick={onDelete}
+              disabled={deleting}
+              className="glass px-3 py-1.5 rounded-xl text-red-200 hover:bg-red-500/20 disabled:opacity-60 transition-colors"
+            >
+              {deleting ? '삭제 중…' : '삭제'}
+            </button>
+          </div>
         )}
       </div>
 
