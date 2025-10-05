@@ -15,17 +15,17 @@ import { useScrollReveal } from '../hooks/useScrollReveal'
 const NAV_CARD_BASE =
   "pointer-events-auto p-0 overflow-hidden relative transition-all duration-200 " +
   "transform hover:scale-105 active:scale-95 " +
-  "bg-transparent !border-white/20 hover:!bg-white/10 bg-clip-padding " +
-  "backdrop-blur-2xl backdrop-contrast-125 backdrop-saturate-150";
+  "bg-transparent !border-white/25 hover:!bg-white/15 bg-clip-padding " +
+  "backdrop-blur-2xl backdrop-contrast-110 backdrop-saturate-120";
 
 // 네비 카드 타이포/레이아웃 공통 클래스
 const NAV_INNER_BASE = "relative flex flex-col gap-3";
 const NAV_INNER_PAD_DESKTOP = "p-5 md:p-6";
 const NAV_INNER_PAD_MOBILE = "p-5";
 const NAV_TITLE_DESKTOP = "text-3xl md:text-4xl text-white";
-const NAV_TEXT_DESKTOP = "text-lg md:text-xl leading-relaxed !text-amber-300";
+const NAV_TEXT_DESKTOP = "text-lg md:text-xl leading-relaxed !text-amber-200";
 const NAV_TITLE_MOBILE = "text-2xl text-white";
-const NAV_TEXT_MOBILE = "text-lg leading-relaxed !text-amber-300";
+const NAV_TEXT_MOBILE = "text-lg leading-relaxed !text-amber-200";
 
 
 export default function Home() {

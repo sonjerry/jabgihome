@@ -1,6 +1,6 @@
 // client/src/pages/Editor.tsx
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { Post, Attachment } from '../types'
 import { getPost, savePost, uploadFile, updatePost } from '../lib/api'
 import PageShell from '../components/PageShell'
@@ -9,6 +9,7 @@ function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36
 
 export default function Editor(){
   const nav = useNavigate()
+  const location = useLocation()
   const { id } = useParams()
   const isEdit = Boolean(id)
 
@@ -90,7 +91,15 @@ export default function Editor(){
       } else {
         await savePost(post)
       }
-      nav('/blog')
+      
+      // URL 파라미터를 확인해서 프로젝트 진행사항에서 온 경우 해당 페이지로 돌아가기
+      const searchParams = new URLSearchParams(location.search)
+      const progress = searchParams.get('progress')
+      if (progress) {
+        nav(`/blog?progress=${encodeURIComponent(progress)}`)
+      } else {
+        nav('/blog')
+      }
     }catch(e){
       console.error(e)
       alert('저장에 실패했습니다.')

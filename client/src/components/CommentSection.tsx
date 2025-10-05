@@ -175,16 +175,16 @@ export default function CommentSection({ postId }: Props) {
               <div className="flex-shrink-0 flex items-center gap-2">
                 <button
                   onClick={() => onEditStart(c)}
-                  className="opacity-80 hover:opacity-100 text-sm"
+                  className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
                   title="편집"
                   aria-label="댓글 편집"
                 >
                   편집
                 </button>
-                <span className="opacity-30">|</span>
+                <span className="opacity-30 text-white/30">|</span>
                 <button
                   onClick={() => onDelete(c)}
-                  className="opacity-80 hover:opacity-100 text-sm"
+                  className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors"
                   title="삭제"
                   aria-label="댓글 삭제"
                 >

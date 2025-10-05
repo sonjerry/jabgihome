@@ -214,7 +214,10 @@ export default function Blog() {
                         <div className="hidden md:block absolute left-2.5 top-8 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_0_4px_rgba(251,191,36,0.2)]" />
                       )}
                       <article className="rounded-2xl bg-white/5 border border-white/10 shadow-glass overflow-hidden">
-                        <Link to={`/blog/${p.id}`} className="block select-none">
+                        <Link 
+                          to={`/blog/${p.id}${inProgressMode && progressTag ? `?progress=${encodeURIComponent(progressTag)}` : ''}`} 
+                          className="block select-none"
+                        >
                           <div className="grid grid-cols-[88px,1fr] md:grid-cols-[128px,1fr] gap-3 md:gap-4 p-3 md:p-4 items-center">
                             {/* 썸네일 */}
                             <div className="w-[88px] h-[88px] md:w-[128px] md:h-[128px] rounded-xl overflow-hidden bg-white/5 border border-white/10">
@@ -244,8 +247,8 @@ export default function Blog() {
                         {!loading && role === 'admin' && (
                           <div className="absolute top-2 right-2 flex items-center gap-1">
                             <Link
-                              to={`/blog/edit/${p.id}`}
-                              className="p-1.5 rounded-lg bg-white/10 hover:bg-blue-500/20 text-blue-200 transition-colors"
+                              to={`/blog/edit/${p.id}${inProgressMode && progressTag ? `?progress=${encodeURIComponent(progressTag)}` : ''}`}
+                              className="p-1.5 rounded-lg bg-white/10 hover:bg-blue-500/20 text-blue-400 transition-colors"
                               onClick={(e) => e.stopPropagation()}
                               title="수정"
                             >
@@ -271,7 +274,7 @@ export default function Blog() {
                                   alert('삭제에 실패했습니다.')
                                 }
                               }}
-                              className="p-1.5 rounded-lg bg-white/10 hover:bg-red-500/20 text-red-200 transition-colors"
+                              className="p-1.5 rounded-lg bg-white/10 hover:bg-red-500/20 text-red-400 transition-colors"
                               title="삭제"
                             >
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">

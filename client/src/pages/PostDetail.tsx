@@ -1,6 +1,6 @@
 // client/src/pages/PostDetail.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
 import type { Post } from '../types'
 import { getPost } from '../lib/api'
@@ -62,6 +62,7 @@ function FigureImage(props: React.ImgHTMLAttributes<HTMLImageElement>) {
 export default function PostDetail() {
   const { id } = useParams<{ id: string }>()
   const nav = useNavigate()
+  const location = useLocation()
   const { role, loading: authLoading } = useAuth()
   const [post, setPost] = useState<Post | null>(null)
   const [loading, setLoading] = useState(true)
@@ -190,9 +191,18 @@ export default function PostDetail() {
     <div className="pt-24 mx-auto max-w-[1000px] px-3 md:px-6">
       {/* 상단 바: 뒤로 + (관리자) 삭제 */}
       <div className="flex items-center justify-between mb-4">
-        <Link
-          to="/blog"
-          className="inline-flex items-center gap-2 text-sm opacity-80 hover:opacity-100"
+        <button
+          onClick={() => {
+            // URL 파라미터를 확인해서 프로젝트 진행사항에서 온 경우 해당 페이지로 돌아가기
+            const searchParams = new URLSearchParams(location.search)
+            const progress = searchParams.get('progress')
+            if (progress) {
+              nav(`/blog?progress=${encodeURIComponent(progress)}`)
+            } else {
+              nav(-1) // 브라우저 히스토리에서 이전 페이지로
+            }
+          }}
+          className="inline-flex items-center gap-2 text-sm opacity-80 hover:opacity-100 transition-opacity"
           aria-label="뒤로가기"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" className="-ml-1">
@@ -206,13 +216,13 @@ export default function PostDetail() {
             />
           </svg>
           뒤로
-        </Link>
+        </button>
 
         {!authLoading && role === 'admin' && (
           <div className="flex items-center gap-2">
             <Link
               to={`/blog/edit/${id}`}
-              className="glass px-3 py-1.5 rounded-xl text-blue-200 hover:bg-blue-500/20 transition-colors"
+              className="glass px-3 py-1.5 rounded-xl text-blue-400 hover:bg-blue-500/20 transition-colors font-medium"
               aria-label="글 수정"
             >
               수정
@@ -220,7 +230,7 @@ export default function PostDetail() {
             <button
               onClick={onDelete}
               disabled={deleting}
-              className="glass px-3 py-1.5 rounded-xl text-red-200 hover:bg-red-500/20 disabled:opacity-60 transition-colors"
+              className="glass px-3 py-1.5 rounded-xl text-red-400 hover:bg-red-500/20 disabled:opacity-60 transition-colors font-medium"
             >
               {deleting ? '삭제 중…' : '삭제'}
             </button>

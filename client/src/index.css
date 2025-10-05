@@ -30,7 +30,7 @@ html, body, #root {
 }
 
 html {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 25%, #60a5fa 50%, #93c5fd 75%, #dbeafe 100%); /* 하늘색 그라디언트 */
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 15%, #3b82f6 30%, #60a5fa 50%, #93c5fd 70%, #bfdbfe 85%, #e0f2fe 100%); /* 부드러운 하늘색 그라디언트 */
   /* iOS Safari safe area 지원 */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
@@ -111,7 +111,7 @@ body {
 
 /* 유리 카드 - 컴포넌트 레이어에 선언하여 유틸리티 우선순위와 충돌 최소화 */
 @layer components {
-  .glass { @apply bg-white/10 border border-white/20 shadow-glass; position: relative; overflow: hidden; }
+  .glass { @apply bg-white/12 border border-white/25 shadow-glass; position: relative; overflow: hidden; }
   .glass > * { position: relative; z-index: 1; }
 }
 /* 강건한 글래스 효과: 내부 오버레이로 백드롭 블러 적용 */
@@ -120,7 +120,7 @@ body {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.10);
   -webkit-backdrop-filter: blur(18px) saturate(1.35) contrast(1.1);
   backdrop-filter: blur(18px) saturate(1.35) contrast(1.1);
   z-index: 0;

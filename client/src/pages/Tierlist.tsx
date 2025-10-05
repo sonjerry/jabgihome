@@ -85,76 +85,17 @@ export default function Tierlist() {
   const current = currentList[idx]
   const storageKey = current ? `tier:${current.url}` : ''
 
-  // ── review (admin only) ─────────────────────────────
-  const [rating, setRating] = useState<number>(0)
-  const [reviewText, setReviewText] = useState('')
-  const [savedReview, setSavedReview] = useState<Review | null>(null)
+  // ── admin comment (admin only) ─────────────────────────────
+  const [commentText, setCommentText] = useState('')
+  const [savedComment, setSavedComment] = useState<Review | null>(null)
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [editedTitle, setEditedTitle] = useState('')
 
-  // 별점 컴포넌트 (0.5 단위 지원)
-  const StarRating = ({ value, onChange, editable = false }: { value: number; onChange?: (rating: number) => void; editable?: boolean }) => {
-    const [hoverValue, setHoverValue] = useState<number | null>(null)
-    
-    const handleStarClick = (starValue: number) => {
-      if (!editable || !onChange) return
-      onChange(starValue)
-    }
 
-    const handleStarHover = (starValue: number) => {
-      if (!editable) return
-      setHoverValue(starValue)
-    }
-
-    const handleMouseLeave = () => {
-      if (!editable) return
-      setHoverValue(null)
-    }
-
-    const displayValue = hoverValue || value
-
-    const getStarFill = (starIndex: number) => {
-      if (starIndex < displayValue) return '#fbbf24'
-      return 'none'
-    }
-
-    const getStarStroke = (starIndex: number) => {
-      if (starIndex < displayValue) return '#fbbf24'
-      return '#6b7280'
-    }
-
-    return (
-      <div className="flex items-center gap-0.5" onMouseLeave={handleMouseLeave}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            onClick={() => handleStarClick(star)}
-            onMouseEnter={() => handleStarHover(star)}
-            disabled={!editable}
-            className={`transition-colors ${editable ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill={getStarFill(star)}
-              stroke={getStarStroke(star)}
-              strokeWidth={getStarFill(star) === 'none' ? 1 : 0}
-              className="transition-all duration-150"
-            >
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-          </button>
-        ))}
-        <span className="ml-3 text-sm text-white/70">
-          {value.toFixed(1)}/5.0
-        </span>
-      </div>
-    )
-  }
-
-  const refreshReview = useCallback(async (key: string) => {
+  const refreshComment = useCallback(async (key: string) => {
     const r = await ReviewAPI.get(key)
-    if (r) setSavedReview({ rating: r.rating, text: r.text, updatedAt: r.updatedAt })
-    else setSavedReview(null)
+    if (r) setSavedComment({ rating: 0, text: r.text, updatedAt: r.updatedAt })
+    else setSavedComment(null)
   }, [])
 
   // ── comments (anonymous) ────────────────────────────
@@ -167,20 +108,21 @@ export default function Tierlist() {
 
   useEffect(() => {
     if (!open || !storageKey) return
-    refreshReview(storageKey)
+    refreshComment(storageKey)
     refreshComments(storageKey)
-    setReviewText('')
+    setCommentText('')
     setDraft('')
-    setRating(savedReview?.rating || 0)
+    setEditingTitle(false)
+    if (current) setEditedTitle(current.title)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, storageKey])
 
-  const handleSaveReview = useCallback(async () => {
-    if (role !== 'admin' || !storageKey) return
-    await ReviewAPI.save(storageKey, rating, reviewText.trim())
-    await refreshReview(storageKey)
-    setReviewText('')
-  }, [role, storageKey, rating, reviewText, refreshReview])
+  const handleSaveComment = useCallback(async () => {
+    if (role !== 'admin' || !storageKey || !commentText.trim()) return
+    await ReviewAPI.save(storageKey, 0, commentText.trim())
+    await refreshComment(storageKey)
+    setCommentText('')
+  }, [role, storageKey, commentText, refreshComment])
 
   const handleAddComment = useCallback(async () => {
     const text = draft.trim()
@@ -247,91 +189,116 @@ export default function Tierlist() {
 
       {open && current && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
           role="dialog" aria-modal="true" onClick={close}
         >
-          <div className="relative w-[95vw] max-w-6xl max-h-[90vh] rounded-xl overflow-hidden bg-black/30 backdrop-blur border border-white/10 flex" onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-[95vw] max-w-6xl max-h-[90vh] rounded-xl overflow-hidden glass border border-white/20 flex" onClick={(e) => e.stopPropagation()}>
             {/* 왼쪽: 포스터 */}
             <div className="w-1/2 min-w-0 flex-shrink-0">
               <img 
                 src={current.url} 
                 alt={current.title} 
-                className="w-full h-full object-contain bg-black/20" 
+                className="w-full h-full object-contain bg-white/5" 
               />
             </div>
 
-            {/* 오른쪽: 별점, 리뷰, 댓글 */}
+            {/* 오른쪽: 제목, 코멘트, 댓글 */}
             <div className="w-1/2 flex flex-col p-6 min-w-0">
               {/* 제목 */}
               <div className="mb-4">
-                <h2 className="text-xl font-bold text-white mb-2">{current.title}</h2>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-white/60">티어:</span>
-                  <span className={`px-2 py-1 rounded text-sm font-semibold ${
-                    current.tier === 'S' ? 'bg-rose-500/20 text-rose-300' :
-                    current.tier === 'A' ? 'bg-amber-500/20 text-amber-300' :
-                    current.tier === 'B' ? 'bg-blue-500/20 text-blue-300' :
-                    current.tier === 'C' ? 'bg-lime-500/20 text-lime-300' :
-                    current.tier === 'D' ? 'bg-green-500/20 text-green-300' :
-                    'bg-slate-500/20 text-slate-300'
-                  }`}>
-                    {current.tier}
-                  </span>
-                </div>
-              </div>
-
-              {/* 별점 */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-white/90 mb-3">평점</h3>
-                {savedReview ? (
+                {editingTitle && role === 'admin' ? (
                   <div className="space-y-2">
-                    <StarRating value={savedReview.rating} editable={false} />
-                    {role === 'admin' && (
-                      <div className="mt-3">
-                        <label className="block text-sm text-white/70 mb-2">평점 수정</label>
-                        <StarRating value={rating} onChange={setRating} editable={true} />
-                      </div>
-                    )}
+                    <input
+                      type="text"
+                      value={editedTitle}
+                      onChange={(e) => setEditedTitle(e.target.value)}
+                      className="w-full text-xl font-bold text-white bg-white/10 border border-white/20 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-white/30"
+                      placeholder="제목을 입력하세요"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          // TODO: 제목 저장 로직 구현
+                          setEditingTitle(false)
+                        }}
+                        className="px-3 py-1 bg-emerald-500/80 hover:bg-emerald-500 text-white text-sm rounded transition-colors"
+                      >
+                        저장
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditedTitle(current.title)
+                          setEditingTitle(false)
+                        }}
+                        className="px-3 py-1 bg-gray-500/80 hover:bg-gray-500 text-white text-sm rounded transition-colors"
+                      >
+                        취소
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <div>
-                    {role === 'admin' ? (
-                      <div className="space-y-2">
-                        <label className="block text-sm text-white/70 mb-2">평점 설정</label>
-                        <StarRating value={rating} onChange={setRating} editable={true} />
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="text-xl font-bold text-white mb-2">{current.title}</h2>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-white/60">티어:</span>
+                        <span className={`px-2 py-1 rounded text-sm font-semibold ${
+                          current.tier === 'S' ? 'bg-rose-500/20 text-rose-300' :
+                          current.tier === 'A' ? 'bg-amber-500/20 text-amber-300' :
+                          current.tier === 'B' ? 'bg-blue-500/20 text-blue-300' :
+                          current.tier === 'C' ? 'bg-lime-500/20 text-lime-300' :
+                          current.tier === 'D' ? 'bg-green-500/20 text-green-300' :
+                          'bg-slate-500/20 text-slate-300'
+                        }`}>
+                          {current.tier}
+                        </span>
                       </div>
-                    ) : (
-                      <p className="text-white/50 text-sm">아직 평점이 없습니다.</p>
+                    </div>
+                    {role === 'admin' && (
+                      <button
+                        onClick={() => setEditingTitle(true)}
+                        className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                        title="제목 편집"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                        </svg>
+                      </button>
                     )}
                   </div>
                 )}
               </div>
 
-              {/* 리뷰 */}
+              {/* 관리자 코멘트 */}
               <div className="mb-6 flex-1 min-h-0">
-                <h3 className="text-lg font-semibold text-white/90 mb-3">리뷰</h3>
-                {savedReview ? (
+                <h3 className="text-lg font-semibold text-white/90 mb-3">관리자 코멘트</h3>
+                {savedComment ? (
                   <div className="space-y-2">
-                    <div className="text-white/80 whitespace-pre-wrap bg-white/5 rounded-lg p-3 min-h-[100px]">
-                      {savedReview.text}
+                    <div className="text-white/90 whitespace-pre-wrap glass rounded-lg p-4 min-h-[100px] border-l-4 border-l-emerald-400/50">
+                      <div className="text-emerald-300/80 text-sm mb-2 font-medium">💬 관리자 코멘트</div>
+                      <div className="prose prose-invert prose-sm max-w-none">
+                        <blockquote className="border-l-4 border-emerald-400/30 pl-4 italic text-white/90">
+                          "{savedComment.text}"
+                        </blockquote>
+                      </div>
                     </div>
-                    {savedReview.updatedAt && (
+                    {savedComment.updatedAt && (
                       <div className="text-white/40 text-xs">
-                        {new Date(savedReview.updatedAt).toLocaleString()}
+                        {new Date(savedComment.updatedAt).toLocaleString()}
                       </div>
                     )}
                     {role === 'admin' && (
                       <div className="mt-3 space-y-2">
-                        <label className="block text-sm text-white/70">리뷰 수정</label>
+                        <label className="block text-sm text-white/70">코멘트 수정</label>
                         <textarea 
-                          value={reviewText} 
-                          onChange={(e) => setReviewText(e.target.value)} 
-                          placeholder="리뷰를 작성하세요..." 
+                          value={commentText} 
+                          onChange={(e) => setCommentText(e.target.value)} 
+                          placeholder="코멘트를 작성하세요..." 
                           className="w-full min-h-[80px] rounded-md bg-white/10 text-white placeholder:text-white/40 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20" 
                         />
                         <div className="flex justify-end">
                           <button 
-                            onClick={handleSaveReview} 
+                            onClick={handleSaveComment} 
                             className="px-4 py-2 rounded-md bg-emerald-500/80 hover:bg-emerald-500 text-white text-sm transition-colors"
                           >
                             저장
@@ -345,14 +312,14 @@ export default function Tierlist() {
                     {role === 'admin' ? (
                       <div className="space-y-2">
                         <textarea 
-                          value={reviewText} 
-                          onChange={(e) => setReviewText(e.target.value)} 
-                          placeholder="리뷰를 작성하세요..." 
+                          value={commentText} 
+                          onChange={(e) => setCommentText(e.target.value)} 
+                          placeholder="코멘트를 작성하세요..." 
                           className="w-full min-h-[100px] rounded-md bg-white/10 text-white placeholder:text-white/40 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20" 
                         />
                         <div className="flex justify-end">
                           <button 
-                            onClick={handleSaveReview} 
+                            onClick={handleSaveComment} 
                             className="px-4 py-2 rounded-md bg-emerald-500/80 hover:bg-emerald-500 text-white text-sm transition-colors"
                           >
                             저장
@@ -360,8 +327,8 @@ export default function Tierlist() {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-white/50 text-sm bg-white/5 rounded-lg p-3 min-h-[100px] flex items-center justify-center">
-                        아직 리뷰가 없습니다.
+                      <p className="text-white/50 text-sm glass rounded-lg p-4 min-h-[100px] flex items-center justify-center">
+                        아직 관리자 코멘트가 없습니다.
                       </p>
                     )}
                   </div>
@@ -376,7 +343,7 @@ export default function Tierlist() {
                     <p className="text-xs text-white/50 text-center py-4">첫 댓글을 남겨보세요.</p>
                   ) : (
                     comments.map(c => (
-                      <div key={c.id} className="text-sm bg-white/5 rounded-lg p-3">
+                      <div key={c.id} className="text-sm glass rounded-lg p-3 border border-white/10">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <span className="text-white/70 mr-2 font-medium">{c.nickname}</span>
@@ -402,11 +369,11 @@ export default function Tierlist() {
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddComment() } }}
                     placeholder="댓글을 입력하세요..."
-                    className="flex-1 rounded-md bg-white/10 text-white placeholder:text-white/40 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20"
+                    className="flex-1 rounded-md glass border border-white/20 text-white placeholder:text-white/40 px-3 py-2 outline-none focus:ring-2 focus:ring-white/30"
                   />
                   <button 
                     onClick={handleAddComment} 
-                    className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20 text-white text-sm transition-colors"
+                    className="px-4 py-2 rounded-md glass border border-white/20 hover:bg-white/10 text-white text-sm transition-colors"
                   >
                     등록
                   </button>
@@ -418,21 +385,21 @@ export default function Tierlist() {
             <button 
               onClick={(e) => { e.stopPropagation(); prev() }} 
               aria-label="이전" 
-              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full px-3 py-2 bg-white/10 hover:bg-white/20 transition-colors"
+              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full px-3 py-2 glass border border-white/20 hover:bg-white/10 transition-colors"
             >
               ◀
             </button>
             <button 
               onClick={(e) => { e.stopPropagation(); next() }} 
               aria-label="다음" 
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full px-3 py-2 bg-white/10 hover:bg-white/20 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full px-3 py-2 glass border border-white/20 hover:bg-white/10 transition-colors"
             >
               ▶
             </button>
             <button 
               onClick={close} 
               aria-label="닫기" 
-              className="absolute right-2 top-2 rounded-full px-2 py-1 bg-white/10 hover:bg-white/20 transition-colors"
+              className="absolute right-2 top-2 rounded-full px-2 py-1 glass border border-white/20 hover:bg-white/10 transition-colors"
             >
               ✕
             </button>

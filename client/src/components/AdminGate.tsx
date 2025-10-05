@@ -46,14 +46,14 @@ export default function AdminGate() {
   )
 
   if (loading) {
-    return <button className="glass px-3 py-1.5 rounded-xl text-sm opacity-70" disabled>관리자 확인중…</button>
+    return <button className="glass px-3 py-1.5 rounded-xl text-sm text-white opacity-70 font-medium" disabled>관리자 확인중…</button>
   }
 
   if (role === 'admin') {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-emerald-300 text-sm">관리자</span>
-        <button onClick={logout} className="glass px-3 py-1.5 rounded-xl text-sm hover:bg-white/20">로그아웃</button>
+        <span className="text-emerald-300 text-sm font-medium">관리자</span>
+        <button onClick={logout} className="glass px-3 py-1.5 rounded-xl text-sm text-white hover:bg-white/20 font-medium">로그아웃</button>
       </div>
     )
   }
@@ -62,7 +62,7 @@ export default function AdminGate() {
     <>
       <button
         onClick={() => { setErr(null); setPw(''); setOpen(true) }}
-        className="glass px-3 py-1.5 rounded-xl text-sm hover:bg-white/20"
+        className="glass px-3 py-1.5 rounded-xl text-sm text-white hover:bg-white/20 font-medium"
       >관리자</button>
 
       {open && createPortal(
