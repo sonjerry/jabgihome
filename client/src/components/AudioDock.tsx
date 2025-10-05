@@ -232,8 +232,28 @@ function PlaylistPopover({
   list: Track[]
 }) {
   const [open, setOpen] = useState(false)
+  const [position, setPosition] = useState<'right' | 'left'>('right')
   const btnRef = useRef<HTMLButtonElement | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!open || !btnRef.current) return
+    
+    const btnRect = btnRef.current.getBoundingClientRect()
+    const viewportWidth = window.innerWidth
+    const panelWidth = 224 // w-56 = 14rem = 224px
+    
+    // 버튼 오른쪽에 공간이 충분한지 확인
+    const spaceOnRight = viewportWidth - btnRect.right
+    const spaceOnLeft = btnRect.left
+    
+    // 오른쪽 공간이 부족하면 왼쪽에 표시
+    if (spaceOnRight < panelWidth + 16 && spaceOnLeft > panelWidth + 16) {
+      setPosition('left')
+    } else {
+      setPosition('right')
+    }
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -274,10 +294,11 @@ function PlaylistPopover({
         id="playlist-popover"
         ref={panelRef}
         className={clsx(
-          'absolute top-1/2 left-full ml-2 -translate-y-1/2 z-50',
+          'absolute top-1/2 -translate-y-1/2 z-50',
+          position === 'right' ? 'left-full ml-2 origin-left' : 'right-full mr-2 origin-right',
           'w-56 max-h-60 overflow-auto',
           'rounded-xl border border-white/20 bg-white/10 backdrop-blur-xl shadow-xl',
-          'transition-all duration-150 origin-left',
+          'transition-all duration-150',
           open
             ? 'opacity-100 scale-100 pointer-events-auto'
             : 'opacity-0 scale-95 pointer-events-none'
