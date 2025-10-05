@@ -286,16 +286,11 @@ export default function Tierlist() {
                 <h3 className="text-lg font-semibold text-white/90 mb-3">한줄평</h3>
                 {savedComment ? (
                   <div className="space-y-2">
-                    <div className="text-white/90 whitespace-pre-wrap">
+                    <div className="glass rounded-lg p-4 text-white/90 whitespace-pre-wrap">
                       <p className="italic text-white/90">
                         "{savedComment.text}"
                       </p>
                     </div>
-                    {savedComment.updatedAt && (
-                      <div className="text-white/40 text-xs">
-                        {new Date(savedComment.updatedAt).toLocaleString()}
-                      </div>
-                    )}
                     {role === 'admin' && (
                       <div className="mt-3 space-y-2">
                         <label className="block text-sm text-white/70">한줄평 수정</label>
