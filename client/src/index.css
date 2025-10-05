@@ -111,7 +111,13 @@ body {
 
 /* 유리 카드 - 컴포넌트 레이어에 선언하여 유틸리티 우선순위와 충돌 최소화 */
 @layer components {
-  .glass { @apply bg-white/12 border border-white/25 shadow-glass; position: relative; overflow: hidden; }
+  .glass { 
+    background-color: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    position: relative; 
+    overflow: hidden; 
+  }
   .glass > * { position: relative; z-index: 1; }
 }
 /* 강건한 글래스 효과: 내부 오버레이로 백드롭 블러 적용 */
