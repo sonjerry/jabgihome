@@ -135,13 +135,13 @@ export default function Tierlist() {
     await refreshComments(storageKey)
   }, [role, storageKey, refreshComments])
 
-  const TIERS: { key: Tier; color: string; label: string }[] = [
-    { key: 'S', color: 'from-rose-400/40 to-rose-500/40', label: 'S' },
-    { key: 'A', color: 'from-amber-300/40 to-amber-400/40', label: 'A' },
-    { key: 'B', color: 'from-yellow-300/40 to-yellow-400/40', label: 'B' },
-    { key: 'C', color: 'from-lime-200/40 to-lime-300/40', label: 'C' },
-    { key: 'D', color: 'from-green-200/40 to-green-300/40', label: 'D' },
-    { key: 'F', color: 'from-slate-200/40 to-slate-300/40', label: 'F' },
+  const TIERS: { key: Tier; color: string; label: string; desc: string }[] = [
+    { key: 'S', color: 'from-rose-400/40 to-rose-500/40', label: 'S', desc: '강렬한 여운, 완벽한 서사, 흠잡을 곳 없는 작화, 모든걸 아우른' },
+    { key: 'A', color: 'from-amber-300/40 to-amber-400/40', label: 'A', desc: '걸작. 감동을 주는 작품들' },
+    { key: 'B', color: 'from-yellow-300/40 to-yellow-400/40', label: 'B', desc: '명작. 뛰어난 개성을 갖고 있는 작품들' },
+    { key: 'C', color: 'from-lime-200/40 to-lime-300/40', label: 'C', desc: '평작. 시간이 아깝지 않은 작품들' },
+    { key: 'D', color: 'from-green-200/40 to-green-300/40', label: 'D', desc: '아쉬운 점들이 더 큰 작품들' },
+    { key: 'F', color: 'from-slate-200/40 to-slate-300/40', label: 'F', desc: '안봐도 되는 작품들' },
   ]
 
   return (
@@ -158,9 +158,11 @@ export default function Tierlist() {
             return (
               <div key={t.key}>
                 <div className={`glass rounded-2xl p-2 md:p-3 bg-gradient-to-r ${t.color} border border-white/10`}> 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 mb-2">
                     <div className="shrink-0 rounded-xl px-3 py-1.5 text-lg font-bold bg-black/30 border border-white/10">{t.label}</div>
-                    <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
+                    <p className="text-white/85 text-sm">{t.desc}</p>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
                       {list.length === 0 && (
                         <div className="text-sm text-white/60 px-2 py-6">포스터가 없습니다.</div>
                       )}
@@ -174,7 +176,6 @@ export default function Tierlist() {
                           <img src={p.url} alt={p.title} className="block w-full h-full object-cover" loading="lazy" />
                         </button>
                       ))}
-                    </div>
                   </div>
                 </div>
               </div>
