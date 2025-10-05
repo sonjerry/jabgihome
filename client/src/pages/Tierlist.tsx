@@ -281,18 +281,15 @@ export default function Tierlist() {
                 )}
               </div>
 
-              {/* 관리자 코멘트 */}
+              {/* 한줄평 */}
               <div className="mb-6 flex-1 min-h-0">
-                <h3 className="text-lg font-semibold text-white/90 mb-3">관리자 코멘트</h3>
+                <h3 className="text-lg font-semibold text-white/90 mb-3">한줄평</h3>
                 {savedComment ? (
                   <div className="space-y-2">
-                    <div className="text-white/90 whitespace-pre-wrap glass rounded-lg p-4 min-h-[100px] border-l-4 border-l-emerald-400/50">
-                      <div className="text-emerald-300/80 text-sm mb-2 font-medium">💬 관리자 코멘트</div>
-                      <div className="prose prose-invert prose-sm max-w-none">
-                        <blockquote className="border-l-4 border-emerald-400/30 pl-4 italic text-white/90">
-                          "{savedComment.text}"
-                        </blockquote>
-                      </div>
+                    <div className="text-white/90 whitespace-pre-wrap">
+                      <p className="italic text-white/90">
+                        "{savedComment.text}"
+                      </p>
                     </div>
                     {savedComment.updatedAt && (
                       <div className="text-white/40 text-xs">
@@ -301,11 +298,11 @@ export default function Tierlist() {
                     )}
                     {role === 'admin' && (
                       <div className="mt-3 space-y-2">
-                        <label className="block text-sm text-white/70">코멘트 수정</label>
+                        <label className="block text-sm text-white/70">한줄평 수정</label>
                         <textarea 
                           value={commentText} 
                           onChange={(e) => setCommentText(e.target.value)} 
-                          placeholder="코멘트를 작성하세요..." 
+                          placeholder="한줄평을 작성하세요..." 
                           className="w-full min-h-[80px] rounded-md bg-white/10 text-white placeholder:text-white/40 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20" 
                         />
                         <div className="flex justify-end">
@@ -326,7 +323,7 @@ export default function Tierlist() {
                         <textarea 
                           value={commentText} 
                           onChange={(e) => setCommentText(e.target.value)} 
-                          placeholder="코멘트를 작성하세요..." 
+                          placeholder="한줄평을 작성하세요..." 
                           className="w-full min-h-[100px] rounded-md bg-white/10 text-white placeholder:text-white/40 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20" 
                         />
                         <div className="flex justify-end">
@@ -339,8 +336,8 @@ export default function Tierlist() {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-white/50 text-sm glass rounded-lg p-4 min-h-[100px] flex items-center justify-center">
-                        아직 관리자 코멘트가 없습니다.
+                      <p className="text-white/50 text-sm">
+                        아직 한줄평이 없습니다.
                       </p>
                     )}
                   </div>
