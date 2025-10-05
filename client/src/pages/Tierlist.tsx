@@ -149,7 +149,7 @@ export default function Tierlist() {
       <section className="absolute inset-x-0 bottom-0 top-6 px-3 md:px-8 lg:px-12 z-0 overflow-y-auto">
         <GlassCard className="mb-6 md:mb-8">
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">애니 티어리스트</h1>
-          <p className="text-sm md:text-base text-white/70 mt-4">`src/tier/`에 올린 포스터가 자동으로 분류됩니다.</p>
+          <p className="text-sm md:text-base text-white/70 mt-4">객관적이고 정확한 분류</p>
         </GlassCard>
 
         <div className="space-y-3 md:space-y-4">
