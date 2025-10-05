@@ -115,7 +115,7 @@ export default function Navbar() {
             }} 
           />
           <aside
-            className="fixed left-0 top-0 h-[100dvh] z:[102] md:hidden glass border-r border-white/10 w-[33vw] min-w-[260px] max-w-[360px] animate-slide-in-left"
+            className="fixed left-0 top-0 h-[100dvh] z-[102] md:hidden glass border-r border-white/10 w-[33vw] min-w-[260px] max-w-[360px] animate-slide-in-left"
             role="dialog" aria-modal="true"
             style={{
               animation: 'slideInFromLeft 0.3s ease-out'
