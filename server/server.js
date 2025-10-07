@@ -130,7 +130,7 @@ function ensureObjectBody(body) {
 }
 
 /* ─────────────── 캐시 유틸 (메모리) ─────────────── */
-const CACHE_TTL_MS = Number(process.env.API_CACHE_TTL_MS || 60_000) // 기본 60초
+const CACHE_TTL_MS = Number(process.env.API_CACHE_TTL_MS || 300_000) // 기본 5분
 const cacheStore = new Map()
 
 function makeEtagFromBody(body) {
@@ -170,11 +170,11 @@ function respondWithCaching(req, res, cacheKey, payload) {
   const reqTag = req.headers['if-none-match']
   if (item.etag && reqTag && reqTag === item.etag) {
     res.setHeader('ETag', item.etag)
-    res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
+    res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
     return res.status(304).end()
   }
   if (item.etag) res.setHeader('ETag', item.etag)
-  res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
+  res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
   return res.json(item.body)
 }
 
@@ -789,7 +789,7 @@ app.delete('/api/anime-titles/:key', requireAdmin, async (req, res) => {
 })
 
 /* ───────────────────── Prewarm (무료 Supabase 웜업) ───────────────────── */
-const PREWARM_INTERVAL_MS = Number(process.env.PREWARM_INTERVAL_MS || 240_000) // 4분
+const PREWARM_INTERVAL_MS = Number(process.env.PREWARM_INTERVAL_MS || 120_000) // 2분
 if (PREWARM_INTERVAL_MS > 0) {
   setInterval(async () => {
     try {

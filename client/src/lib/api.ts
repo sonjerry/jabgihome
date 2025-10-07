@@ -31,10 +31,16 @@ async function handle<T>(r: Response): Promise<T> {
 
 // 공통 옵션: 쿠키 기반 인증 사용 시 credentials: 'include'
 const withCreds: RequestInit = { credentials: 'include' }
+// 공개 GET 전용: 크리덴셜 비포함 → 브라우저/CDN 캐시 활성화
+const withoutCreds: RequestInit = { credentials: 'omit' }
 
 /** ─────────── 기본 메서드 ─────────── */
 export async function apiGet<T>(path: string): Promise<T> {
   const r = await fetch(joinApi(path), { ...withCreds })
+  return handle<T>(r)
+}
+export async function publicGet<T>(path: string): Promise<T> {
+  const r = await fetch(joinApi(path), { ...withoutCreds })
   return handle<T>(r)
 }
 export async function apiPost<T>(path: string, body?: any): Promise<T> {
@@ -78,10 +84,10 @@ export const AuthAPI = {
 
 /** ─────────── Posts ─────────── */
 export async function listPosts(): Promise<Post[]> {
-  return apiGet<Post[]>('/posts')
+  return publicGet<Post[]>('/posts')
 }
 export async function getPost(id: string): Promise<Post> {
-  return apiGet<Post>(`/posts/${id}`)
+  return publicGet<Post>(`/posts/${id}`)
 }
 export async function savePost(p: Post): Promise<Post> {
   return apiPost<Post>('/posts', p)
@@ -161,7 +167,7 @@ export type ThreadComment = {
 }
 
 export const ThreadAPI = {
-  list: (key: string) => apiGet<ThreadComment[]>(`/threads/${encodeURIComponent(key)}/comments`),
+  list: (key: string) => publicGet<ThreadComment[]>(`/threads/${encodeURIComponent(key)}/comments`),
   create: (key: string, body: { nickname: string; password: string; content: string }) =>
     apiPost<{ id: string }>(`/threads/${encodeURIComponent(key)}/comments`, body),
   verify: (cid: string, password: string) =>
@@ -175,7 +181,7 @@ export const ThreadAPI = {
 /** ─────────── Reviews (admin-only) ─────────── */
 export type Review = { key: string; rating: number; text: string; updatedAt: string }
 export const ReviewAPI = {
-  get: (key: string) => apiGet<Review | null>(`/reviews/${encodeURIComponent(key)}`),
+  get: (key: string) => publicGet<Review | null>(`/reviews/${encodeURIComponent(key)}`),
   save: (key: string, rating: number, text: string) => apiPut<{ ok: boolean }>(`/reviews/${encodeURIComponent(key)}`, { rating, text }),
   remove: (key: string) => apiDelete<{ ok: boolean }>(`/reviews/${encodeURIComponent(key)}`).then(r => !!r.ok),
 }
@@ -183,7 +189,7 @@ export const ReviewAPI = {
 /** ─────────── Anime Titles (admin-only) ─────────── */
 export type AnimeTitle = { key: string; title: string; updatedAt: string }
 export const AnimeTitleAPI = {
-  get: (key: string) => apiGet<AnimeTitle | null>(`/anime-titles/${encodeURIComponent(key)}`),
+  get: (key: string) => publicGet<AnimeTitle | null>(`/anime-titles/${encodeURIComponent(key)}`),
   save: (key: string, title: string) => apiPut<{ ok: boolean }>(`/anime-titles/${encodeURIComponent(key)}`, { title }),
   remove: (key: string) => apiDelete<{ ok: boolean }>(`/anime-titles/${encodeURIComponent(key)}`).then(r => !!r.ok),
 }
