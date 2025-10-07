@@ -21,6 +21,8 @@ export default function Editor(){
   const [attachments,setAttachments]=useState<Attachment[]>([])
   const [createdAt, setCreatedAt] = useState<string>('')
   const [loading, setLoading] = useState(isEdit)
+  const [styleTextColor, setStyleTextColor] = useState<string>('#e5e7eb')
+  const [styleFontSize, setStyleFontSize] = useState<number>(16)
 
   const textareaRef = useRef<HTMLTextAreaElement|null>(null)
 
@@ -35,6 +37,8 @@ export default function Editor(){
         setTags(p.tags || [])
         setAttachments(p.attachments || [])
         setCreatedAt(p.createdAt || '')
+        setStyleTextColor(p.style?.textColor || '#e5e7eb')
+        setStyleFontSize(p.style?.fontSize || 16)
       })
       .catch(err => {
         console.error(err)
@@ -83,7 +87,8 @@ export default function Editor(){
       title, content, category, tags,
       createdAt: isEdit ? (createdAt || now) : now,
       updatedAt: isEdit ? now : undefined,
-      attachments
+      attachments,
+      style: { textColor: styleTextColor, fontSize: styleFontSize }
     }
     try{
       if (isEdit) {
@@ -180,7 +185,35 @@ export default function Editor(){
           </div>
         </div>
 
-        
+        {/* 스타일 옵션 */}
+        <div className="glass rounded-2xl p-3">
+          <h3 className="text-lg font-semibold mb-3">표시 스타일</h3>
+          <div className="flex items-center gap-3 mb-3">
+            <label className="text-sm opacity-80">글자색</label>
+            <input type="color" value={styleTextColor} onChange={e=>setStyleTextColor(e.target.value)} className="h-8 w-8 rounded border border-white/10" />
+            <span className="text-xs opacity-60">{styleTextColor}</span>
+          </div>
+          <div className="flex items-center gap-3 mb-3">
+            <label className="text-sm opacity-80">글자 크기</label>
+            <select
+              value={styleFontSize}
+              onChange={e=>setStyleFontSize(Number(e.target.value))}
+              className="px-2 py-1 rounded bg-white/10 border border-white/10"
+            >
+              <option value={14}>14</option>
+              <option value={16}>16</option>
+              <option value={18}>18</option>
+              <option value={20}>20</option>
+              <option value={22}>22</option>
+              <option value={24}>24</option>
+            </select>
+          </div>
+
+          <div className="text-xs opacity-70">
+            이 옵션은 독자 화면에서 제목/본문에 적용됩니다.
+          </div>
+        </div>
+
       </div>
     </PageShell>
   )

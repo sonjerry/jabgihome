@@ -65,8 +65,8 @@ export default function PostDetail() {
   const [post, setPost] = useState<Post | null>(null)
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
-  const [fontSize, setFontSize] = useState<number>(16)
-  const [textColor, setTextColor] = useState<string>('#e5e7eb')
+  const editorFontSize = post?.style?.fontSize ?? 16
+  const editorTextColor = post?.style?.textColor ?? '#e5e7eb'
 
   useEffect(() => {
     if (!id) return
@@ -188,9 +188,9 @@ export default function PostDetail() {
   const visibleTags = (post.tags || []).filter(t => !isProjectTag((t || '').toLowerCase()))
 
   return (
-    <div className="pt-24 mx-auto max-w-[1000px] px-3 md:px-6">
-      {/* 상단 바: 뒤로 + (관리자) 삭제 + 보기 옵션 */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
+    <div className="pt-24">
+      {/* 상단 바: 뒤로 + (관리자) 삭제 */}
+      <div className="mx-auto max-w-[72ch] px-3 md:px-6 flex items-center justify-between mb-8">
         <button
           onClick={() => {
             // URL 파라미터를 확인해서 프로젝트 진행사항에서 온 경우 해당 페이지로 돌아가기
@@ -218,36 +218,8 @@ export default function PostDetail() {
           뒤로
         </button>
 
-        <div className="flex items-center gap-3">
-          {/* 보기 옵션: 색상/크기 */}
-          <div className="flex items-center gap-2 text-xs">
-            <label className="opacity-70">글자색</label>
-            <input
-              type="color"
-              value={textColor}
-              onChange={e => setTextColor(e.target.value)}
-              className="h-6 w-6 rounded-md border border-white/10 bg-transparent p-0"
-              aria-label="글자색 선택"
-            />
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <label className="opacity-70">크기</label>
-            <select
-              value={fontSize}
-              onChange={e => setFontSize(Number(e.target.value))}
-              className="h-7 rounded-md bg-white/10 border border-white/10 px-2"
-              aria-label="글자 크기"
-            >
-              <option value={14}>14</option>
-              <option value={16}>16</option>
-              <option value={18}>18</option>
-              <option value={20}>20</option>
-              <option value={22}>22</option>
-            </select>
-          </div>
-
-          {!authLoading && role === 'admin' && (
-            <div className="ml-auto flex items-center gap-2">
+        {!authLoading && role === 'admin' && (
+            <div className="flex items-center gap-2">
               <Link
                 to={`/blog/edit/${id}`}
                 className="px-3 py-1.5 rounded-xl text-blue-400 hover:bg-blue-500/20 transition-colors font-medium border border-white/10"
@@ -263,11 +235,10 @@ export default function PostDetail() {
                 {deleting ? '삭제 중…' : '삭제'}
               </button>
             </div>
-          )}
-        </div>
+        )}
       </div>
 
-      <article className="font-sans">
+      <article className="font-sans mx-auto max-w-[72ch] px-3 md:px-6">
         {/* 헤더 */}
         <header className="mb-6">
           <h1 className="text-3xl md:text-4xl font-bold leading-tight">{title}</h1>
@@ -290,12 +261,11 @@ export default function PostDetail() {
           )}
         </header>
 
-        {/* 본문: 단순한 블로그 레이아웃, 시스템 폰트, 사용자 설정 적용 */}
+        {/* 본문: 단순한 블로그 레이아웃, 시스템 폰트, 에디터 설정 적용 */}
         <div
-          style={{ color: textColor, fontSize: `${fontSize}px` }}
+          style={{ color: editorTextColor, fontSize: `${editorFontSize}px` }}
           className={clsx(
             'post-content',
-            'max-w-[72ch] mx-auto',
             'leading-[1.85]'
           )}
         >
