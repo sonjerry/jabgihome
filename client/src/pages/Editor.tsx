@@ -4,7 +4,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { Post, Attachment } from '../types'
 import { getPost, savePost, uploadFile, updatePost } from '../lib/api'
 import PageShell from '../components/PageShell'
-// TipTap (동적 임포트: 없으면 textarea 폴백)
+// TipTap (동적 임포트: 정적 빌드에서도 포함되도록 useEffect에서 로드)
 let TipTapReact: any = null
 let StarterKitExt: any = null
 let TextStyleExt: any = null
@@ -12,22 +12,6 @@ let ColorExt: any = null
 let LinkExt: any = null
 let ImageExt: any = null
 let TextAlignExt: any = null
-try {
-  // @ts-ignore - 런타임에만 존재해도 동작하게 함
-  TipTapReact = require('@tiptap/react')
-  // @ts-ignore
-  StarterKitExt = require('@tiptap/starter-kit').default
-  // @ts-ignore
-  TextStyleExt = require('@tiptap/extension-text-style').default
-  // @ts-ignore
-  ColorExt = require('@tiptap/extension-color').default
-  // @ts-ignore
-  LinkExt = require('@tiptap/extension-link').default
-  // @ts-ignore
-  ImageExt = require('@tiptap/extension-image').default
-  // @ts-ignore
-  TextAlignExt = require('@tiptap/extension-text-align').default
-} catch {}
 const tiptapAvailable = Boolean(TipTapReact && StarterKitExt)
 
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
@@ -49,6 +33,7 @@ export default function Editor(){
   const [styleTextColor, setStyleTextColor] = useState<string>('#e5e7eb')
   const [styleFontSize, setStyleFontSize] = useState<number>(16)
   const [helpOpen, setHelpOpen] = useState<boolean>(false)
+  const [tiptapReady, setTiptapReady] = useState<boolean>(tiptapAvailable)
 
   const textareaRef = useRef<HTMLTextAreaElement|null>(null)
   const editorRef = useRef<any>(null)
@@ -73,6 +58,37 @@ export default function Editor(){
       })
       .finally(()=> setLoading(false))
   }, [id, isEdit])
+
+  // TipTap 모듈을 클라이언트에서 동적으로 로드하여 정적 배포에서도 활성화
+  useEffect(() => {
+    if (tiptapReady) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const [reactMod, starter, textStyle, color, link, image, textAlign] = await Promise.all([
+          import('@tiptap/react'),
+          import('@tiptap/starter-kit'),
+          import('@tiptap/extension-text-style'),
+          import('@tiptap/extension-color'),
+          import('@tiptap/extension-link'),
+          import('@tiptap/extension-image'),
+          import('@tiptap/extension-text-align'),
+        ])
+        if (cancelled) return
+        TipTapReact = reactMod
+        StarterKitExt = (starter as any).default
+        TextStyleExt = (textStyle as any).default
+        ColorExt = (color as any).default
+        LinkExt = (link as any).default
+        ImageExt = (image as any).default
+        TextAlignExt = (textAlign as any).default
+        setTiptapReady(true)
+      } catch {
+        // 무시: 네트워크/캐시 문제일 수 있음
+      }
+    })()
+    return () => { cancelled = true }
+  }, [tiptapReady])
   const addTag = ()=>{ const tt = tagInput.trim(); if(tt && !tags.includes(tt)) setTags(v=>[...v,tt]); setTagInput('') }
   const removeTag = (tt:string)=> setTags(v=>v.filter(x=>x!==tt))
 
@@ -228,7 +244,7 @@ export default function Editor(){
                         className="w-5 h-5 rounded-full border border-white/20" style={{ background: c }} />
               ))}
               <input type="color" onChange={(e)=>applyInlineColor(e.target.value)} className="w-6 h-6 rounded border border-white/10" />
-              {TipTapReact && (
+              {tiptapReady && (
                 <>
                   <button type="button" onClick={() => editorRef.current?.chain().focus().unsetColor().run()} className="text-xs px-2 py-1 rounded hover:bg-white/10">색상 해제</button>
                   <button type="button" onClick={() => editorRef.current?.chain().focus().setMark('textStyle', { fontSize: null }).run()} className="text-xs px-2 py-1 rounded hover:bg-white/10">크기 해제</button>
@@ -238,7 +254,7 @@ export default function Editor(){
           </div>
 
           {/* TipTap 툴바 (데스크톱 전용) */}
-          {TipTapReact && (
+          {tiptapReady && (
             <div className="flex flex-wrap items-center gap-2 mb-3 glass rounded-xl p-2">
               {(() => {
                 const ed = editorRef.current
@@ -306,10 +322,10 @@ export default function Editor(){
             )}
           </div>
 
-          {TipTapReact ? (
+          {tiptapReady ? (
             <div className="rounded-xl overflow-hidden bg-white/5 border border-white/10">
               <TipTapReact.EditorContent editor={useMemo(() => {
-                if (!TipTapReact) return null as any
+                if (!tiptapReady || !TipTapReact) return null as any
                 const editor = new TipTapReact.Editor({
                   extensions: [
                     StarterKitExt,
@@ -324,8 +340,7 @@ export default function Editor(){
                 })
                 editorRef.current = editor
                 return editor
-              // eslint-disable-next-line react-hooks/exhaustive-deps
-              }, [])} className="prose prose-invert max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2" />
+              }, [tiptapReady])} className="prose prose-invert max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2" />
             </div>
           ) : (
             <textarea
@@ -337,7 +352,7 @@ export default function Editor(){
             />
           )}
 
-          {!tiptapAvailable && (
+          {!tiptapReady && (
             <div className="mt-2 text-xs opacity-70">
               WYSIWYG를 사용하려면 다음 패키지를 설치하세요: <code>@tiptap/react @tiptap/starter-kit @tiptap/extension-text-style @tiptap/extension-color @tiptap/extension-link @tiptap/extension-image @tiptap/extension-text-align</code>
             </div>

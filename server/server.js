@@ -1142,6 +1142,30 @@ app.get('/static/threads/:filename', async (req, res) => {
   }
 })
 
+/* ───────────────────── 정적 번들 서빙(클라이언트) + SPA Fallback ───────────────────── */
+try {
+  const distDir = path.resolve(__dirname, '../client/dist')
+  // 정적 자산 서빙
+  app.use(express.static(distDir, {
+    extensions: ['html'],
+    maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0,
+    etag: true,
+    setHeaders: (res, filePath) => {
+      if (/\.(html)$/.test(filePath)) {
+        // HTML은 캐시 짧게
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
+      }
+    }
+  }))
+
+  // SPA 라우팅: API/정적 파일이 아닌 모든 경로는 index.html로
+  app.get(/^(?!\/api\/|\/static\/).*/, (_req, res) => {
+    res.sendFile(path.join(distDir, 'index.html'))
+  })
+} catch (e) {
+  console.warn('정적 번들 서빙 비활성:', e?.message || e)
+}
+
 /* ───────────────────── 서버 시작 ───────────────────── */
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API on http://0.0.0.0:${PORT}`)
