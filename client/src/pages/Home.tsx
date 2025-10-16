@@ -198,7 +198,9 @@ export default function Home() {
         {/* 섹션 레벨 UI: 볼륨바(중앙 약간 아래) */}
         {isVideoReady && (
           <>
-            <div className="absolute left-1/2 top-[66%] -translate-x-1/2 z-10" style={{ animation: 'hintSlideUp 0.6s ease-out' }}>
+            {/* 위치 고정 컨테이너: translateX(-50%)가 애니메이션 transform에 의해 덮어쓰이지 않도록 애니메이션은 자식으로 분리 */}
+            <div className="absolute left-1/2 top-[66%] -translate-x-1/2 z-10">
+              <div style={{ animation: 'hintSlideUp 0.6s ease-out' }}>
               <div className="home-force-white flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 backdrop-blur px-4 py-2 shadow-glass">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="opacity-90">
                   <path d="M5 9v6h4l5 5V4L9 9H5z" />
@@ -216,6 +218,7 @@ export default function Home() {
                 </span>
               </div>
               <div className="mt-2 text-center text-xs home-force-white opacity-80">드래그해서 볼륨을 조절하세요</div>
+              </div>
             </div>
 
             {/* 중앙 하단 화살표 3개 힌트 UI - 스크롤 진행도에 따라 점점 사라짐 */}

@@ -113,7 +113,8 @@ export default function Editor(){
       editorRef.current.chain().focus().setMark('textStyle', { fontSize: `${px}px` }).run()
       return
     }
-    wrapSelection(`{{size:${px}|`, `}}`)
+    // WYSIWYG가 비활성화된 상태에서는 토큰을 삽입하지 않고 안내만 표시
+    alert('WYSIWYG 에디터가 활성화된 상태에서만 크기 변경이 가능합니다. 화면 상단 안내를 참고해 패키지를 설치하세요.')
   }
   const applyInlineColor = (color: string) => {
     // 안전 토큰 구문: {{color:#ff0000|텍스트}}
@@ -121,7 +122,8 @@ export default function Editor(){
       editorRef.current.chain().focus().setColor(color).run()
       return
     }
-    wrapSelection(`{{color:${color}|`, `}}`)
+    // WYSIWYG가 비활성화된 상태에서는 토큰을 삽입하지 않고 안내만 표시
+    alert('WYSIWYG 에디터가 활성화된 상태에서만 색상 변경이 가능합니다. 화면 상단 안내를 참고해 패키지를 설치하세요.')
   }
 
   const onFiles = async (files: FileList | null) => {
