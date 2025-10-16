@@ -229,13 +229,16 @@ export default function Home() {
           <>
             {/* 위치 고정 컨테이너: 스크롤 진행도에 따라 힌트 위치로 부드럽게 이동 */}
             {(() => {
-              // 힌트 페이드 타이밍과 동일하게 0→1로 보간 (hint는 revealProgress*4로 사라짐)
-              const t = Math.min(1, Math.max(0, revealProgress * 4))
-              const startVh = 66 // 초기 위치(기존)
-              const endVh = 82   // 힌트 UI가 있는 하단 근처 위치
+              // 더 느리고 부드럽게: 진행도 압축 + easeOutCubic 적용
+              const clamp01 = (x: number) => Math.min(1, Math.max(0, x))
+              const easeOutCubic = (x: number) => 1 - Math.pow(1 - x, 3)
+              const raw = clamp01(revealProgress * 1.6) // 이전 4x 대비 더 느리게
+              const t = easeOutCubic(raw)
+              const startVh = 66 // 초기 위치
+              const endVh = 82   // 힌트 UI 위치 근처
               const topVh = startVh + (endVh - startVh) * t
               return (
-                <div className="absolute left-1/2 -translate-x-1/2 z-10" style={{ top: `${topVh}vh`, transition: 'top 300ms ease' }}>
+                <div className="absolute left-1/2 -translate-x-1/2 z-10" style={{ top: `${topVh}vh`, transition: 'top 420ms cubic-bezier(0.22, 0.61, 0.36, 1)' }}>
                   <div style={{ animation: 'hintSlideUp 0.6s ease-out' }}>
                   <div className="home-force-white flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 backdrop-blur px-4 py-2 shadow-glass">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="opacity-90">

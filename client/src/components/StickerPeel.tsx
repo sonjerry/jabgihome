@@ -20,6 +20,7 @@ interface StickerPeelProps {
   initialPosition?: 'center' | { x: number; y: number }
   peelDirection?: number
   className?: string
+  onAnyDragStart?: () => void
 }
 
 interface CSSVars extends CSSProperties {
@@ -50,12 +51,14 @@ export const StickerPeel: React.FC<StickerPeelProps> = ({
   initialPosition = 'center',
   peelDirection = 0,
   className = '',
+  onAnyDragStart,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const dragTargetRef = useRef<HTMLDivElement>(null)
   const pointLightRef = useRef<SVGFEPointLightElement>(null)
   const pointLightFlippedRef = useRef<SVGFEPointLightElement>(null)
   const draggableInstanceRef = useRef<Draggable | null>(null)
+  const notifiedDragStartRef = useRef(false)
 
   const defaultPadding = 12
 
@@ -87,6 +90,12 @@ export const StickerPeel: React.FC<StickerPeelProps> = ({
       type: 'x,y',
       bounds: boundsEl,
       inertia: true,
+      onDragStart() {
+        if (!notifiedDragStartRef.current) {
+          notifiedDragStartRef.current = true
+          try { onAnyDragStart?.() } catch {}
+        }
+      },
       onDrag(this: Draggable) {
         const rot = gsap.utils.clamp(-24, 24, this.deltaX * 0.4)
         gsap.to(target, { rotation: rot, duration: 0.15, ease: 'power1.out' })
@@ -404,6 +413,10 @@ type StickerItem = {
 export default function AutoStickers() {
   const ref = useRef<HTMLDivElement>(null)
   const [box, setBox] = useState({ w: 0, h: 0 })
+  const [nudgeIdx] = useState<number>(() => Math.floor(Math.random() * 7))
+  const [nudgeGone, setNudgeGone] = useState<boolean>(() => {
+    try { return localStorage.getItem('stickerNudgeDismissed') === '1' } catch { return false }
+  })
 
   // 스티커 png 자동 수집
   const urls = useMemo(() => {
@@ -430,8 +443,9 @@ export default function AutoStickers() {
   // 배치 파라미터 (가장자리 고정 배치) + 모바일 대응
   const margin = 8
   const isMobile = box.w > 0 && box.w <= 640
-  const minW = isMobile ? 110 : 140
-  const maxW = isMobile ? 180 : 260
+  // 전체 크기를 50%로 축소
+  const minW = isMobile ? 55 : 70
+  const maxW = isMobile ? 90 : 130
   const safeTopHeight = isMobile ? 120 : 80
   const safeBottomHeight = isMobile ? 280 : 220 // 하단 UI(사운드 버튼 등) 안전 영역 높이
   const safeLeftWidth = isMobile ? 16 : 420 // 좌측 콘텐츠 폭 근처 회피 (모바일에서는 가장자리만 사용)
@@ -440,12 +454,12 @@ export default function AutoStickers() {
     if (!box.h || urls.length === 0) return []
 
     const patternWidths = isMobile
-      ? [150, 130, 170, 120, 160, 140]
-      : [200, 160, 220, 180, 240, 150, 210, 170]
+      ? [75, 65, 85, 60, 80, 70]
+      : [100, 80, 110, 90, 120, 75, 105, 85]
     const patternRot = isMobile
       ? [-6, 5, -3, 7, -4, 4]
       : [-8, 6, -4, 10, -6, 4, 0, 8]
-    const baseSlotSize = isMobile ? 190 : 160
+    const baseSlotSize = isMobile ? 95 : 80
     const minSlots = isMobile ? 3 : 4
     const slots = Math.min(urls.length, Math.max(minSlots, Math.floor(box.h / baseSlotSize)))
     const usableHeight = Math.max(0, box.h - safeBottomHeight - margin)
@@ -491,19 +505,31 @@ export default function AutoStickers() {
   return (
     <div ref={ref} className="pointer-events-none absolute inset-0 overflow-visible z-[5]">
       {items.map((it, idx) => (
-        <StickerPeel
-          key={`${it.url}-${idx}`}
-          imageSrc={it.url}
-          width={it.width}
-          rotate={it.rotate}
-          peelBackHoverPct={20}
-          peelBackActivePct={40}
-          shadowIntensity={0.6}
-          lightingIntensity={0.12}
-          initialPosition={{ x: it.x, y: it.y }}
-          peelDirection={it.peelDirection}
-          className="pointer-events-auto z-[6]"
-        />
+        <div key={`${it.url}-${idx}`} className="absolute" style={{ left: 0, top: 0 }}>
+          <StickerPeel
+            imageSrc={it.url}
+            width={it.width}
+            rotate={it.rotate}
+            peelBackHoverPct={20}
+            peelBackActivePct={40}
+            shadowIntensity={0.6}
+            lightingIntensity={0.12}
+            initialPosition={{ x: it.x, y: it.y }}
+            peelDirection={it.peelDirection}
+            className="pointer-events-auto z-[6]"
+            onAnyDragStart={() => { if (!nudgeGone) { setNudgeGone(true); try { localStorage.setItem('stickerNudgeDismissed','1') } catch {} } }}
+          />
+          {/* 랜덤 하나에 넛지 표시 */}
+          {!nudgeGone && idx === (nudgeIdx % Math.max(1, items.length)) && (
+            <div
+              className="absolute -top-8 left-1/2 -translate-x-1/2 z-[7] rounded-xl border border-white/20 bg-black/70 text-white/90 backdrop-blur px-2.5 py-1.5 text-[12px] shadow-2xl"
+              style={{ animation: 'hintSlideUp 0.4s ease-out, homeArrowFloat 2.2s infinite ease-in-out' }}
+            >
+              끌어서 이동하세요
+              <div className="absolute left-1/2 -bottom-1 w-2.5 h-2.5 rotate-45 bg-black/70 border-b border-r border-white/20" />
+            </div>
+          )}
+        </div>
       ))}
     </div>
   )

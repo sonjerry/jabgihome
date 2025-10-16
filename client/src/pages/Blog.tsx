@@ -129,10 +129,18 @@ export default function Blog() {
 
   // 가시 목록 계산
   const visible = useMemo(() => {
+    // 방문자가 이미 본 글(localStorage)에 있는 ID는 제외
+    let viewed: Set<string> | null = null
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('viewedPosts') : null
+      if (raw) viewed = new Set<string>(JSON.parse(raw))
+    } catch {}
+
     const byCatAndDate = (arr: Post[]) =>
       arr
         .filter(p => activeCat === '전체' || p.category === activeCat)
         .filter(p => !activeDate || new Date(p.createdAt).toISOString().split('T')[0] === activeDate)
+        .filter(p => (viewed ? !viewed.has(p.id) : true))
 
     let base: Post[] = posts
 
@@ -176,8 +184,8 @@ export default function Blog() {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden">
-      <AutoStickers />
       <section className="absolute inset-x-0 bottom-0 top-6 px-3 md:px-8 lg:px-12 z-0 overflow-y-auto">
+        <AutoStickers />
         {/* 헤더 */}
         <GlassCard className="mb-6 md:mb-8">
           <div className="flex items-center justify-between px-2 py-2">

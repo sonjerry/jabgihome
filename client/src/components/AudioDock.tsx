@@ -93,6 +93,8 @@ export default function AudioDock() {
   const hasList = a.playlist.length > 0
   const progress = a.duration ? a.currentTime / a.duration : 0
   const [nudgeVisible, setNudgeVisible] = useState<boolean>(true)
+  const playBtnRef = useRef<HTMLButtonElement | null>(null)
+  const [nudgePos, setNudgePos] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
 
   // 최초 1회만 노출: 로컬스토리지 체크
   useEffect(() => {
@@ -147,6 +149,48 @@ export default function AudioDock() {
     try { localStorage.setItem('audioNudgeDismissed', '1') } catch {}
   }, [a, hasList])
 
+  // 데스크톱 넛지 포지션 업데이트 (버튼을 가리키도록)
+  useEffect(() => {
+    if (!nudgeVisible) return
+    const update = () => {
+      const btn = playBtnRef.current
+      if (!btn) return
+      const r = btn.getBoundingClientRect()
+      const bubbleWidth = 260
+      const left = Math.max(8, r.left + r.width / 2 - bubbleWidth / 2)
+      const top = Math.max(8, r.top - 56) // 버튼 위 56px
+      setNudgePos({ left, top })
+    }
+    update()
+    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, { passive: true })
+    const id = setInterval(update, 500) // 폰트/레이아웃 변동 대비
+    return () => {
+      window.removeEventListener('resize', update)
+      window.removeEventListener('scroll', update)
+      clearInterval(id)
+    }
+  }, [nudgeVisible])
+
+  const renderDesktopNudge = () => {
+    if (!nudgeVisible) return null
+    if (typeof window !== 'undefined' && window.innerWidth < 640) return null // 모바일은 별도 UI 사용
+    return createPortal(
+      <div className="fixed z-[120]" style={{ left: nudgePos.left, top: nudgePos.top }}>
+        <div
+          className="relative pointer-events-auto rounded-2xl border border-white/20 bg-black/70 backdrop-blur px-3 py-2 text-[13px] text-white/90 shadow-2xl animate-pulse"
+          role="note"
+          onClick={() => { setNudgeVisible(false); try { localStorage.setItem('audioNudgeDismissed', '1') } catch {} }}
+        >
+          이거 진짜 갓곡이니까 들어줘..
+          {/* 화살표 (버튼을 가리킴) */}
+          <div className="absolute left-1/2 -bottom-1 w-3 h-3 rotate-45 bg-black/70 border-b border-r border-white/20" />
+        </div>
+      </div>,
+      document.body
+    )
+  }
+
   // (원복) 별도 음소거 토글/자동 해제 로직 없이 기본 볼륨 변경만 수행
 
   return (
@@ -158,18 +202,7 @@ export default function AudioDock() {
           'w-full min-h-[17rem] h-auto box-border overflow-visible flex flex-col'
         )}
       >
-        {/* 넛지: 데스크톱 기본 표시 */}
-        {nudgeVisible && (
-          <div className="relative mb-2">
-            <div
-              className="pointer-events-auto rounded-xl border border-amber-300/40 bg-amber-200/15 text-amber-200 px-3 py-2 text-sm font-medium flex items-center gap-2 animate-pulse"
-            >
-              <span className="hidden sm:inline">이거 진짜 갓곡이니까 들어줘..</span>
-              <span className="sm:hidden">갓곡.. ▶ 눌러봐!</span>
-              <button onClick={() => setNudgeVisible(false)} className="ml-auto text-xs opacity-80 hover:opacity-100">닫기</button>
-            </div>
-          </div>
-        )}
+        {renderDesktopNudge()}
         {/* 제목 */}
         <div className="min-w-0">
           <h3 className="text-cream/90 text-base font-semibold break-words font-jp-title">
@@ -189,6 +222,7 @@ export default function AudioDock() {
             ‹‹
           </button>
           <button
+            ref={playBtnRef}
             className="w-12 h-12 rounded-2xl bg-amber-400/90 hover:bg-amber-400 text-brown-900 font-bold text-xl disabled:opacity-40"
             onClick={handlePlayClick}
             aria-label={a.playing ? 'Pause' : 'Play'}
@@ -251,14 +285,14 @@ export default function AudioDock() {
       </div>
       {/* 모바일 넛지: 왼쪽 가장자리 아래 고정 표시 (사이드바 영역 힌트) */}
       {nudgeVisible && (
-        <div className="sm:hidden fixed left-3 bottom-20 z-[60]">
+        <div className="sm:hidden fixed left-3 bottom-20 z-[120]">
           <div
-            className="pointer-events-auto rounded-2xl border border-amber-300/40 bg-amber-200/15 backdrop-blur px-3 py-2 shadow-glass"
+            className="pointer-events-auto rounded-2xl border border-white/20 bg-black/70 text-white/90 backdrop-blur px-3 py-2 shadow-2xl"
             style={{ animation: 'hintSlideUp 0.5s ease-out, homeArrowFloat 2.2s infinite ease-in-out' }}
-            onClick={() => setNudgeVisible(false)}
+            onClick={() => { setNudgeVisible(false); try { localStorage.setItem('audioNudgeDismissed', '1') } catch {} }}
           >
-            <div className="text-[13px] text-amber-200 font-semibold">이거 진짜 갓곡이니까 들어줘..</div>
-            <div className="text-[11px] text-amber-100/90 mt-1">사이드바 열고 ▶ 눌러보기</div>
+            <div className="text-[13px] font-semibold">이거 진짜 갓곡이니까 들어줘..</div>
+            <div className="text-[11px] opacity-90 mt-1">사이드바 열고 ▶ 눌러보기</div>
           </div>
         </div>
       )}

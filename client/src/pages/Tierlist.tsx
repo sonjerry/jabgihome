@@ -324,7 +324,7 @@ export default function Tierlist() {
     <main className="relative min-h-screen overflow-x-hidden">
       <section className="absolute inset-x-0 bottom-0 top-6 px-3 md:px-8 lg:px-12 z-0 overflow-y-auto">
         <GlassCard className="mb-6 md:mb-8">
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">애니/만화화 티어리스트</h1>
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">애니/만화 티어리스트</h1>
           <p className="text-sm md:text-base text-white/70 mt-4">객관적이고 정확한 분류</p>
         </GlassCard>
 

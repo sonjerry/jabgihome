@@ -108,6 +108,22 @@ export default function PostDetail() {
     loadPost()
   }, [id])
 
+  // 방문 기록: 로컬스토리지에 열람한 글 ID 저장 (방문자 개인 기준)
+  useEffect(() => {
+    if (!id) return
+    try {
+      const key = 'viewedPosts'
+      const raw = typeof window !== 'undefined' ? localStorage.getItem(key) : null
+      const arr: string[] = raw ? JSON.parse(raw) : []
+      if (!arr.includes(id)) {
+        arr.unshift(id)
+        // 과도한 누적 방지: 최근 500개까지만 유지
+        const trimmed = arr.slice(0, 500)
+        localStorage.setItem(key, JSON.stringify(trimmed))
+      }
+    } catch {}
+  }, [id])
+
   const title = useMemo(() => post?.title ?? '', [post])
 
   const onDelete = async () => {

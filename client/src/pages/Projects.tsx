@@ -50,7 +50,7 @@ const PROJECTS: Project[] = [
   {
     id: 'p2',
     title: 'Openapi 튜링 테스트',
-    summary: '사람과 구별 불가능한 페르소나 구성',
+    summary: '정교한 페르소나 구성 실험험',
     linkUrl: 'https://example-project2.onrender.com',
     repoUrl: 'https://github.com/sonjerry/Turing-test',
     status: 'paused',

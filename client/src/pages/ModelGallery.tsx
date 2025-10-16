@@ -52,7 +52,7 @@ export default function ModelGallery() {
     const timer = setTimeout(() => {
       // Canvas들을 강제로 다시 렌더링
       window.dispatchEvent(new Event('resize'))
-    }, 350) // 페이지 전환 애니메이션(280ms) 후
+    }, 100) // 페이지 전환 애니메이션 후 빠른 리렌더링
     return () => clearTimeout(timer)
   }, [])
 
@@ -204,7 +204,7 @@ export default function ModelGallery() {
                       height="100%"
                       environmentPreset="studio"
                       autoFrame
-                      autoRotate
+                      autoRotate={false}
                       autoRotateSpeed={0.25}
                       enableManualRotation
                       enableManualZoom
@@ -259,7 +259,7 @@ export default function ModelGallery() {
           </button>
 
           <div
-            className="relative w-[92vw] max-w-5xl max-h-[86vh] rounded-xl overflow-hidden bg-black/30 backdrop-blur border border-white/10"
+            className="relative w-[92vw] max-w-5xl max-h-[86vh] rounded-xl overflow-hidden bg-white border border-black/10"
             onClick={(e) => e.stopPropagation()}
           >
             <div
@@ -292,21 +292,21 @@ export default function ModelGallery() {
 
               {/* comments */}
               <div className="px-4 py-3 space-y-3">
-                <h3 className="text-sm font-semibold text-white/80">댓글</h3>
+                <h3 className="text-sm font-semibold text-gray-800">댓글</h3>
                 <div className="max-h-[18vh] overflow-y-auto space-y-2 pr-1">
                   {comments.length === 0 ? (
-                    <p className="text-xs text-white/50">첫 댓글을 남겨보세요.</p>
+                    <p className="text-xs text-gray-500">첫 댓글을 남겨보세요.</p>
                   ) : (
                     comments.map(c => (
                       <div key={c.id} className="text-sm flex items-start gap-2">
                         <div className="flex-1">
-                          <span className="text-white/70 mr-2">{c.nickname}</span>
-                          <span className="text-white/90 break-words align-middle">{c.content}</span>
+                          <span className="text-gray-600 mr-2">{c.nickname}</span>
+                          <span className="text-gray-900 break-words align-middle">{c.content}</span>
                         </div>
                         {role === 'admin' && (
                           <button
                             onClick={() => handleDeleteComment(c.id)}
-                            className="shrink-0 text-xs px-2 py-1 rounded bg-red-500/20 hover:bg-red-500/30 text-red-200"
+                            className="shrink-0 text-xs px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 text-red-700"
                           >삭제</button>
                         )}
                       </div>
@@ -321,11 +321,11 @@ export default function ModelGallery() {
                     onChange={e => setDraft(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddComment() } }}
                     placeholder="텍스트만 입력..."
-                    className="flex-1 rounded-md bg-white/10 text-white placeholder:text-white/40 px-3 py-2 outline-none focus:ring-2 focus:ring-white/20"
+                    className="flex-1 rounded-md bg-black/5 text-gray-900 placeholder:text-gray-400 px-3 py-2 outline-none focus:ring-2 focus:ring-black/10 border border-black/10"
                   />
                   <button
                     onClick={handleAddComment}
-                    className="px-3 py-2 rounded-md bg-white/10 hover:bg-white/20 text-white text-sm"
+                    className="px-3 py-2 rounded-md bg-black/5 hover:bg-black/10 text-gray-900 text-sm border border-black/10"
                   >
                     남기기
                   </button>
