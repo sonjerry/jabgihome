@@ -95,6 +95,7 @@ export default function AudioDock() {
   const [nudgeVisible, setNudgeVisible] = useState<boolean>(true)
   const playBtnRef = useRef<HTMLButtonElement | null>(null)
   const [nudgePos, setNudgePos] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
+  const nudgeRef = useRef<HTMLDivElement | null>(null)
 
   // 최초 1회만 노출: 로컬스토리지 체크
   useEffect(() => {
@@ -156,9 +157,10 @@ export default function AudioDock() {
       const btn = playBtnRef.current
       if (!btn) return
       const r = btn.getBoundingClientRect()
-      const bubbleWidth = 260
-      const left = Math.max(8, r.left + r.width / 2 - bubbleWidth / 2)
-      const top = Math.max(8, r.top - 56) // 버튼 위 56px
+      const bw = nudgeRef.current?.offsetWidth || 300
+      const bh = nudgeRef.current?.offsetHeight || 56
+      const left = Math.max(8, r.left + r.width / 2 - bw / 2)
+      const top = Math.max(8, r.top - bh - 12) // 버튼 위 약간 띄움
       setNudgePos({ left, top })
     }
     update()
@@ -176,16 +178,17 @@ export default function AudioDock() {
     if (!nudgeVisible) return null
     if (typeof window !== 'undefined' && window.innerWidth < 640) return null // 모바일은 별도 UI 사용
     return createPortal(
-      <div className="fixed z-[120]" style={{ left: nudgePos.left, top: nudgePos.top }}>
+      <div className="fixed z-[200]" style={{ left: nudgePos.left, top: nudgePos.top }}>
         <div
-          className="relative pointer-events-auto rounded-2xl border border-white/60 bg-white/90 backdrop-blur-xl px-4 py-3 text-[14px] font-bold text-gray-900 shadow-2xl"
+          ref={nudgeRef}
+          className="relative pointer-events-auto rounded-2xl border border-black/10 bg-white/95 backdrop-blur-xl px-5 py-3 text-[15px] font-extrabold text-gray-900 shadow-[0_12px_40px_rgba(0,0,0,0.25)]"
           role="note"
           onClick={() => { setNudgeVisible(false); try { localStorage.setItem('audioNudgeDismissed', '1') } catch {} }}
           style={{ animation: 'nudgePop 900ms ease-in-out infinite alternate, nudgeFloat 2.2s ease-in-out infinite, nudgeGlow 2.4s ease-in-out infinite' }}
         >
           클릭!!
           {/* 화살표 (버튼을 가리킴) */}
-          <div className="absolute left-1/2 -bottom-1 w-3 h-3 rotate-45 bg-white/90 border-b border-r border-white/60" />
+          <div className="absolute left-1/2 -bottom-1.5 w-4 h-4 rotate-45 bg-white/95 border-b border-r border-black/10" />
         </div>
       </div>,
       document.body
@@ -297,13 +300,13 @@ export default function AudioDock() {
       </div>
       {/* 모바일 넛지: 왼쪽 가장자리 아래 고정 표시 (사이드바 영역 힌트) */}
       {nudgeVisible && (
-        <div className="sm:hidden fixed left-3 bottom-20 z-[120]">
+        <div className="sm:hidden fixed left-3 bottom-24 z-[200]">
           <div
-            className="pointer-events-auto rounded-2xl border border-white/60 bg-white/90 backdrop-blur-xl text-gray-900 px-4 py-3 shadow-2xl"
+            className="pointer-events-auto rounded-2xl border border-black/10 bg-white/95 backdrop-blur-xl text-gray-900 px-5 py-3 shadow-[0_12px_40px_rgba(0,0,0,0.25)]"
             style={{ animation: 'hintSlideUp 0.5s ease-out, nudgeFloat 2.2s ease-in-out infinite, nudgeGlow 2.4s ease-in-out infinite' }}
             onClick={() => { setNudgeVisible(false); try { localStorage.setItem('audioNudgeDismissed', '1') } catch {} }}
           >
-            <div className="text-[14px] font-bold" style={{ animation: 'nudgePop 900ms ease-in-out infinite alternate' }}>클릭!!</div>
+            <div className="text-[15px] font-extrabold" style={{ animation: 'nudgePop 900ms ease-in-out infinite alternate' }}>클릭!!</div>
           </div>
         </div>
       )}
