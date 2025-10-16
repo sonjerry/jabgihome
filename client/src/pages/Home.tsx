@@ -31,6 +31,7 @@ const NAV_TEXT_MOBILE = "text-lg leading-relaxed !text-amber-200";
 export default function Home() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [isMuted, setIsMuted] = useState(true)
+  const [volume, setVolume] = useState(0.5)
   const [hasUnmuted, setHasUnmuted] = useState(false)
   const [isVideoReady, setIsVideoReady] = useState(false)
   const revealProgress = useScrollReveal(10)
@@ -59,10 +60,22 @@ export default function Home() {
     if (v) {
       try { v.removeAttribute('muted') } catch {}
       v.muted = false
-      v.volume = 1
+      v.volume = volume
       try { void v.play() } catch {}
     }
   }
+
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v) return
+    try {
+      v.volume = volume
+      if (volume === 0) {
+        v.muted = true
+        setIsMuted(true)
+      }
+    } catch {}
+  }, [volume])
 
   return (
     <>
@@ -163,7 +176,7 @@ export default function Home() {
 
 
 
-        {/* 히어로 콘텐츠 (제목/서브타이틀/언뮤트) */}
+        {/* 히어로 콘텐츠 (제목/서브타이틀/언뮤트/힌트/볼륨) */}
         {isVideoReady && (
           <div className="absolute inset-0 z-10 px-4 md:px-8 flex items-center justify-center" style={{ transform: 'translateY(-15vh)' }}>
             <div className="w-full max-w-5xl flex flex-col items-center text-center">
@@ -195,44 +208,31 @@ export default function Home() {
                   <span className="opacity-90 text-sm md:text-base font-medium whitespace-nowrap home-force-white">음소거 해제</span>
                 </button>
               )}
-            </div>
-          </div>
-        )}
 
-        {/* 스크롤 힌트 - 음소거 해제 후 표시 */}
-        {hasUnmuted && revealProgress < 0.1 && (
-          <div
-            className="absolute inset-x-0 bottom-[20vh] z-20 flex items-center justify-center"
-            style={{
-              opacity: 1 - revealProgress * 10,
-              transition: 'opacity 300ms ease, transform 300ms ease',
-              animation: 'hintSlideUp 0.6s ease-out'
-            }}
-          >
-            <div className="text-center">
-              <div className="text-sm mb-3 home-force-white">아래로 스크롤하세요</div>
-              <div className="pointer-events-none rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass home-force-white">
-                <div className="flex items-center gap-3">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                       style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '0ms' }}
-                       aria-hidden>
-                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              {/* 볼륨/힌트: 항상 표시, 언뮤트 버튼 아래 */}
+              <div className="mt-6 md:mt-8 flex flex-col items-center gap-4">
+                <div className="home-force-white flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 backdrop-blur px-4 py-2 shadow-glass">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="opacity-90">
+                    <path d="M5 9v6h4l5 5V4L9 9H5z" />
                   </svg>
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                       style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '150ms' }}
-                       aria-hidden>
-                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                       style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '300ms' }}
-                       aria-hidden>
-                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={Math.round(volume * 100)}
+                    onChange={(e) => { const val = Number(e.target.value); setVolume(val / 100); if (val>0) setIsMuted(false) }}
+                    className="home-volume w-56 md:w-72"
+                  />
+                  <span className="text-xs opacity-90 w-8 text-right">{Math.round(volume*100)}</span>
                 </div>
+
+                <div className="text-sm home-force-white" style={{ animation: 'hintSlideUp 0.6s ease-out' }}>아래로 스크롤하세요</div>
               </div>
             </div>
           </div>
         )}
+
+        {/* 하단 힌트 제거: 버튼 아래에 통합 */}
 
         {/* 중앙 음소거 버튼 블록은 로딩 오버레이에서 처리하므로 별도 노출 없음 */}
 
@@ -252,9 +252,9 @@ export default function Home() {
         <div style={{ height: '90vh' }} />
       </main>
 
-      {/* 스크롤 시 나타나는 카드들 - 영상 위에 포개짐 (언뮤트 이후 + 스크롤 임계값 충족, BodyPortal) */}
+      {/* 스크롤 시 나타나는 카드들 - 언뮤트와 무관 */}
       <BodyPortal>
-      {hasUnmuted && revealProgress >= 0.1 && (
+      {revealProgress >= 0.1 && (
       <>
       {/* Desktop (md+) - 가장자리에서 슬라이드 인 */}
       <div className="fixed inset-0 z-30 pointer-events-none hidden md:block" style={{ pointerEvents: 'none' }}>

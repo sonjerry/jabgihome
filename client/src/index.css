@@ -209,7 +209,32 @@ body {
 .home-force-white { color: #ffffff !important; }
 .home-subtitle { color: #fbbf24 !important; }
 
-
+.home-volume {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 10px;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.35);
+  outline: none;
+}
+.home-volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.2);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.2);
+}
+.home-volume::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.2);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.2);
+}
 
 /* 전역 스크롤바 숨김 (스크롤 기능 유지) */
 html, body, * {
