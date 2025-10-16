@@ -1,9 +1,35 @@
 // client/src/pages/Editor.tsx
-import { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo, Component, ReactNode } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { Post, Attachment } from '../types'
 import { getPost, savePost, uploadFile, updatePost } from '../lib/api'
 import PageShell from '../components/PageShell'
+
+// 간단한 ErrorBoundary 컴포넌트
+class EditorErrorBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode; fallback: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('에디터 에러:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback
+    }
+    return this.props.children
+  }
+}
 
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
 
@@ -28,6 +54,7 @@ export default function Editor(){
   const [editorError, setEditorError] = useState<string | null>(null)
   const [tipTapLoaded, setTipTapLoaded] = useState<boolean>(false)
   const [tipTapModules, setTipTapModules] = useState<any>(null)
+  const [editorInstance, setEditorInstance] = useState<any>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement|null>(null)
   const editorRef = useRef<any>(null)
@@ -82,6 +109,73 @@ export default function Editor(){
 
     loadTipTap()
   }, [])
+
+  // 에디터 인스턴스 생성
+  useEffect(() => {
+    if (!tipTapModules || editorInstance) return
+
+    const createEditor = () => {
+      try {
+        console.log('TipTap 에디터 인스턴스 생성 시작...')
+        const { Editor, StarterKit, TextStyle, Color, Link, Image, TextAlign } = tipTapModules
+        
+        const extensions = [
+          StarterKit.default || StarterKit,
+          TextStyle.default || TextStyle,
+          Color.default || Color,
+          Link.default.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer' } }),
+          Image.default.configure({ inline: false, allowBase64: true }),
+          TextAlign.default.configure({ types: ['heading','paragraph'] })
+        ]
+        
+        const editor = new Editor({
+          extensions,
+          content: content || '<p></p>',
+          onUpdate: ({ editor }: any) => {
+            const newContent = editor.getHTML()
+            console.log('에디터 업데이트:', newContent.substring(0, 100))
+            // content가 실제로 변경되었을 때만 상태 업데이트
+            if (newContent !== content) {
+              setContent(newContent)
+            }
+            setEditorReady(true)
+          },
+          onCreate: ({ editor }: any) => {
+            console.log('에디터 생성 완료')
+            editorRef.current = editor
+            setEditorReady(true)
+            setEditorError(null)
+          },
+        })
+        
+        setEditorInstance(editor)
+        console.log('TipTap 에디터 인스턴스 생성 성공')
+      } catch (error) {
+        console.error('TipTap 에디터 인스턴스 생성 실패:', error)
+        setEditorError(error instanceof Error ? error.message : '알 수 없는 오류')
+      }
+    }
+
+    createEditor()
+  }, [tipTapModules])
+
+  // content 변경 시 에디터 내용 업데이트 (에디터가 외부에서 content를 변경받을 때)
+  useEffect(() => {
+    if (editorInstance && content && editorInstance.getHTML() !== content) {
+      console.log('에디터 내용 외부 업데이트:', content.substring(0, 100))
+      editorInstance.commands.setContent(content)
+    }
+  }, [content, editorInstance])
+
+  // 컴포넌트 언마운트 시 에디터 정리
+  useEffect(() => {
+    return () => {
+      if (editorInstance) {
+        console.log('에디터 인스턴스 정리')
+        editorInstance.destroy()
+      }
+    }
+  }, [editorInstance])
 
   useEffect(()=> {
     if (!isEdit) return
@@ -371,54 +465,25 @@ export default function Editor(){
                   마크다운 문법을 사용하여 글을 작성할 수 있습니다. 위의 마크다운 도움말을 참고하세요.
                 </div>
               </div>
-            ) : tipTapModules ? (
-              <tipTapModules.EditorContent 
-                editor={useMemo(() => {
-                  try {
-                    console.log('TipTap 에디터 초기화 시작...', { tipTapModules })
-                    const { Editor, StarterKit, TextStyle, Color, Link, Image, TextAlign } = tipTapModules
-                    
-                    const extensions = [
-                      StarterKit.default || StarterKit,
-                      TextStyle.default || TextStyle,
-                      Color.default || Color,
-                      Link.default.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer' } }),
-                      Image.default.configure({ inline: false, allowBase64: true }),
-                      TextAlign.default.configure({ types: ['heading','paragraph'] })
-                    ]
-                    
-                    console.log('Extensions 준비 완료:', extensions.length)
-                    
-                    const editor = new Editor({
-                      extensions,
-                      content: content || '<p></p>',
-                      onUpdate: ({ editor }: any) => {
-                        console.log('에디터 업데이트:', editor.getHTML().substring(0, 100))
-                        setContent(editor.getHTML())
-                        setEditorReady(true)
-                      },
-                      onCreate: ({ editor }: any) => {
-                        console.log('에디터 생성 완료')
-                        editorRef.current = editor
-                        setEditorReady(true)
-                        setEditorError(null)
-                      },
-                    })
-                    console.log('TipTap 에디터 초기화 성공')
-                    return editor
-                  } catch (error) {
-                    console.error('TipTap 에디터 초기화 실패:', error)
-                    console.error('Error details:', {
-                      message: error instanceof Error ? error.message : 'Unknown error',
-                      stack: error instanceof Error ? error.stack : undefined,
-                      name: error instanceof Error ? error.name : undefined
-                    })
-                    setEditorError(error instanceof Error ? error.message : '알 수 없는 오류')
-                    return null
-                  }
-                }, [tipTapModules, content])} 
-                className="prose prose-invert max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2" 
-              />
+            ) : editorInstance ? (
+              <EditorErrorBoundary fallback={
+                <div className="p-4 text-center">
+                  <div className="text-red-400 mb-2">에디터 렌더링 중 오류가 발생했습니다.</div>
+                  <div className="text-sm opacity-80 mb-3">마크다운 에디터로 전환합니다.</div>
+                  <textarea
+                    ref={textareaRef}
+                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg min-h-[52vh] md:min-h-[60vh] resize-none font-mono text-sm"
+                    placeholder="마크다운으로 작성하세요..."
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                  />
+                </div>
+              }>
+                <tipTapModules.EditorContent 
+                  editor={editorInstance} 
+                  className="prose prose-invert max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2" 
+                />
+              </EditorErrorBoundary>
             ) : null}
           </div>
 
