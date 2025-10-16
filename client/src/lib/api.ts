@@ -179,10 +179,10 @@ export const ThreadAPI = {
 }
 
 /** ─────────── Reviews (admin-only) ─────────── */
-export type Review = { key: string; rating: number; text: string; updatedAt: string }
+export type Review = { key: string; text: string; updatedAt: string }
 export const ReviewAPI = {
   get: (key: string) => publicGet<Review | null>(`/reviews/${encodeURIComponent(key)}`),
-  save: (key: string, rating: number, text: string) => apiPut<{ ok: boolean }>(`/reviews/${encodeURIComponent(key)}`, { rating, text }),
+  save: (key: string, text: string) => apiPut<{ ok: boolean }>(`/reviews/${encodeURIComponent(key)}`, { text }),
   remove: (key: string) => apiDelete<{ ok: boolean }>(`/reviews/${encodeURIComponent(key)}`).then(r => !!r.ok),
 }
 

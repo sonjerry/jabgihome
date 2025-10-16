@@ -96,7 +96,7 @@ async function generateTierlistData() {
       }
     })
     
-    // 리뷰 데이터 추가 (rating을 티어로 변환)
+    // 리뷰 데이터 추가 (rating 제거; 텍스트만 사용)
     reviews.forEach(review => {
       if (!itemsMap.has(review.thread_key)) {
         itemsMap.set(review.thread_key, {
@@ -109,9 +109,7 @@ async function generateTierlistData() {
       }
       const item = itemsMap.get(review.thread_key)
       item.review = review.text || ''
-      // rating을 티어로 변환 (0=S, 1=A, 2=B, 3=C, 4=D, 5=F)
-      const tierMap = ['S', 'A', 'B', 'C', 'D', 'F']
-      item.tier = tierMap[review.rating] || 'F'
+      // rating 값은 더 이상 사용하지 않음
     })
     
     // 댓글 데이터 추가

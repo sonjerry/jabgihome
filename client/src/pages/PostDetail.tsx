@@ -271,7 +271,10 @@ export default function PostDetail() {
         )}
       </div>
 
-      <article className="font-sans mx-auto max-w-[72ch] px-3 md:px-6">
+      <article
+        className="mx-auto max-w-[72ch] px-3 md:px-6 text-left"
+        style={{ fontFamily: 'Gulim, 굴림, sans-serif' }}
+      >
         {/* 헤더 */}
         <header className="mb-6">
           <h1 className="text-3xl md:text-4xl font-bold leading-tight">{title}</h1>
@@ -299,7 +302,8 @@ export default function PostDetail() {
           style={{ color: editorTextColor, fontSize: `${editorFontSize}px` }}
           className={clsx(
             'post-content',
-            'leading-[1.85]'
+            'leading-[1.85]',
+            'text-left'
           )}
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>

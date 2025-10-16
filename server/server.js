@@ -761,8 +761,8 @@ app.get('/api/reviews/:key', async (req, res) => {
     }
     const row = Array.isArray(data) ? (data[0] || null) : (data || null)
     if (!row) return res.json(null)
-    const rating = typeof row.rating === 'number' ? row.rating : (row.score ?? row.stars ?? null)
-    return res.json({ key: row.thread_key, rating, text: row.text, updatedAt: row.updated_at })
+    // rating 컬럼 없이 동작: 클라이언트는 rating을 사용하지 않음
+    return res.json({ key: row.thread_key, text: row.text, updatedAt: row.updated_at })
   } catch (e) {
     console.error('get review error', e)
     res.status(500).json({ error: 'review get failed' })
@@ -773,12 +773,12 @@ app.put('/api/reviews/:key', requireAdmin, async (req, res) => {
   try {
     const key = decodeURIComponent(req.params.key || '')
     const parsed = ensureObjectBody(req.body)
-    const { rating, text } = parsed || {}
-    if (!key || typeof rating !== 'number') return res.status(400).json({ ok: false })
+    const { text } = parsed || {}
+    if (!key) return res.status(400).json({ ok: false })
     const nowIso = new Date().toISOString()
     const { error } = await supabase
       .from('threads_reviews')
-      .upsert({ thread_key: key, rating, text: text || '', updated_at: nowIso }, { onConflict: 'thread_key' })
+      .upsert({ thread_key: key, text: text || '', updated_at: nowIso }, { onConflict: 'thread_key' })
     if (error) return res.status(500).json({ ok: false, msg: error.message })
     
     // 해당 thread_key의 개별 파일 재생성
@@ -1083,8 +1083,7 @@ app.get('/api/threads/:key', async (req, res) => {
     const reviewRow2 = Array.isArray(reviewList.data) ? reviewList.data[0] : reviewList.data
     if (reviewRow2) {
       threadData.review = reviewRow2.text || ''
-      const tierMap = ['S', 'A', 'B', 'C', 'D', 'F']
-      threadData.tier = tierMap[reviewRow2.rating] || 'F'
+      // rating 제거: 티어는 기본값 유지
     }
     
     // 댓글 데이터 처리

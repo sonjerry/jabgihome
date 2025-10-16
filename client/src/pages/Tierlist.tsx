@@ -210,7 +210,7 @@ export default function Tierlist() {
     if (role !== 'admin' || !commentText.trim()) return
     const storageKey = currentKey // 파일명을 그대로 사용
     try {
-      await ReviewAPI.save(storageKey, 0, commentText.trim())
+      await ReviewAPI.save(storageKey, commentText.trim())
       await refreshComment(storageKey)
       setCommentText('')
     } catch (error) {

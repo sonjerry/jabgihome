@@ -18,10 +18,28 @@
   font-style: normal;
   font-display: swap;
 }
-/* 본문 전용 글꼴 */
+/* 본문 컨텐츠: 상위에서 지정한 폰트를 따르고, 모바일 겹침 방지 */
 .post-content {
-  font-family: 'Moneygraphy-Rounded', ui-sans-serif, system-ui, -apple-system,
-    'Noto Sans KR', 'Apple SD Gothic Neo', 'Helvetica Neue', Arial, 'Malgun Gothic', '맑은 고딕', sans-serif;
+  font-family: inherit; /* PostDetail에서 지정한 글꼴(Gulim)을 따름 */
+  overflow-wrap: anywhere; /* 긴 단어 줄바꿈 */
+  word-break: break-word;  /* 한국어/영문 혼용 시 안전한 줄바꿈 */
+}
+
+.post-content img, .post-content video, .post-content canvas, .post-content iframe {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.post-content figure {
+  margin-top: 1.25rem; /* mt-5 정도 */
+  margin-bottom: 1.25rem; /* mb-5 정도 */
+}
+
+.post-content table {
+  display: block;          /* 작은 화면에서 수평 스크롤 */
+  width: 100%;
+  overflow-x: auto;
 }
 
 /* 루트 높이 및 배경 */
@@ -30,7 +48,8 @@ html, body, #root {
 }
 
 html {
-  background: linear-gradient(135deg, #1e40af 0%, #2563eb 15%, #3b82f6 30%, #60a5fa 50%, #93c5fd 70%, #bfdbfe 85%, #e0f2fe 100%); /* 부드러운 하늘색 그라디언트 */
+  /* 유리 효과를 잘 받는, 거의 흰색에 가까운 미묘한 중성 그라디언트 */
+  background: linear-gradient(160deg, #f8fafc 0%, #f2f5f9 40%, #eef2f7 70%, #eceff4 100%);
   /* iOS Safari safe area 지원 */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
@@ -129,7 +148,7 @@ body {
   background: rgba(255,255,255,0.10);
   -webkit-backdrop-filter: blur(18px) saturate(1.35) contrast(1.1);
   backdrop-filter: blur(18px) saturate(1.35) contrast(1.1);
-  z-index: 0;
+  z-index: -1; /* 버튼/텍스트가 가려지지 않게 뒤로 보냄 */
 }
 
 /* 멀티 컬럼 깨짐 방지 */
