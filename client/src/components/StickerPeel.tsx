@@ -503,7 +503,7 @@ export default function AutoStickers() {
   }, [box.w, box.h, urls])
 
   return (
-    <div ref={ref} className="pointer-events-none absolute inset-0 overflow-visible z-[5]">
+    <div ref={ref} className="pointer-events-none absolute inset-0 overflow-visible z-[30]">
       {items.map((it, idx) => (
         <div key={`${it.url}-${idx}`} className="absolute" style={{ left: 0, top: 0 }}>
           <StickerPeel
@@ -516,7 +516,7 @@ export default function AutoStickers() {
             lightingIntensity={0.12}
             initialPosition={{ x: it.x, y: it.y }}
             peelDirection={it.peelDirection}
-            className="pointer-events-auto z-[6]"
+            className="pointer-events-auto z-[31]"
             onAnyDragStart={() => { if (!nudgeGone) { setNudgeGone(true); try { localStorage.setItem('stickerNudgeDismissed','1') } catch {} } }}
           />
           {/* 랜덤 하나에 넛지 표시 */}

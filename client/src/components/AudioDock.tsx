@@ -178,13 +178,13 @@ export default function AudioDock() {
     return createPortal(
       <div className="fixed z-[120]" style={{ left: nudgePos.left, top: nudgePos.top }}>
         <div
-          className="relative pointer-events-auto rounded-2xl border border-white/20 bg-black/70 backdrop-blur px-3 py-2 text-[13px] text-white/90 shadow-2xl animate-pulse"
+          className="relative pointer-events-auto rounded-2xl border border-white/60 bg-white/90 backdrop-blur-xl px-4 py-3 text-[14px] font-bold text-gray-900 shadow-2xl"
           role="note"
           onClick={() => { setNudgeVisible(false); try { localStorage.setItem('audioNudgeDismissed', '1') } catch {} }}
         >
-          이거 진짜 갓곡이니까 들어줘..
+          클릭!!
           {/* 화살표 (버튼을 가리킴) */}
-          <div className="absolute left-1/2 -bottom-1 w-3 h-3 rotate-45 bg-black/70 border-b border-r border-white/20" />
+          <div className="absolute left-1/2 -bottom-1 w-3 h-3 rotate-45 bg-white/90 border-b border-r border-white/60" />
         </div>
       </div>,
       document.body
@@ -287,12 +287,11 @@ export default function AudioDock() {
       {nudgeVisible && (
         <div className="sm:hidden fixed left-3 bottom-20 z-[120]">
           <div
-            className="pointer-events-auto rounded-2xl border border-white/20 bg-black/70 text-white/90 backdrop-blur px-3 py-2 shadow-2xl"
+            className="pointer-events-auto rounded-2xl border border-white/60 bg-white/90 backdrop-blur-xl text-gray-900 px-4 py-3 shadow-2xl"
             style={{ animation: 'hintSlideUp 0.5s ease-out, homeArrowFloat 2.2s infinite ease-in-out' }}
             onClick={() => { setNudgeVisible(false); try { localStorage.setItem('audioNudgeDismissed', '1') } catch {} }}
           >
-            <div className="text-[13px] font-semibold">이거 진짜 갓곡이니까 들어줘..</div>
-            <div className="text-[11px] opacity-90 mt-1">사이드바 열고 ▶ 눌러보기</div>
+            <div className="text-[14px] font-bold">클릭!!</div>
           </div>
         </div>
       )}
