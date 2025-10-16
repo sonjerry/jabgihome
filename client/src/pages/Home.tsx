@@ -186,47 +186,7 @@ export default function Home() {
               />
               {/* 음소거 해제 버튼 제거 */}
 
-              {/* 볼륨바: 화면 중앙 살짝 아래 */}
-              <div className="absolute left-1/2 top-[58%] -translate-x-1/2 flex flex-col items-center gap-5" style={{ animation: 'hintSlideUp 0.6s ease-out' }}>
-                <div className="home-force-white flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 backdrop-blur px-4 py-2 shadow-glass">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="opacity-90">
-                    <path d="M5 9v6h4l5 5V4L9 9H5z" />
-                  </svg>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={Math.round(volume * 100)}
-                    onChange={(e) => { const val = Number(e.target.value); setVolume(val / 100); if (val>0) setIsMuted(false) }}
-                    className="home-volume w-56 md:w-72"
-                  />
-                  <span className="text-xs opacity-90 w-8 text-right">{Math.round(volume*100)}</span>
-                </div>
-
-                {/* 중앙 하단 화살표 3개 힌트 UI */}
-                <div className="absolute left-1/2 bottom-[8vh] -translate-x-1/2 text-center">
-                  <div className="text-sm mb-3 home-force-white">아래로 스크롤하세요</div>
-                  <div className="pointer-events-none rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass home-force-white">
-                    <div className="flex items-center gap-3">
-                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                           style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '0ms' }}
-                           aria-hidden>
-                        <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                           style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '150ms' }}
-                           aria-hidden>
-                        <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                           style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '300ms' }}
-                           aria-hidden>
-                        <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {/* 힌트/볼륨은 섹션 레벨에서 절대 배치 (부모의 translateY 영향 제거) */}
             </div>
           </div>
         )}
@@ -235,6 +195,51 @@ export default function Home() {
 
         {/* 중앙 음소거 버튼 블록은 로딩 오버레이에서 처리하므로 별도 노출 없음 */}
 
+        {/* 섹션 레벨 UI: 볼륨바(중앙 약간 아래) */}
+        {isVideoReady && (
+          <>
+            <div className="absolute left-1/2 top-[58%] -translate-x-1/2 z-10" style={{ animation: 'hintSlideUp 0.6s ease-out' }}>
+              <div className="home-force-white flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 backdrop-blur px-4 py-2 shadow-glass">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="opacity-90">
+                  <path d="M5 9v6h4l5 5V4L9 9H5z" />
+                </svg>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={Math.round(volume * 100)}
+                  onChange={(e) => { const val = Number(e.target.value); setVolume(val / 100); if (val>0) setIsMuted(false) }}
+                  className="home-volume w-56 md:w-72"
+                />
+                <span className="text-xs opacity-90 w-8 text-right">{Math.round(volume*100)}</span>
+              </div>
+            </div>
+
+            {/* 중앙 하단 화살표 3개 힌트 UI */}
+            <div className="absolute left-1/2 bottom-[8vh] -translate-x-1/2 z-10 text-center">
+              <div className="text-sm mb-3 home-force-white">아래로 스크롤하세요</div>
+              <div className="pointer-events-none rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass home-force-white">
+                <div className="flex items-center gap-3">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                       style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '0ms' }}
+                       aria-hidden>
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                       style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '150ms' }}
+                       aria-hidden>
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                       style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '300ms' }}
+                       aria-hidden>
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </section>
       </BodyPortal>
 

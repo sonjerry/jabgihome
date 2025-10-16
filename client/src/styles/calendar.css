@@ -1,11 +1,11 @@
 /* ===== 기본 레이아웃 ===== */
 .react-calendar {
   width: 100%;
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.55); /* 라이트 배경에서 대비 확보 */
+  border: 1px solid rgba(0,0,0,0.2);
   border-radius: 0.75rem;
   padding: 0.25rem;
-  color: #f3f3f3;
+  color: #111827; /* 기본 글자색 어둡게 */
   font-size: 14px;
 }
 
@@ -27,15 +27,15 @@
   white-space: nowrap;
 }
 .react-calendar__navigation button {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.85);
   border-radius: 0.5rem;
   padding: 6px;
   border: none;
-  color: inherit;
+  color: #111827;
   min-width: 40px;
 }
 .react-calendar__navigation button:hover {
-  background: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,1);
 }
 
 /* ===== 요일 헤더 ===== */
@@ -56,7 +56,7 @@
   transition: background 120ms ease;
 }
 .react-calendar__tile:enabled:hover {
-  background: rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.75);
 }
 
 /* ===== 날짜 상태 ===== */
@@ -72,24 +72,24 @@
   width: 6px;
   height: 6px;
   border-radius: 9999px;
-  background: rgba(255,255,255,0.9);
+  background: rgba(17,24,39,0.9);
 }
 .cal-no-post {
   opacity: 0.4;
 }
 .cal-selected {
-  background: rgba(255,255,255,0.18) !important;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.25) inset;
+  background: rgba(0,0,0,0.08) !important;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.25) inset;
 }
 
 /* 오늘 날짜 */
 .react-calendar__tile--now {
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.18) inset;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.18) inset;
 }
 
 /* ===== 범례용 점 ===== */
-.cal-dot.has { background: rgba(255,255,255,0.9); }
-.cal-dot.none { background: rgba(255,255,255,0.35); }
+.cal-dot.has { background: rgba(17,24,39,0.9); }
+.cal-dot.none { background: rgba(17,24,39,0.45); }
 
 /* 기본 active 스타일 제거 (왼쪽 버튼 불 방지) */
 .react-calendar__tile--active {
