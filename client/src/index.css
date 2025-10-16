@@ -118,7 +118,7 @@ html {
 
 /* 전역 배경/타이포 */
 body {
-  @apply text-cream font-rokaf;
+  @apply text-black font-rokaf;
   /* 배경은 html 요소에서 상속받음 */
 }
 
