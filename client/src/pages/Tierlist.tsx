@@ -32,8 +32,38 @@ function extractTierAndTitle(p: string): { tier: Tier; title: string } | null {
 type Review = { rating: number; text: string; updatedAt?: string }
 type Comment = { id: string; nickname: string; content: string; createdAt: string }
 
+type TierlistData = {
+  items: {
+    key: string
+    title: string
+    tier: Tier
+    review: string
+    comments: Comment[]
+  }[]
+}
+
 export default function Tierlist() {
   const { role } = useAuth()
+  const [tierlistData, setTierlistData] = useState<TierlistData>({ items: [] })
+
+  // 하이브리드 로딩: 정적 파일 우선, API 백업
+  useEffect(() => {
+    const loadTierlistData = async () => {
+      try {
+        // 1. 정적 파일 먼저 시도 (빠른 로딩)
+        const staticResponse = await fetch('/data/tierlist.json', { cache: 'no-store' })
+        if (staticResponse.ok) {
+          const staticData = await staticResponse.json()
+          setTierlistData(staticData)
+        }
+      } catch (error) {
+        console.error('Failed to load tierlist data:', error)
+        setTierlistData({ items: [] })
+      }
+    }
+    
+    loadTierlistData()
+  }, [])
 
   const posters: Poster[] = useMemo(
     () => Object.entries(POSTER_MODULES)
@@ -83,7 +113,12 @@ export default function Tierlist() {
   }, [open, close, next, prev])
 
   const current = currentList[idx]
-  const storageKey = current ? `tier:${current.url}` : ''
+  const currentKey = current ? current.title : ''
+
+  // 정적 데이터에서 현재 아이템 정보 가져오기
+  const currentItemData = useMemo(() => {
+    return tierlistData.items.find(item => item.title === currentKey)
+  }, [tierlistData.items, currentKey])
 
   // ── admin comment (admin only) ─────────────────────────────
   const [commentText, setCommentText] = useState('')
@@ -92,66 +127,127 @@ export default function Tierlist() {
   const [editedTitle, setEditedTitle] = useState('')
   const [savedTitle, setSavedTitle] = useState<string | null>(null)
 
-
-  const refreshComment = useCallback(async (key: string) => {
-    const r = await ReviewAPI.get(key)
-    if (r) setSavedComment({ rating: 0, text: r.text, updatedAt: r.updatedAt })
-    else setSavedComment(null)
-  }, [])
-
-  const refreshTitle = useCallback(async (key: string) => {
-    const t = await AnimeTitleAPI.get(key)
-    if (t) setSavedTitle(t.title)
-    else setSavedTitle(null)
-  }, [])
-
   // ── comments (anonymous) ────────────────────────────
   const [comments, setComments] = useState<Comment[]>([])
   const [draft, setDraft] = useState('')
+
+  const refreshComment = useCallback(async (key: string) => {
+    try {
+      const r = await ReviewAPI.get(key)
+      if (r) setSavedComment({ rating: 0, text: r.text, updatedAt: r.updatedAt })
+      else setSavedComment(null)
+    } catch (error) {
+      console.warn('Failed to load comment:', error)
+      // 정적 데이터에서 폴백
+      const item = tierlistData.items.find(item => item.key === key)
+      if (item?.review) {
+        setSavedComment({ rating: 0, text: item.review, updatedAt: new Date().toISOString() })
+      } else {
+        setSavedComment(null)
+      }
+    }
+  }, [tierlistData.items])
+
+  const refreshTitle = useCallback(async (key: string) => {
+    try {
+      const t = await AnimeTitleAPI.get(key)
+      if (t) setSavedTitle(t.title)
+      else setSavedTitle(null)
+    } catch (error) {
+      console.warn('Failed to load title:', error)
+      // 정적 데이터에서 폴백
+      const item = tierlistData.items.find(item => item.key === key)
+      setSavedTitle(item?.title || null)
+    }
+  }, [tierlistData.items])
+
   const refreshComments = useCallback(async (key: string) => {
-    const list = await ThreadAPI.list(key)
-    setComments(list.map(c => ({ id: c.id, nickname: c.nickname, content: c.content, createdAt: c.createdAt })))
-  }, [])
+    try {
+      const list = await ThreadAPI.list(key)
+      setComments(list.map(c => ({ id: c.id, nickname: c.nickname, content: c.content, createdAt: c.createdAt })))
+    } catch (error) {
+      console.warn('Failed to load comments:', error)
+      // 정적 데이터에서 폴백
+      const item = tierlistData.items.find(item => item.key === key)
+      setComments(item?.comments || [])
+    }
+  }, [tierlistData.items])
 
   useEffect(() => {
-    if (!open || !storageKey) return
+    if (!open || !currentKey) return
+    
+    // 정적 데이터로 즉시 표시
+    if (currentItemData) {
+      setEditedTitle(currentItemData.title)
+      setSavedTitle(currentItemData.title)
+      if (currentItemData.review) {
+        setSavedComment({ rating: 0, text: currentItemData.review, updatedAt: new Date().toISOString() })
+      }
+      setComments(currentItemData.comments || [])
+    }
+    
+    // 백그라운드에서 API 데이터 확인
+    const storageKey = `tier:${currentKey}`
     refreshComment(storageKey)
     refreshComments(storageKey)
     refreshTitle(storageKey)
+    
     setCommentText('')
     setDraft('')
     setEditingTitle(false)
-    if (current) setEditedTitle(savedTitle || current.title)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, storageKey, savedTitle, current])
+  }, [open, currentKey, currentItemData, refreshComment, refreshComments, refreshTitle])
 
   const handleSaveComment = useCallback(async () => {
-    if (role !== 'admin' || !storageKey || !commentText.trim()) return
-    await ReviewAPI.save(storageKey, 0, commentText.trim())
-    await refreshComment(storageKey)
-    setCommentText('')
-  }, [role, storageKey, commentText, refreshComment])
+    if (role !== 'admin' || !commentText.trim()) return
+    const storageKey = `tier:${currentKey}`
+    try {
+      await ReviewAPI.save(storageKey, 0, commentText.trim())
+      await refreshComment(storageKey)
+      setCommentText('')
+    } catch (error) {
+      console.error('Failed to save comment:', error)
+      alert('저장에 실패했습니다.')
+    }
+  }, [role, commentText, currentKey, refreshComment])
 
   const handleSaveTitle = useCallback(async () => {
-    if (role !== 'admin' || !storageKey || !editedTitle.trim()) return
-    await AnimeTitleAPI.save(storageKey, editedTitle.trim())
-    await refreshTitle(storageKey)
-    setEditingTitle(false)
-  }, [role, storageKey, editedTitle, refreshTitle])
+    if (role !== 'admin' || !editedTitle.trim()) return
+    const storageKey = `tier:${currentKey}`
+    try {
+      await AnimeTitleAPI.save(storageKey, editedTitle.trim())
+      await refreshTitle(storageKey)
+      setEditingTitle(false)
+    } catch (error) {
+      console.error('Failed to save title:', error)
+      alert('저장에 실패했습니다.')
+    }
+  }, [role, editedTitle, currentKey, refreshTitle])
 
   const handleAddComment = useCallback(async () => {
     const text = draft.trim()
-    if (!text || !storageKey) return
-    await ThreadAPI.create(storageKey, { nickname: '익명', password: 'anon', content: text })
-    setDraft('')
-    await refreshComments(storageKey)
-  }, [draft, storageKey, refreshComments])
+    if (!text) return
+    const storageKey = `tier:${currentKey}`
+    try {
+      await ThreadAPI.create(storageKey, { nickname: '익명', password: 'anon', content: text })
+      setDraft('')
+      await refreshComments(storageKey)
+    } catch (error) {
+      console.error('Failed to add comment:', error)
+      alert('댓글 추가에 실패했습니다.')
+    }
+  }, [draft, currentKey, refreshComments])
 
   const handleDeleteComment = useCallback(async (id: string) => {
-    if (role !== 'admin' || !storageKey) return
-    await ThreadAPI.delete(id)
-    await refreshComments(storageKey)
-  }, [role, storageKey, refreshComments])
+    if (role !== 'admin') return
+    try {
+      await ThreadAPI.delete(id)
+      const storageKey = `tier:${currentKey}`
+      await refreshComments(storageKey)
+    } catch (error) {
+      console.error('Failed to delete comment:', error)
+      alert('댓글 삭제에 실패했습니다.')
+    }
+  }, [role, currentKey, refreshComments])
 
   const TIERS: { key: Tier; color: string; label: string; desc: string }[] = [
     { key: 'S', color: 'from-rose-400/40 to-rose-500/40', label: 'S', desc: '강렬한 여운, 완벽한 서사, 흠잡을 곳 없는 작화, 모든걸 아우른 1황' },
@@ -251,18 +347,18 @@ export default function Tierlist() {
                 ) : (
                   <div className="flex items-start justify-between">
                     <div>
-                      <h2 className="text-xl font-bold text-white mb-2">{savedTitle || current.title}</h2>
+                      <h2 className="text-xl font-bold text-white mb-2">{editedTitle}</h2>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-white/60">티어:</span>
                         <span className={`px-2 py-1 rounded text-sm font-semibold ${
-                          current.tier === 'S' ? 'bg-rose-500/20 text-rose-300' :
-                          current.tier === 'A' ? 'bg-amber-500/20 text-amber-300' :
-                          current.tier === 'B' ? 'bg-blue-500/20 text-blue-300' :
-                          current.tier === 'C' ? 'bg-lime-500/20 text-lime-300' :
-                          current.tier === 'D' ? 'bg-green-500/20 text-green-300' :
+                          current?.tier === 'S' ? 'bg-rose-500/20 text-rose-300' :
+                          current?.tier === 'A' ? 'bg-amber-500/20 text-amber-300' :
+                          current?.tier === 'B' ? 'bg-blue-500/20 text-blue-300' :
+                          current?.tier === 'C' ? 'bg-lime-500/20 text-lime-300' :
+                          current?.tier === 'D' ? 'bg-green-500/20 text-green-300' :
                           'bg-slate-500/20 text-slate-300'
                         }`}>
-                          {current.tier}
+                          {current?.tier}
                         </span>
                       </div>
                     </div>

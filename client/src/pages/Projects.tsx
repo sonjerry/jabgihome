@@ -256,30 +256,20 @@ export default function Projects() {
     ;(async () => {
       setLoading(true)
       try {
-        // 1) 정적 프리로드 우선
-        const r1 = await fetch('/posts-brief.json', { cache: 'no-store' })
-        if (r1.ok) {
-          const d = (await r1.json()) as PostBrief[]
-          if (mounted) {
-            setPosts(Array.isArray(d) ? d : [])
-            setLoading(false)
-          }
-          // 2) 백그라운드 최신화(선택): API 한 번 더
-          try {
-            const r2 = await fetch(`${API_BASE}/api/posts-brief`, { cache: 'no-store' })
-            if (r2.ok) {
-              const d2 = (await r2.json()) as PostBrief[]
-              if (mounted && Array.isArray(d2) && d2.length) setPosts(d2)
-            }
-          } catch {}
-          return
+        // 정적 데이터 로드
+        const response = await fetch('/data/posts.json', { cache: 'no-store' })
+        if (response.ok) {
+          const allPosts = await response.json()
+          // PostBrief 형태로 변환
+          const briefPosts: PostBrief[] = allPosts.map((post: any) => ({
+            id: post.id,
+            title: post.title,
+            tags: post.tags,
+            createdAt: post.createdAt,
+            slug: post.id
+          }))
+          if (mounted) setPosts(briefPosts)
         }
-
-        // 3) 정적이 없으면 API 사용
-        const r2 = await fetch(`${API_BASE}/api/posts-brief`, { cache: 'no-store' })
-        if (!r2.ok) throw new Error(`API ${r2.status}`)
-        const d2 = (await r2.json()) as PostBrief[]
-        if (mounted) setPosts(Array.isArray(d2) ? d2 : [])
       } catch (e: any) {
         console.error('Failed to load posts:', e?.message || '불러오기 오류')
       } finally {

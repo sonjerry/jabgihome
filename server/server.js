@@ -357,6 +357,10 @@ app.post('/api/posts', requireAdmin, async (req, res) => {
 
     // 캐시 무효화
     clearCache(['posts:index', `posts:item:${post.id}`])
+    
+    // 정적 데이터 재생성 (백그라운드)
+    regenerateStaticData().catch(console.error)
+    
     res.json({ ok: true, id: data.id })
   } catch (e) {
     console.error('create post error', e)
@@ -383,6 +387,10 @@ app.put('/api/posts/:id', requireAdmin, async (req, res) => {
     }
     // 캐시 무효화
     clearCache(['posts:index', `posts:item:${id}`])
+    
+    // 정적 데이터 재생성 (백그라운드)
+    regenerateStaticData().catch(console.error)
+    
     res.json({ ok: true, id: data.id })
   } catch (e) {
     console.error('update post error', e)
@@ -398,6 +406,10 @@ app.delete('/api/posts/:id', requireAdmin, async (req, res) => {
     if (error) return res.status(500).json({ error: error.message })
     // 캐시 무효화
     clearCache(['posts:index', `posts:item:${id}`])
+    
+    // 정적 데이터 재생성 (백그라운드)
+    regenerateStaticData().catch(console.error)
+    
     res.json({ ok: true })
   } catch (e) {
     console.error('delete post error', e)
@@ -811,6 +823,23 @@ if (PREWARM_INTERVAL_MS > 0) {
       }
     } catch {}
   }, PREWARM_INTERVAL_MS).unref?.()
+}
+
+/* ───────────────────── 정적 데이터 생성 ───────────────────── */
+import { generatePostsData, generateTierlistData } from './generate-static-data.js'
+
+// 관리자 수정 시 정적 파일 자동 생성
+async function regenerateStaticData() {
+  try {
+    console.log('🔄 정적 데이터 재생성 중...')
+    await Promise.all([
+      generatePostsData(),
+      generateTierlistData()
+    ])
+    console.log('✅ 정적 데이터 재생성 완료')
+  } catch (error) {
+    console.error('❌ 정적 데이터 재생성 실패:', error)
+  }
 }
 
 /* ───────────────────── 서버 시작 ───────────────────── */

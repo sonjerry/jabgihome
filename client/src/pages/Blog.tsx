@@ -58,7 +58,40 @@ export default function Blog() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [sheetTab, setSheetTab] = useState<'calendar' | 'categories'>('calendar')
 
-  useEffect(() => { listPosts().then(setPosts).catch(console.error) }, [])
+  // 하이브리드 로딩: 정적 파일 우선, API 백업
+  useEffect(() => {
+    const loadPosts = async () => {
+      try {
+        // 1. 정적 파일 먼저 시도 (빠른 로딩)
+        const staticResponse = await fetch('/data/posts.json', { cache: 'no-store' })
+        if (staticResponse.ok) {
+          const staticData = await staticResponse.json()
+          setPosts(staticData)
+          
+          // 2. 백그라운드에서 API로 최신 데이터 확인
+          try {
+            const apiData = await listPosts()
+            // 데이터가 다르면 API 데이터로 업데이트 (관리자 수정 반영)
+            if (JSON.stringify(staticData) !== JSON.stringify(apiData)) {
+              setPosts(apiData)
+            }
+          } catch (apiError) {
+            console.warn('API fallback failed, using static data:', apiError)
+          }
+          return
+        }
+        
+        // 3. 정적 파일 실패 시 API 사용
+        const apiData = await listPosts()
+        setPosts(apiData)
+      } catch (error) {
+        console.error('Failed to load posts:', error)
+        setPosts([])
+      }
+    }
+    
+    loadPosts()
+  }, [])
 
   // URL 파라미터 해석
   const { progressTag, normalTag, progressTitle } = useMemo(() => {
@@ -288,7 +321,7 @@ export default function Blog() {
                   )
                 })}
               </ul>
-              {visible.length === 0 && (<p className="text-cream/70">데이터베이스에서 자료 로딩중</p>)}
+              {visible.length === 0 && (<p className="text-cream/70">게시글이 없습니다.</p>)}
             </div>
           </div>
 

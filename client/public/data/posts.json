@@ -1,0 +1,30 @@
+[
+  {
+    "id": "post_1",
+    "title": "블로그 첫 글",
+    "content": "# 안녕하세요!\n\n이것은 첫 번째 블로그 글입니다.\n\n## 소개\n\n저는 개발자로서 다양한 프로젝트를 진행하고 있습니다.",
+    "category": "일상",
+    "tags": ["첫글", "소개"],
+    "createdAt": "2024-01-15T09:00:00Z",
+    "updatedAt": "2024-01-15T09:00:00Z",
+    "attachments": [],
+    "style": {
+      "textColor": "#e5e7eb",
+      "fontSize": 16
+    }
+  },
+  {
+    "id": "post_2", 
+    "title": "와카와카 프로젝트 시작",
+    "content": "# 와카와카 프로젝트\n\nWI-FI 라즈베리파이 기반 심레이싱 조종 자동차를 만들고 있습니다.\n\n![와카와카](https://example.com/wakawaka.jpg)",
+    "category": "프로젝트",
+    "tags": ["p1", "와카와카", "라즈베리파이"],
+    "createdAt": "2024-01-10T14:30:00Z",
+    "updatedAt": "2024-01-12T16:45:00Z",
+    "attachments": [],
+    "style": {
+      "textColor": "#e5e7eb", 
+      "fontSize": 16
+    }
+  }
+]

@@ -71,7 +71,40 @@ export default function PostDetail() {
   useEffect(() => {
     if (!id) return
     setLoading(true)
-    getPost(id).then(setPost).finally(() => setLoading(false))
+    
+    const loadPost = async () => {
+      try {
+        // 1. 정적 파일 먼저 시도 (빠른 로딩)
+        const staticResponse = await fetch('/data/posts.json', { cache: 'no-store' })
+        if (staticResponse.ok) {
+          const posts: Post[] = await staticResponse.json()
+          const foundPost = posts.find(p => p.id === id)
+          if (foundPost) {
+            setPost(foundPost)
+            
+            // 2. 백그라운드에서 API로 최신 데이터 확인
+            try {
+              const apiPost = await getPost(id)
+              setPost(apiPost)
+            } catch (apiError) {
+              console.warn('API fallback failed, using static data:', apiError)
+            }
+            return
+          }
+        }
+        
+        // 3. 정적 파일에 없으면 API 사용
+        const apiPost = await getPost(id)
+        setPost(apiPost)
+      } catch (error) {
+        console.error('Failed to load post:', error)
+        setPost(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadPost()
   }, [id])
 
   const title = useMemo(() => post?.title ?? '', [post])
