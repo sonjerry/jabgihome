@@ -214,10 +214,13 @@ body {
 
 /* 일본어 호환 굵은 타이틀 폰트 (음악 플레이어 전용) */
 .font-jp-title {
-  font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, -apple-system, sans-serif;
-  font-weight: 800;
-  font-feature-settings: 'pkna' 1, 'liga' 1; /* 자간/합자 */
-  letter-spacing: 0.02em;
+  font-family: 'Noto Sans JP', 'Yu Gothic', 'Meiryo', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, -apple-system, sans-serif;
+  font-weight: 700; /* 일부 환경에서 800이 폴백을 유발 → 700 사용 */
+  font-feature-settings: normal;
+  letter-spacing: normal;
+  font-synthesis-weight: none; /* 가짜 볼드 방지 */
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 .home-volume {

@@ -308,7 +308,7 @@ function PlaylistPopover({
                   setOpen(false)
                 }}
                 className={clsx(
-                  'w-full text-left px-3 py-2 hover:bg-white/10 whitespace-nowrap overflow-hidden text-ellipsis font-jp-title',
+                  'w-full text-left px-3 py-2 hover:bg-white/10 whitespace-nowrap overflow-hidden text-ellipsis font-jp-title text-[15px]',
                   i === currentIdx && 'bg-white/10 text-amber-400'
                 )}
                 title={t.title}
