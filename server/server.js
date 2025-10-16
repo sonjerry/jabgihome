@@ -588,6 +588,10 @@ app.post('/api/threads/:key/comments', async (req, res) => {
       { id, thread_key: key, nickname, content, password_hash: passwordHash, created_at: nowIso },
     ])
     if (error) return res.status(500).json({ error: error.message })
+    
+    // 해당 thread_key의 개별 파일 재생성
+    regenerateThreadFile(key).catch(console.error)
+    
     res.json({ id })
   } catch (e) {
     console.error('threads create comment error', e)
@@ -649,8 +653,23 @@ app.put('/api/threads-comments/:cid', async (req, res) => {
       if (!ok) return res.status(401).json({ ok: false })
     }
 
+    // 댓글 수정 전에 thread_key 가져오기
+    const { data: commentData, error: getErr } = await supabase
+      .from('threads_comments')
+      .select('thread_key')
+      .eq('id', cid)
+      .single()
+    
+    if (getErr) return res.status(500).json({ ok: false })
+
     const { error } = await supabase.from('threads_comments').update({ content }).eq('id', cid)
     if (error) return res.status(500).json({ ok: false })
+    
+    // 해당 thread_key의 개별 파일 재생성
+    if (commentData?.thread_key) {
+      regenerateThreadFile(commentData.thread_key).catch(console.error)
+    }
+    
     res.json({ ok: true })
   } catch (e) {
     console.error('threads update comment error', e)
@@ -688,8 +707,23 @@ app.delete('/api/threads-comments/:cid', async (req, res) => {
       if (!ok) return res.status(401).json({ ok: false })
     }
 
+    // 댓글 삭제 전에 thread_key 가져오기
+    const { data: commentData, error: getErr } = await supabase
+      .from('threads_comments')
+      .select('thread_key')
+      .eq('id', cid)
+      .single()
+    
+    if (getErr) return res.status(500).json({ ok: false })
+
     const { error } = await supabase.from('threads_comments').delete().eq('id', cid)
     if (error) return res.status(500).json({ ok: false })
+    
+    // 해당 thread_key의 개별 파일 재생성
+    if (commentData?.thread_key) {
+      regenerateThreadFile(commentData.thread_key).catch(console.error)
+    }
+    
     res.json({ ok: true })
   } catch (e) {
     console.error('threads delete comment error', e)
@@ -703,16 +737,22 @@ app.get('/api/reviews/:key', async (req, res) => {
   try {
     const key = decodeURIComponent(req.params.key || '')
     if (!key) return res.status(400).json({ error: 'invalid key' })
+    // rating 컬럼이 없는 환경에서도 동작하도록 방어적으로 조회
     const { data, error } = await supabase
       .from('threads_reviews')
-      .select('thread_key, rating, text, updated_at')
+      .select('*')
       .eq('thread_key', key)
-      .single()
+      .maybeSingle?.() ?? await supabase
+        .from('threads_reviews')
+        .select('*')
+        .eq('thread_key', key)
+        .single()
     if (error) {
       if (error.code === 'PGRST116') return res.json(null)
       return res.status(500).json({ error: error.message })
     }
-    return res.json({ key: data.thread_key, rating: data.rating, text: data.text, updatedAt: data.updated_at })
+    const rating = typeof data.rating === 'number' ? data.rating : (data.score ?? data.stars ?? null)
+    return res.json({ key: data.thread_key, rating, text: data.text, updatedAt: data.updated_at })
   } catch (e) {
     console.error('get review error', e)
     res.status(500).json({ error: 'review get failed' })
@@ -731,7 +771,10 @@ app.put('/api/reviews/:key', requireAdmin, async (req, res) => {
       .upsert({ thread_key: key, rating, text: text || '', updated_at: nowIso }, { onConflict: 'thread_key' })
     if (error) return res.status(500).json({ ok: false, msg: error.message })
     
-    // 티어리스트 관련 키인 경우 정적 데이터 재생성 (백그라운드)
+    // 해당 thread_key의 개별 파일 재생성
+    regenerateThreadFile(key).catch(console.error)
+    
+    // 티어리스트 관련 키인 경우 전체 정적 데이터도 재생성 (백그라운드)
     // thread_key가 파일명 형태인지 확인 (예: .png, .jpg 등 이미지 확장자)
     if (key.includes('.png') || key.includes('.jpg') || key.includes('.jpeg') || key.includes('.webp')) {
       regenerateStaticData().catch(console.error)
@@ -750,7 +793,10 @@ app.delete('/api/reviews/:key', requireAdmin, async (req, res) => {
     const { error } = await supabase.from('threads_reviews').delete().eq('thread_key', key)
     if (error) return res.status(500).json({ ok: false })
     
-    // 티어리스트 관련 키인 경우 정적 데이터 재생성 (백그라운드)
+    // 해당 thread_key의 개별 파일 재생성
+    regenerateThreadFile(key).catch(console.error)
+    
+    // 티어리스트 관련 키인 경우 전체 정적 데이터도 재생성 (백그라운드)
     // thread_key가 파일명 형태인지 확인 (예: .png, .jpg 등 이미지 확장자)
     if (key.includes('.png') || key.includes('.jpg') || key.includes('.jpeg') || key.includes('.webp')) {
       regenerateStaticData().catch(console.error)
@@ -796,7 +842,10 @@ app.put('/api/anime-titles/:key', requireAdmin, async (req, res) => {
       .upsert({ thread_key: key, title: title.trim(), updated_at: nowIso }, { onConflict: 'thread_key' })
     if (error) return res.status(500).json({ ok: false, msg: error.message })
     
-    // 티어리스트 관련 키인 경우 정적 데이터 재생성 (백그라운드)
+    // 해당 thread_key의 개별 파일 재생성
+    regenerateThreadFile(key).catch(console.error)
+    
+    // 티어리스트 관련 키인 경우 전체 정적 데이터도 재생성 (백그라운드)
     // thread_key가 파일명 형태인지 확인 (예: .png, .jpg 등 이미지 확장자)
     if (key.includes('.png') || key.includes('.jpg') || key.includes('.jpeg') || key.includes('.webp')) {
       regenerateStaticData().catch(console.error)
@@ -815,7 +864,10 @@ app.delete('/api/anime-titles/:key', requireAdmin, async (req, res) => {
     const { error } = await supabase.from('anime_titles').delete().eq('thread_key', key)
     if (error) return res.status(500).json({ ok: false })
     
-    // 티어리스트 관련 키인 경우 정적 데이터 재생성 (백그라운드)
+    // 해당 thread_key의 개별 파일 재생성
+    regenerateThreadFile(key).catch(console.error)
+    
+    // 티어리스트 관련 키인 경우 전체 정적 데이터도 재생성 (백그라운드)
     // thread_key가 파일명 형태인지 확인 (예: .png, .jpg 등 이미지 확장자)
     if (key.includes('.png') || key.includes('.jpg') || key.includes('.jpeg') || key.includes('.webp')) {
       regenerateStaticData().catch(console.error)
@@ -854,7 +906,7 @@ if (PREWARM_INTERVAL_MS > 0) {
 }
 
 /* ───────────────────── 정적 데이터 생성 ───────────────────── */
-import { generatePostsData, generateTierlistData } from './generate-static-data.js'
+import { generatePostsData, generateTierlistData, generateIndividualThreadFiles } from './generate-static-data.js'
 
 // 관리자 수정 시 정적 파일 자동 생성
 async function regenerateStaticData() {
@@ -862,13 +914,172 @@ async function regenerateStaticData() {
     console.log('🔄 정적 데이터 재생성 중...')
     await Promise.all([
       generatePostsData(),
-      generateTierlistData()
+      generateTierlistData(),
+      generateIndividualThreadFiles()
     ])
     console.log('✅ 정적 데이터 재생성 완료')
   } catch (error) {
     console.error('❌ 정적 데이터 재생성 실패:', error)
   }
 }
+
+// 특정 thread_key의 파일만 재생성
+async function regenerateThreadFile(threadKey) {
+  try {
+    console.log(`🔄 ${threadKey} 파일 재생성 중...`)
+    
+    // 해당 thread_key의 모든 데이터 가져오기
+    const [titleResult, reviewResult, commentsResult] = await Promise.all([
+      supabase.from('anime_titles').select('*').eq('thread_key', threadKey).maybeSingle(),
+      supabase.from('threads_reviews').select('*').eq('thread_key', threadKey).maybeSingle(),
+      supabase.from('threads_comments').select('*').eq('thread_key', threadKey)
+    ])
+    
+    const threadData = {
+      key: threadKey,
+      title: titleResult.data?.title || '',
+      tier: 'F',
+      review: '',
+      comments: []
+    }
+    
+    // 리뷰 데이터 처리
+    if (reviewResult.data) {
+      threadData.review = reviewResult.data.text || ''
+      const tierMap = ['S', 'A', 'B', 'C', 'D', 'F']
+      threadData.tier = tierMap[reviewResult.data.rating] || 'F'
+    }
+    
+    // 댓글 데이터 처리
+    if (commentsResult.data) {
+      threadData.comments = commentsResult.data.map(comment => ({
+        id: comment.id,
+        nickname: comment.nickname,
+        content: comment.content,
+        createdAt: comment.created_at
+      }))
+    }
+    
+    // 파일 저장
+    const serverDir = path.dirname(new URL(import.meta.url).pathname)
+    const repoRoot = path.resolve(serverDir, '..')
+    const threadsDir = path.join(repoRoot, 'client', 'public', 'threads')
+    await fs.mkdir(threadsDir, { recursive: true })
+    
+    const safeFileName = threadKey.replace(/[^a-zA-Z0-9._-]/g, '_') + '.json'
+    const filePath = path.join(threadsDir, safeFileName)
+    
+    await fs.writeFile(filePath, JSON.stringify(threadData, null, 2))
+    console.log(`✅ ${threadKey} 파일 재생성 완료: ${filePath}`)
+    
+  } catch (error) {
+    console.error(`❌ ${threadKey} 파일 재생성 실패:`, error)
+  }
+}
+
+/* ───────────────────── 정적 파일 제공 API ───────────────────── */
+// 개별 스레드 파일 제공
+app.get('/api/threads/:key', async (req, res) => {
+  try {
+    const key = decodeURIComponent(req.params.key || '')
+    if (!key) return res.status(400).json({ error: 'invalid key' })
+    
+    // 정적 파일에서 읽기 시도
+    const serverDir = path.dirname(new URL(import.meta.url).pathname)
+    const repoRoot = path.resolve(serverDir, '..')
+    const threadsDir = path.join(repoRoot, 'client', 'public', 'threads')
+    const safeFileName = key.replace(/[^a-zA-Z0-9._-]/g, '_') + '.json'
+    const filePath = path.join(threadsDir, safeFileName)
+    
+    try {
+      const fileContent = await fs.readFile(filePath, 'utf-8')
+      const threadData = JSON.parse(fileContent)
+      
+      // 캐시 헤더 설정
+      res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
+      res.json(threadData)
+      return
+    } catch (fileError) {
+      // 파일이 없으면 데이터베이스에서 직접 조회
+      console.log(`📁 정적 파일 없음, DB에서 직접 조회: ${key}`)
+    }
+    
+    // 데이터베이스에서 직접 조회
+    const [titleResult, reviewResult, commentsResult] = await Promise.all([
+      supabase.from('anime_titles').select('*').eq('thread_key', key).maybeSingle(),
+      supabase.from('threads_reviews').select('*').eq('thread_key', key).maybeSingle(),
+      supabase.from('threads_comments').select('*').eq('thread_key', key)
+    ])
+    
+    const threadData = {
+      key: key,
+      title: titleResult.data?.title || '',
+      tier: 'F',
+      review: '',
+      comments: []
+    }
+    
+    // 리뷰 데이터 처리
+    if (reviewResult.data) {
+      threadData.review = reviewResult.data.text || ''
+      const tierMap = ['S', 'A', 'B', 'C', 'D', 'F']
+      threadData.tier = tierMap[reviewResult.data.rating] || 'F'
+    }
+    
+    // 댓글 데이터 처리
+    if (commentsResult.data) {
+      threadData.comments = commentsResult.data.map(comment => ({
+        id: comment.id,
+        nickname: comment.nickname,
+        content: comment.content,
+        createdAt: comment.created_at
+      }))
+    }
+    
+    // 백그라운드에서 정적 파일 생성
+    regenerateThreadFile(key).catch(console.error)
+    
+    res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
+    res.json(threadData)
+    
+  } catch (e) {
+    console.error('get thread error', e)
+    res.status(500).json({ error: 'thread get failed' })
+  }
+})
+
+// 정적 파일 직접 제공 (캐시 최적화)
+app.get('/static/threads/:filename', async (req, res) => {
+  try {
+    const filename = req.params.filename
+    if (!filename || !filename.endsWith('.json')) {
+      return res.status(400).json({ error: 'invalid filename' })
+    }
+    
+    const serverDir = path.dirname(new URL(import.meta.url).pathname)
+    const repoRoot = path.resolve(serverDir, '..')
+    const filePath = path.join(repoRoot, 'client', 'public', 'threads', filename)
+    
+    // 파일 존재 확인
+    try {
+      await fs.access(filePath)
+    } catch {
+      return res.status(404).json({ error: 'file not found' })
+    }
+    
+    const fileContent = await fs.readFile(filePath, 'utf-8')
+    const threadData = JSON.parse(fileContent)
+    
+    // 긴 캐시 설정 (정적 파일이므로)
+    res.setHeader('Cache-Control', 'public, max-age=3600, immutable')
+    res.setHeader('Content-Type', 'application/json')
+    res.json(threadData)
+    
+  } catch (e) {
+    console.error('serve static thread error', e)
+    res.status(500).json({ error: 'static file serve failed' })
+  }
+})
 
 /* ───────────────────── 서버 시작 ───────────────────── */
 app.listen(PORT, '0.0.0.0', () => {

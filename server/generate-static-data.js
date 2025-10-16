@@ -154,6 +154,88 @@ async function generateTierlistData() {
   }
 }
 
+// thread_key를 파일명으로 하는 개별 정적 파일 생성
+async function generateIndividualThreadFiles() {
+  try {
+    console.log('📁 개별 스레드 파일 생성 중...')
+    
+    // 모든 thread_key 수집
+    const [titlesResult, reviewsResult, commentsResult] = await Promise.all([
+      supabase.from('anime_titles').select('thread_key'),
+      supabase.from('threads_reviews').select('thread_key'),
+      supabase.from('threads_comments').select('thread_key')
+    ])
+    
+    const allKeys = new Set()
+    if (titlesResult.data) titlesResult.data.forEach(t => allKeys.add(t.thread_key))
+    if (reviewsResult.data) reviewsResult.data.forEach(r => allKeys.add(r.thread_key))
+    if (commentsResult.data) commentsResult.data.forEach(c => allKeys.add(c.thread_key))
+    
+    console.log(`📊 총 ${allKeys.size}개의 thread_key 발견`)
+    
+    const serverDir = path.dirname(new URL(import.meta.url).pathname)
+    const repoRoot = path.resolve(serverDir, '..')
+    const threadsDir = path.join(repoRoot, 'client', 'public', 'threads')
+    await fs.mkdir(threadsDir, { recursive: true })
+    
+    let generatedCount = 0
+    
+    // 각 thread_key에 대해 개별 파일 생성
+    for (const threadKey of allKeys) {
+      try {
+        // 해당 thread_key의 모든 데이터 가져오기
+        const [titleResult, reviewResult, commentsResult] = await Promise.all([
+          supabase.from('anime_titles').select('*').eq('thread_key', threadKey).maybeSingle(),
+          supabase.from('threads_reviews').select('*').eq('thread_key', threadKey).maybeSingle(),
+          supabase.from('threads_comments').select('*').eq('thread_key', threadKey)
+        ])
+        
+        const threadData = {
+          key: threadKey,
+          title: titleResult.data?.title || '',
+          tier: 'F',
+          review: '',
+          comments: []
+        }
+        
+        // 리뷰 데이터 처리
+        if (reviewResult.data) {
+          threadData.review = reviewResult.data.text || ''
+          const tierMap = ['S', 'A', 'B', 'C', 'D', 'F']
+          threadData.tier = tierMap[reviewResult.data.rating] || 'F'
+        }
+        
+        // 댓글 데이터 처리
+        if (commentsResult.data) {
+          threadData.comments = commentsResult.data.map(comment => ({
+            id: comment.id,
+            nickname: comment.nickname,
+            content: comment.content,
+            createdAt: comment.created_at
+          }))
+        }
+        
+        // 파일명으로 안전한 이름 생성 (특수문자 제거)
+        const safeFileName = threadKey.replace(/[^a-zA-Z0-9._-]/g, '_') + '.json'
+        const filePath = path.join(threadsDir, safeFileName)
+        
+        await fs.writeFile(filePath, JSON.stringify(threadData, null, 2))
+        generatedCount++
+        
+      } catch (error) {
+        console.error(`❌ ${threadKey} 파일 생성 실패:`, error.message)
+      }
+    }
+    
+    console.log(`✅ ${generatedCount}개 개별 스레드 파일 생성 완료: ${threadsDir}`)
+    return generatedCount
+    
+  } catch (error) {
+    console.error('❌ 개별 스레드 파일 생성 실패:', error.message)
+    throw error
+  }
+}
+
 async function main() {
   try {
     console.log('🚀 정적 데이터 생성 시작...')
@@ -162,15 +244,17 @@ async function main() {
     const repoRoot = path.resolve(serverDir, '..')
     console.log('해석된 repoRoot:', repoRoot)
     
-    const [postsCount, tierlistCount] = await Promise.all([
+    const [postsCount, tierlistCount, threadFilesCount] = await Promise.all([
       generatePostsData(),
-      generateTierlistData()
+      generateTierlistData(),
+      generateIndividualThreadFiles()
     ])
     
     console.log('🎉 정적 데이터 생성 완료!')
     console.log(`📊 생성된 데이터:`)
     console.log(`   - 블로그 포스트: ${postsCount}개`)
     console.log(`   - 티어리스트 아이템: ${tierlistCount}개`)
+    console.log(`   - 개별 스레드 파일: ${threadFilesCount}개`)
     
   } catch (error) {
     console.error('💥 정적 데이터 생성 실패:', error)
@@ -184,4 +268,4 @@ if (import.meta.url.endsWith('generate-static-data.js')) {
   main()
 }
 
-export { generatePostsData, generateTierlistData }
+export { generatePostsData, generateTierlistData, generateIndividualThreadFiles }
