@@ -12,24 +12,7 @@ type Poster = {
 
 type Tier = 'S' | 'A' | 'B' | 'C' | 'D' | 'F'
 
-const POSTER_MODULES = import.meta.glob('../assets/tier/**/*.{png,jpg,jpeg,webp,avif,gif}', {
-  eager: true,
-  query: '?url',
-  import: 'default',
-}) as Record<string, string>
-
-function extractTierAndTitle(p: string): { tier: Tier; title: string; filename: string } | null {
-  const i = p.indexOf('/tier/')
-  if (i === -1) return null
-  const rest = p.slice(i + '/tier/'.length)
-  const [tier, name] = rest.split('/')
-  if (!tier || !name) return null
-  const t = tier as Tier
-  if (!['S', 'A', 'B', 'C', 'D', 'F'].includes(t)) return null
-  const title = decodeURIComponent(name.replace(/\.[^/.]+$/, '')).replace(/[_-]+/g, ' ').trim()
-  const filename = decodeURIComponent(name)
-  return { tier: t, title, filename }
-}
+// 포스터는 매니페스트에서 로드 (빌드/서버에서 생성)
 
 type Review = { rating: number; text: string; updatedAt?: string }
 type Comment = { id: string; nickname: string; content: string; createdAt: string }
@@ -74,15 +57,24 @@ export default function Tierlist() {
     loadTierlistData()
   }, [])
 
-  const posters: Poster[] = useMemo(
-    () => Object.entries(POSTER_MODULES)
-      .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
-      .map(([p, url]) => ({
-        url,
-        ...(extractTierAndTitle(p) ?? { tier: 'F', title: 'Unknown', filename: 'unknown' }),
-      })) as Poster[],
-    []
-  )
+  const [posters, setPosters] = useState<Poster[]>([])
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/data/posters.json', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          const items = (data?.items || []) as Array<{ tier: Tier; title: string; filename: string; url: string }>
+          // 키 순으로 정렬(안정적 표시)
+          setPosters(items.sort((a,b) => a.filename.localeCompare(b.filename, undefined, { numeric: true })) as Poster[])
+        }
+      } catch (e) {
+        console.warn('failed to load posters manifest', e)
+        setPosters([])
+      }
+    }
+    load()
+  }, [])
 
   const byTier = useMemo(() => {
     const map = new Map<Tier, Poster[]>()

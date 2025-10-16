@@ -916,7 +916,7 @@ if (PREWARM_INTERVAL_MS > 0) {
 }
 
 /* ───────────────────── 정적 데이터 생성 ───────────────────── */
-import { generatePostsData, generateTierlistData, generateIndividualThreadFiles } from './generate-static-data.js'
+import { generatePostsData, generateTierlistData, generateIndividualThreadFiles, generatePostersManifest } from './generate-static-data.js'
 
 // 관리자 수정 시 정적 파일 자동 생성
 async function regenerateStaticData() {
@@ -925,7 +925,8 @@ async function regenerateStaticData() {
     await Promise.all([
       generatePostsData(),
       generateTierlistData(),
-      generateIndividualThreadFiles()
+      generateIndividualThreadFiles(),
+      generatePostersManifest()
     ])
     console.log('✅ 정적 데이터 재생성 완료')
   } catch (error) {

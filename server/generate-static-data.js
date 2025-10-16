@@ -45,6 +45,63 @@ async function generatePostsData() {
   }
 }
 
+// Tier 포스터 매니페스트 생성 + public으로 복사
+async function generatePostersManifest() {
+  try {
+    console.log('🖼️ 티어 포스터 매니페스트 생성 중...')
+
+    const serverDir = path.dirname(new URL(import.meta.url).pathname)
+    const repoRoot = path.resolve(serverDir, '..')
+    const srcTierDir = path.join(repoRoot, 'client', 'src', 'assets', 'tier')
+    const publicTierDir = path.join(repoRoot, 'client', 'public', 'tier')
+    const dataDir = path.join(repoRoot, 'client', 'public', 'data')
+
+    await fs.mkdir(publicTierDir, { recursive: true })
+    await fs.mkdir(dataDir, { recursive: true })
+
+    const TIERS = ['S','A','B','C','D','F']
+    const posters = []
+
+    for (const tier of TIERS) {
+      const tierSrc = path.join(srcTierDir, tier)
+      const tierDst = path.join(publicTierDir, tier)
+      try { await fs.mkdir(tierDst, { recursive: true }) } catch {}
+      let entries = []
+      try { entries = await fs.readdir(tierSrc, { withFileTypes: true }) } catch { entries = [] }
+      for (const ent of entries) {
+        if (!ent.isFile()) continue
+        const filename = ent.name
+        const ext = filename.toLowerCase().slice(filename.lastIndexOf('.') + 1)
+        if (!['png','jpg','jpeg','webp','gif','avif'].includes(ext)) continue
+        const srcPath = path.join(tierSrc, filename)
+        const dstPath = path.join(tierDst, filename)
+        try {
+          // 복사(덮어쓰기)
+          await fs.copyFile(srcPath, dstPath)
+          // 타이틀 추출: 확장자 제거, 구분자 -> 공백
+          const title = decodeURIComponent(filename.replace(/\.[^/.]+$/, '')).replace(/[_-]+/g, ' ').trim()
+          posters.push({
+            tier,
+            title,
+            filename,
+            url: `/tier/${tier}/${encodeURIComponent(filename)}`,
+          })
+        } catch (e) {
+          console.warn('포스터 복사 실패:', srcPath, e?.message || e)
+        }
+      }
+    }
+
+    const manifestPath = path.join(dataDir, 'posters.json')
+    await fs.writeFile(manifestPath, JSON.stringify({ items: posters }, null, 2))
+    console.log(`✅ 포스터 ${posters.length}개 매니페스트 생성: ${manifestPath}`)
+    return posters.length
+  } catch (error) {
+    console.error('❌ 티어 포스터 매니페스트 생성 실패:', error?.message || error)
+    throw error
+  }
+}
+
 async function generateTierlistData() {
   try {
     console.log('🎯 티어리스트 데이터 생성 중...')
@@ -243,10 +300,11 @@ async function main() {
     const repoRoot = path.resolve(serverDir, '..')
     console.log('해석된 repoRoot:', repoRoot)
     
-    const [postsCount, tierlistCount, threadFilesCount] = await Promise.all([
+    const [postsCount, tierlistCount, threadFilesCount, postersCount] = await Promise.all([
       generatePostsData(),
       generateTierlistData(),
-      generateIndividualThreadFiles()
+      generateIndividualThreadFiles(),
+      generatePostersManifest()
     ])
     
     console.log('🎉 정적 데이터 생성 완료!')
@@ -254,6 +312,7 @@ async function main() {
     console.log(`   - 블로그 포스트: ${postsCount}개`)
     console.log(`   - 티어리스트 아이템: ${tierlistCount}개`)
     console.log(`   - 개별 스레드 파일: ${threadFilesCount}개`)
+    console.log(`   - 포스터 매니페스트: ${postersCount}개`)
     
   } catch (error) {
     console.error('💥 정적 데이터 생성 실패:', error)
@@ -268,3 +327,4 @@ if (import.meta.url.endsWith('generate-static-data.js')) {
 }
 
 export { generatePostsData, generateTierlistData, generateIndividualThreadFiles }
+export { generatePostersManifest }

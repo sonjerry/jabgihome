@@ -235,7 +235,7 @@ export default function CommentSection({ postId }: Props) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={onEditorKeyDown}
-            placeholder="내용을 입력하세요 (Ctrl/⌘+Enter로 등록)"
+            placeholder="내용을 입력하세요"
             className="glass rounded-xl px-3 py-2 w-full min-h-[110px]"
             aria-label="댓글 내용"
           />
