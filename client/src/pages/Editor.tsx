@@ -23,6 +23,7 @@ export default function Editor(){
   const [loading, setLoading] = useState(isEdit)
   const [styleTextColor, setStyleTextColor] = useState<string>('#e5e7eb')
   const [styleFontSize, setStyleFontSize] = useState<number>(16)
+  const [helpOpen, setHelpOpen] = useState<boolean>(false)
 
   const textareaRef = useRef<HTMLTextAreaElement|null>(null)
 
@@ -80,11 +81,12 @@ export default function Editor(){
   }
 
   const applyInlineSize = (px: number) => {
-    // HTML span으로 크기 적용 (PostDetail에서 rehypeRaw로 허용)
-    wrapSelection(`<span style="font-size:${px}px">`, `</span>`) 
+    // 안전 토큰 구문: {{size:20|텍스트}}
+    wrapSelection(`{{size:${px}|`, `}}`)
   }
   const applyInlineColor = (color: string) => {
-    wrapSelection(`<span style="color:${color}">`, `</span>`) 
+    // 안전 토큰 구문: {{color:#ff0000|텍스트}}
+    wrapSelection(`{{color:${color}|`, `}}`)
   }
 
   const onFiles = async (files: FileList | null) => {
@@ -188,6 +190,42 @@ export default function Editor(){
               ))}
               <input type="color" onChange={(e)=>applyInlineColor(e.target.value)} className="w-6 h-6 rounded border border-white/10" />
             </div>
+          </div>
+
+          {/* 마크다운 도움말 (아코디언) */}
+          <div className="mb-3">
+            <button
+              type="button"
+              onClick={() => setHelpOpen(v=>!v)}
+              className="w-full flex items-center justify-between rounded-xl px-3 py-2 bg-white/10 hover:bg-white/15 border border-white/15"
+              aria-expanded={helpOpen}
+            >
+              <span className="text-sm font-semibold">마크다운 도움말</span>
+              <span aria-hidden>{helpOpen ? '▴' : '▾'}</span>
+            </button>
+            {helpOpen && (
+              <div className="mt-2 glass rounded-xl p-3 text-sm leading-relaxed">
+                <ul className="list-disc pl-5 space-y-1">
+                  <li><code># 제목</code>, <code>## 부제목</code>, <code>### 소제목</code></li>
+                  <li><code>**굵게**</code>, <code>*기울임*</code>, <code>~~취소선~~</code></li>
+                  <li>링크: <code>[텍스트](https://example.com)</code></li>
+                  <li>이미지: <code>![alt](https://.../image.png)</code></li>
+                  <li>코드 블럭:
+                    <pre className="bg-white/5 border border-white/10 rounded-md p-2 mt-1"><code>{"```ts\nconst x = 1\n```"}</code></pre>
+                  </li>
+                  <li>목록: <code>- 항목</code> 또는 <code>1. 항목</code></li>
+                  <li>인용: <code>&gt; 인용문</code></li>
+                </ul>
+                <div className="mt-3">
+                  <div className="font-semibold mb-1">추가 스타일 토큰</div>
+                  <p className="opacity-80">HTML 없이 안전하게 크기/색상 적용:</p>
+                  <ul className="list-disc pl-5 space-y-1 mt-1">
+                    <li>크기: <code>{"{{size:24|이 문장은 24px}}"}</code></li>
+                    <li>색상: <code>{"{{color:#ef4444|빨간 텍스트}}"}</code></li>
+                  </ul>
+                </div>
+              </div>
+            )}
           </div>
 
           <textarea

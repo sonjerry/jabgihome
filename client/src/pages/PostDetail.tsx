@@ -1,13 +1,12 @@
 // client/src/pages/PostDetail.tsx
 import { useEffect, useMemo, useState } from 'react'
+import React from 'react'
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import type { Post } from '../types'
 import { getPost } from '../lib/api'
 import CommentSection from '../components/CommentSection'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-// @ts-ignore - type provided via vite-env.d.ts
-import rehypeRaw from 'rehype-raw'
 import type { Components } from 'react-markdown'
 import clsx from 'clsx'
 import { useAuth } from '../state/auth'
@@ -147,6 +146,35 @@ export default function PostDetail() {
   }
 
   /* ── 마크다운 컴포넌트 ── */
+  function renderTokenText(input: any): any {
+    // 지원 토큰: {{size:20|text}} , {{color:#ff0000|text}}
+    const toReact = (txt: string) => {
+      const parts: any[] = []
+      const regex = /\{\{(size|color):([^|}]+)\|([^}]+)\}\}/g
+      let lastIndex = 0
+      let m: RegExpExecArray | null
+      while ((m = regex.exec(txt)) !== null) {
+        if (m.index > lastIndex) parts.push(txt.slice(lastIndex, m.index))
+        const kind = m[1]
+        const val = m[2]
+        const inner = m[3]
+        const style: React.CSSProperties = {}
+        if (kind === 'size') style.fontSize = `${Number(val)}px`
+        if (kind === 'color') style.color = val
+        parts.push(<span style={style} key={parts.length}>{inner}</span>)
+        lastIndex = m.index + m[0].length
+      }
+      if (lastIndex < txt.length) parts.push(txt.slice(lastIndex))
+      return parts
+    }
+
+    if (typeof input === 'string') return toReact(input)
+    // children 배열일 경우 각각 처리
+    if (Array.isArray(input)) {
+      return input.map((c, i) => typeof c === 'string' ? <React.Fragment key={i}>{toReact(c)}</React.Fragment> : c)
+    }
+    return input
+  }
   const mdComponents: Components = {
     img: (props) => <FigureImage {...props} />,
 
@@ -162,14 +190,14 @@ export default function PostDetail() {
       />
     ),
 
-    h1: ({ className, ...props }) => (
-      <h1 {...props} className={clsx('mt-10 mb-4 text-3xl md:text-4xl font-bold', className)} />
+    h1: ({ className, children, ...props }) => (
+      <h1 {...props} className={clsx('mt-10 mb-4 text-3xl md:text-4xl font-bold', className)}>{renderTokenText(children)}</h1>
     ),
-    h2: ({ className, ...props }) => (
-      <h2 {...props} className={clsx('mt-9 mb-3 text-2xl md:text-3xl font-semibold', className)} />
+    h2: ({ className, children, ...props }) => (
+      <h2 {...props} className={clsx('mt-9 mb-3 text-2xl md:text-3xl font-semibold', className)}>{renderTokenText(children)}</h2>
     ),
-    h3: ({ className, ...props }) => (
-      <h3 {...props} className={clsx('mt-7 mb-2 text-xl md:text-2xl font-semibold', className)} />
+    h3: ({ className, children, ...props }) => (
+      <h3 {...props} className={clsx('mt-7 mb-2 text-xl md:text-2xl font-semibold', className)}>{renderTokenText(children)}</h3>
     ),
 
     code: ({ className, children, ...props }) => {
@@ -216,7 +244,14 @@ export default function PostDetail() {
 
     ul: ({ className, ...props }) => <ul {...props} className={clsx('my-4 pl-6 list-disc', className)} />,
     ol: ({ className, ...props }) => <ol {...props} className={clsx('my-4 pl-6 list-decimal', className)} />,
-    p:  ({ className, ...props }) => <p  {...props} className={clsx('my-4', className)} />,
+    p:  ({ className, children, ...props }) => (
+      <p {...props} className={clsx('my-4', className)}>
+        {renderTokenText(children)}
+      </p>
+    ),
+    li: ({ className, children, ...props }) => (
+      <li {...props} className={className}>{renderTokenText(children)}</li>
+    ),
   }
 
   // 프로젝트 태그는 표시에서 숨김
@@ -308,7 +343,7 @@ export default function PostDetail() {
             'text-left'
           )}
         >
-          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={mdComponents}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
             {post.content}
           </ReactMarkdown>
         </div>
