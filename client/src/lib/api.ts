@@ -176,6 +176,8 @@ export const ThreadAPI = {
     apiPut<{ ok: boolean }>(`/threads-comments/${cid}`, body).then(r => !!r.ok),
   delete: (cid: string, body?: { password?: string }) =>
     apiDelete<{ ok: boolean }>(`/threads-comments/${cid}`, body).then(r => !!r.ok),
+  // 단일 스레드(포스터) 정적 데이터 + 라이브 폴백
+  getThread: (key: string) => publicGet<{ key: string; title: string; tier: 'S'|'A'|'B'|'C'|'D'|'F'; review: string; comments: Array<{ id: string; nickname: string; content: string; createdAt: string }> }>(`/threads/${encodeURIComponent(key)}`),
 }
 
 /** ─────────── Reviews (admin-only) ─────────── */

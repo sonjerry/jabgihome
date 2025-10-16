@@ -184,26 +184,43 @@ export default function Tierlist() {
 
   useEffect(() => {
     if (!open || !currentKey) return
-    
-    // 정적 데이터로 즉시 표시
-    if (currentItemData) {
-      setEditedTitle(currentItemData.title)
-      setSavedTitle(currentItemData.title)
-      if (currentItemData.review) {
-        setSavedComment({ rating: 0, text: currentItemData.review, updatedAt: new Date().toISOString() })
-      }
-      setComments(currentItemData.comments || [])
-    }
-    
-    // 백그라운드에서 API 데이터 확인
-    const storageKey = currentKey // 파일명을 그대로 사용
-    refreshComment(storageKey)
-    refreshComments(storageKey)
-    refreshTitle(storageKey)
-    
-    setCommentText('')
-    setDraft('')
-    setEditingTitle(false)
+    const storageKey = currentKey
+
+    // 1) 단일 스레드 정적 데이터 우선 로드 → 즉시 표시
+    ThreadAPI.getThread(storageKey)
+      .then(data => {
+        if (!data) return
+        setEditedTitle(data.title || '')
+        setSavedTitle(data.title || '')
+        if (data.review) {
+          setSavedComment({ rating: 0, text: data.review, updatedAt: new Date().toISOString() })
+        } else {
+          setSavedComment(null)
+        }
+        setComments(data.comments || [])
+      })
+      .catch(() => {
+        // 폴백: 기존 정적 tierlistData로 즉시 채우기
+        if (currentItemData) {
+          setEditedTitle(currentItemData.title)
+          setSavedTitle(currentItemData.title)
+          if (currentItemData.review) {
+            setSavedComment({ rating: 0, text: currentItemData.review, updatedAt: new Date().toISOString() })
+          } else {
+            setSavedComment(null)
+          }
+          setComments(currentItemData.comments || [])
+        }
+      })
+      .finally(() => {
+        // 2) 라이브 데이터 백그라운드 새로고침
+        refreshComment(storageKey)
+        refreshComments(storageKey)
+        refreshTitle(storageKey)
+        setCommentText('')
+        setDraft('')
+        setEditingTitle(false)
+      })
   }, [open, currentKey, currentItemData, refreshComment, refreshComments, refreshTitle])
 
   const handleSaveComment = useCallback(async () => {
