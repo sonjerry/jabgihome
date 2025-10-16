@@ -1,9 +1,33 @@
 // client/src/pages/Editor.tsx
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { Post, Attachment } from '../types'
 import { getPost, savePost, uploadFile, updatePost } from '../lib/api'
 import PageShell from '../components/PageShell'
+// TipTap (동적 임포트: 없으면 textarea 폴백)
+let TipTapReact: any = null
+let StarterKitExt: any = null
+let TextStyleExt: any = null
+let ColorExt: any = null
+let LinkExt: any = null
+let ImageExt: any = null
+let TextAlignExt: any = null
+try {
+  // @ts-ignore - 런타임에만 존재해도 동작하게 함
+  TipTapReact = require('@tiptap/react')
+  // @ts-ignore
+  StarterKitExt = require('@tiptap/starter-kit').default
+  // @ts-ignore
+  TextStyleExt = require('@tiptap/extension-text-style').default
+  // @ts-ignore
+  ColorExt = require('@tiptap/extension-color').default
+  // @ts-ignore
+  LinkExt = require('@tiptap/extension-link').default
+  // @ts-ignore
+  ImageExt = require('@tiptap/extension-image').default
+  // @ts-ignore
+  TextAlignExt = require('@tiptap/extension-text-align').default
+} catch {}
 
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
 
@@ -26,6 +50,7 @@ export default function Editor(){
   const [helpOpen, setHelpOpen] = useState<boolean>(false)
 
   const textareaRef = useRef<HTMLTextAreaElement|null>(null)
+  const editorRef = useRef<any>(null)
 
   useEffect(()=> {
     if (!isEdit) return
@@ -82,10 +107,19 @@ export default function Editor(){
 
   const applyInlineSize = (px: number) => {
     // 안전 토큰 구문: {{size:20|텍스트}}
+    // TipTap이 있으면 곧바로 에디터에 적용
+    if (editorRef.current) {
+      editorRef.current.chain().focus().setMark('textStyle', { fontSize: `${px}px` }).run()
+      return
+    }
     wrapSelection(`{{size:${px}|`, `}}`)
   }
   const applyInlineColor = (color: string) => {
     // 안전 토큰 구문: {{color:#ff0000|텍스트}}
+    if (editorRef.current) {
+      editorRef.current.chain().focus().setColor(color).run()
+      return
+    }
     wrapSelection(`{{color:${color}|`, `}}`)
   }
 
@@ -112,7 +146,9 @@ export default function Editor(){
     const normalizedCategory = (category || '').trim()
     const post: Post = {
       id: isEdit ? (id as string) : uid(),
-      title, content, category: normalizedCategory, tags,
+      title,
+      content: editorRef.current ? editorRef.current.getHTML() : content,
+      category: normalizedCategory, tags,
       createdAt: isEdit ? (createdAt || now) : now,
       updatedAt: isEdit ? now : undefined,
       attachments,
@@ -189,8 +225,47 @@ export default function Editor(){
                         className="w-5 h-5 rounded-full border border-white/20" style={{ background: c }} />
               ))}
               <input type="color" onChange={(e)=>applyInlineColor(e.target.value)} className="w-6 h-6 rounded border border-white/10" />
+              {TipTapReact && (
+                <>
+                  <button type="button" onClick={() => editorRef.current?.chain().focus().unsetColor().run()} className="text-xs px-2 py-1 rounded hover:bg-white/10">색상 해제</button>
+                  <button type="button" onClick={() => editorRef.current?.chain().focus().setMark('textStyle', { fontSize: null }).run()} className="text-xs px-2 py-1 rounded hover:bg-white/10">크기 해제</button>
+                </>
+              )}
             </div>
           </div>
+
+          {/* TipTap 툴바 (데스크톱 전용) */}
+          {TipTapReact && (
+            <div className="flex flex-wrap items-center gap-2 mb-3 glass rounded-xl p-2">
+              {(() => {
+                const ed = editorRef.current
+                const btn = (label: string, on: () => void, active = false) => (
+                  <button type="button" onClick={on} className={["px-2 py-1 rounded text-xs border border-white/10", active?"bg-white/20":"hover:bg-white/10"].join(' ')}>{label}</button>
+                )
+                return (
+                  <>
+                    {btn('본문', () => ed?.chain().focus().setParagraph().run(), ed?.isActive('paragraph'))}
+                    {btn('H1', () => ed?.chain().focus().toggleHeading({ level: 1 }).run(), ed?.isActive('heading', { level: 1 }))}
+                    {btn('H2', () => ed?.chain().focus().toggleHeading({ level: 2 }).run(), ed?.isActive('heading', { level: 2 }))}
+                    {btn('H3', () => ed?.chain().focus().toggleHeading({ level: 3 }).run(), ed?.isActive('heading', { level: 3 }))}
+                    <span className="mx-1 opacity-40">|</span>
+                    {btn('굵게', () => ed?.chain().focus().toggleBold().run(), ed?.isActive('bold'))}
+                    {btn('기울임', () => ed?.chain().focus().toggleItalic().run(), ed?.isActive('italic'))}
+                    {btn('취소선', () => ed?.chain().focus().toggleStrike().run(), ed?.isActive('strike'))}
+                    <span className="mx-1 opacity-40">|</span>
+                    {btn('불릿', () => ed?.chain().focus().toggleBulletList().run(), ed?.isActive('bulletList'))}
+                    {btn('번호', () => ed?.chain().focus().toggleOrderedList().run(), ed?.isActive('orderedList'))}
+                    {btn('인용', () => ed?.chain().focus().toggleBlockquote().run(), ed?.isActive('blockquote'))}
+                    {btn('코드블럭', () => ed?.chain().focus().toggleCodeBlock().run(), ed?.isActive('codeBlock'))}
+                    <span className="mx-1 opacity-40">|</span>
+                    {btn('구분선', () => ed?.chain().focus().setHorizontalRule().run())}
+                    {btn('↶', () => ed?.chain().focus().undo().run())}
+                    {btn('↷', () => ed?.chain().focus().redo().run())}
+                  </>
+                )
+              })()}
+            </div>
+          )}
 
           {/* 마크다운 도움말 (아코디언) */}
           <div className="mb-3">
@@ -228,13 +303,36 @@ export default function Editor(){
             )}
           </div>
 
-          <textarea
-            ref={textareaRef}
-            className="w-full h-[52vh] md:h-[60vh] bg-transparent outline-none resize-none leading-relaxed"
-            placeholder="본문 내용을 입력하세요"
-            value={content}
-            onChange={e=>setContent(e.target.value)}
-          />
+          {TipTapReact ? (
+            <div className="rounded-xl overflow-hidden bg-white/5 border border-white/10">
+              <TipTapReact.EditorContent editor={useMemo(() => {
+                if (!TipTapReact) return null as any
+                const editor = new TipTapReact.Editor({
+                  extensions: [
+                    StarterKitExt,
+                    TextStyleExt,
+                    ColorExt,
+                    LinkExt.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer' } }),
+                    ImageExt.configure({ inline: false, allowBase64: true }),
+                    TextAlignExt.configure({ types: ['heading','paragraph'] })
+                  ],
+                  content: content || '<p></p>',
+                  onUpdate: ({ editor }: any) => setContent(editor.getHTML()),
+                })
+                editorRef.current = editor
+                return editor
+              // eslint-disable-next-line react-hooks/exhaustive-deps
+              }, [])} className="prose prose-invert max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2" />
+            </div>
+          ) : (
+            <textarea
+              ref={textareaRef}
+              className="w-full h-[52vh] md:h-[60vh] bg-transparent outline-none resize-none leading-relaxed"
+              placeholder="본문 내용을 입력하세요"
+              value={content}
+              onChange={e=>setContent(e.target.value)}
+            />
+          )}
 
           {/* 첨부 */}
           <div className="mt-3">

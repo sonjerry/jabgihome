@@ -147,31 +147,65 @@ export default function PostDetail() {
 
   /* ── 마크다운 컴포넌트 ── */
   function renderTokenText(input: any): any {
-    // 지원 토큰: {{size:20|text}} , {{color:#ff0000|text}}
-    const toReact = (txt: string) => {
-      const parts: any[] = []
-      const regex = /\{\{(size|color):([^|}]+)\|([^}]+)\}\}/g
-      let lastIndex = 0
-      let m: RegExpExecArray | null
-      while ((m = regex.exec(txt)) !== null) {
-        if (m.index > lastIndex) parts.push(txt.slice(lastIndex, m.index))
-        const kind = m[1]
-        const val = m[2]
-        const inner = m[3]
-        const style: React.CSSProperties = {}
-        if (kind === 'size') style.fontSize = `${Number(val)}px`
-        if (kind === 'color') style.color = val
-        parts.push(<span style={style} key={parts.length}>{inner}</span>)
-        lastIndex = m.index + m[0].length
+    // 지원 토큰:
+    // 1) 범위 토큰: {{size:20}} ... {{/size}}, {{color:#ff0000}} ... {{/color}}
+    // 2) 인라인 토큰: {{size:20|text}}, {{color:#ff0000|text}}
+    const renderString = (txt: string) => {
+      const out: any[] = []
+      const stack: Array<React.CSSProperties> = []
+      const pushText = (s: string) => {
+        if (!s) return
+        const style = stack.reduce((acc, cur) => Object.assign(acc, cur), {} as React.CSSProperties)
+        out.push(style && Object.keys(style).length ? <span style={style} key={out.length}>{s}</span> : s)
       }
-      if (lastIndex < txt.length) parts.push(txt.slice(lastIndex))
-      return parts
+      // 먼저 인라인 토큰을 간단 치환
+      const inlineRegex = /\{\{(size|color):([^|}]+)\|([^}]+)\}\}/g
+      txt = txt.replace(inlineRegex, (_m, k, v, t) => {
+        const style = k === 'size' ? `font-size:${Number(v)}px` : `color:${v}`
+        return `<<SPAN ${style}>>${t}<<END>>`
+      })
+
+      const tokenRegex = /(\{\{size:([^}]+)\}\}|\{\{color:([^}]+)\}\}|\{\{\/size\}\}|\{\{\/color\}\}|<<SPAN ([^>]+)>>|<<END>>)/g
+      let last = 0
+      let m: RegExpExecArray | null
+      while ((m = tokenRegex.exec(txt)) !== null) {
+        if (m.index > last) pushText(txt.slice(last, m.index))
+        const token = m[0]
+        if (token.startsWith('{{size:')) {
+          stack.push({ fontSize: `${Number(m[2])}px` })
+        } else if (token.startsWith('{{color:')) {
+          stack.push({ color: m[3] })
+        } else if (token === '{{/size}}') {
+          for (let i = stack.length - 1; i >= 0; i--) {
+            if (stack[i].fontSize) { stack.splice(i, 1); break }
+          }
+        } else if (token === '{{/color}}') {
+          for (let i = stack.length - 1; i >= 0; i--) {
+            if (stack[i].color) { stack.splice(i, 1); break }
+          }
+        } else if (token.startsWith('<<SPAN ')) {
+          const styleStr = m[5] || ''
+          const style: React.CSSProperties = {}
+          styleStr.split(';').forEach(rule => {
+            const [k, v] = rule.split(':').map(s => s?.trim())
+            if (!k || !v) return
+            if (k === 'font-size') style.fontSize = v
+            if (k === 'color') style.color = v
+          })
+          stack.push(style)
+        } else if (token === '<<END>>') {
+          stack.pop()
+        }
+        last = m.index + token.length
+      }
+      if (last < txt.length) pushText(txt.slice(last))
+      return out
     }
 
-    if (typeof input === 'string') return toReact(input)
+    if (typeof input === 'string') return renderString(input)
     // children 배열일 경우 각각 처리
     if (Array.isArray(input)) {
-      return input.map((c, i) => typeof c === 'string' ? <React.Fragment key={i}>{toReact(c)}</React.Fragment> : c)
+      return input.map((c, i) => typeof c === 'string' ? <React.Fragment key={i}>{renderString(c)}</React.Fragment> : c)
     }
     return input
   }
@@ -343,9 +377,13 @@ export default function PostDetail() {
             'text-left'
           )}
         >
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
-            {post.content}
-          </ReactMarkdown>
+          {post.content?.startsWith('<') ? (
+            <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: post.content }} />
+          ) : (
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+              {post.content}
+            </ReactMarkdown>
+          )}
         </div>
       </article>
 
