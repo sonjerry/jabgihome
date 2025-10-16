@@ -4,15 +4,6 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import type { Post, Attachment } from '../types'
 import { getPost, savePost, uploadFile, updatePost } from '../lib/api'
 import PageShell from '../components/PageShell'
-// TipTap (동적 임포트: 정적 빌드에서도 포함되도록 useEffect에서 로드)
-let TipTapReact: any = null
-let StarterKitExt: any = null
-let TextStyleExt: any = null
-let ColorExt: any = null
-let LinkExt: any = null
-let ImageExt: any = null
-let TextAlignExt: any = null
-const tiptapAvailable = Boolean(TipTapReact && StarterKitExt)
 
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
 
@@ -33,10 +24,64 @@ export default function Editor(){
   const [styleTextColor, setStyleTextColor] = useState<string>('#e5e7eb')
   const [styleFontSize, setStyleFontSize] = useState<number>(16)
   const [helpOpen, setHelpOpen] = useState<boolean>(false)
-  const [tiptapReady, setTiptapReady] = useState<boolean>(tiptapAvailable)
+  const [editorReady, setEditorReady] = useState<boolean>(false)
+  const [editorError, setEditorError] = useState<string | null>(null)
+  const [tipTapLoaded, setTipTapLoaded] = useState<boolean>(false)
+  const [tipTapModules, setTipTapModules] = useState<any>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement|null>(null)
   const editorRef = useRef<any>(null)
+
+  // TipTap 동적 로드
+  useEffect(() => {
+    const loadTipTap = async () => {
+      console.log('TipTap 모듈 로드 시작...')
+      try {
+        const [
+          { EditorContent, Editor },
+          StarterKit,
+          TextStyle,
+          Color,
+          Link,
+          Image,
+          TextAlign
+        ] = await Promise.all([
+          import('@tiptap/react'),
+          import('@tiptap/starter-kit'),
+          import('@tiptap/extension-text-style'),
+          import('@tiptap/extension-color'),
+          import('@tiptap/extension-link'),
+          import('@tiptap/extension-image'),
+          import('@tiptap/extension-text-align')
+        ])
+
+        console.log('TipTap 모듈 로드 성공:', { EditorContent, Editor, StarterKit })
+
+        setTipTapModules({
+          EditorContent,
+          Editor,
+          StarterKit,
+          TextStyle,
+          Color,
+          Link,
+          Image,
+          TextAlign
+        })
+        setTipTapLoaded(true)
+        console.log('TipTap 상태 업데이트 완료')
+      } catch (error) {
+        console.error('TipTap 모듈 로드 실패:', error)
+        console.error('Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : undefined
+        })
+        setEditorError(error instanceof Error ? error.message : 'TipTap 모듈을 로드할 수 없습니다.')
+      }
+    }
+
+    loadTipTap()
+  }, [])
 
   useEffect(()=> {
     if (!isEdit) return
@@ -59,36 +104,7 @@ export default function Editor(){
       .finally(()=> setLoading(false))
   }, [id, isEdit])
 
-  // TipTap 모듈을 클라이언트에서 동적으로 로드하여 정적 배포에서도 활성화
-  useEffect(() => {
-    if (tiptapReady) return
-    let cancelled = false
-    ;(async () => {
-      try {
-        const [reactMod, starter, textStyle, color, link, image, textAlign] = await Promise.all([
-          import('@tiptap/react'),
-          import('@tiptap/starter-kit'),
-          import('@tiptap/extension-text-style'),
-          import('@tiptap/extension-color'),
-          import('@tiptap/extension-link'),
-          import('@tiptap/extension-image'),
-          import('@tiptap/extension-text-align'),
-        ])
-        if (cancelled) return
-        TipTapReact = reactMod
-        StarterKitExt = (starter as any).default
-        TextStyleExt = (textStyle as any).default
-        ColorExt = (color as any).default
-        LinkExt = (link as any).default
-        ImageExt = (image as any).default
-        TextAlignExt = (textAlign as any).default
-        setTiptapReady(true)
-      } catch {
-        // 무시: 네트워크/캐시 문제일 수 있음
-      }
-    })()
-    return () => { cancelled = true }
-  }, [tiptapReady])
+  // TipTap: 정적 임포트 사용으로 별도 동적 로드 없음
   const addTag = ()=>{ const tt = tagInput.trim(); if(tt && !tags.includes(tt)) setTags(v=>[...v,tt]); setTagInput('') }
   const removeTag = (tt:string)=> setTags(v=>v.filter(x=>x!==tt))
 
@@ -123,23 +139,12 @@ export default function Editor(){
   }
 
   const applyInlineSize = (px: number) => {
-    // 안전 토큰 구문: {{size:20|텍스트}}
-    // TipTap이 있으면 곧바로 에디터에 적용
-    if (editorRef.current) {
-      editorRef.current.chain().focus().setMark('textStyle', { fontSize: `${px}px` }).run()
-      return
-    }
-    // WYSIWYG가 비활성화된 상태에서는 토큰을 삽입하지 않고 안내만 표시
-    alert('WYSIWYG 에디터가 활성화된 상태에서만 크기 변경이 가능합니다. 화면 상단 안내를 참고해 패키지를 설치하세요.')
+    if (!editorRef.current) return
+    editorRef.current.chain().focus().setMark('textStyle', { fontSize: `${px}px` }).run()
   }
   const applyInlineColor = (color: string) => {
-    // 안전 토큰 구문: {{color:#ff0000|텍스트}}
-    if (editorRef.current) {
-      editorRef.current.chain().focus().setColor(color).run()
-      return
-    }
-    // WYSIWYG가 비활성화된 상태에서는 토큰을 삽입하지 않고 안내만 표시
-    alert('WYSIWYG 에디터가 활성화된 상태에서만 색상 변경이 가능합니다. 화면 상단 안내를 참고해 패키지를 설치하세요.')
+    if (!editorRef.current) return
+    editorRef.current.chain().focus().setColor(color).run()
   }
 
   const onFiles = async (files: FileList | null) => {
@@ -151,7 +156,11 @@ export default function Editor(){
         uploaded.push(att)
         if ((att.type || '').startsWith('image/')) {
           const alt = att.name || 'image'
-          insertMarkdown(`\n\n![${alt}](${att.url})\n\n`)
+          if (editorRef.current) {
+            editorRef.current.chain().focus().setImage({ src: att.url, alt }).run()
+          } else {
+            insertMarkdown(`\n\n![${alt}](${att.url})\n\n`)
+          }
         }
       }
       setAttachments(prev=>[...prev,...uploaded])
@@ -229,35 +238,36 @@ export default function Editor(){
             </div>
           </div>
 
-          {/* 인라인 스타일 도구 */}
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            <div className="flex items-center gap-2 glass rounded-xl px-2 py-1">
-              <span className="text-xs opacity-80">크기</span>
-              {[14,16,18,20,22,24,28,32].map(s => (
-                <button key={s} type="button" onClick={() => applyInlineSize(s)} className="text-xs px-2 py-1 rounded hover:bg-white/10">{s}</button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2 glass rounded-xl px-2 py-1">
-              <span className="text-xs opacity-80">색상</span>
-              {['#111827','#ef4444','#10b981','#3b82f6','#f59e0b','#a855f7'].map(c => (
-                <button key={c} type="button" onClick={() => applyInlineColor(c)}
-                        className="w-5 h-5 rounded-full border border-white/20" style={{ background: c }} />
-              ))}
-              <input type="color" onChange={(e)=>applyInlineColor(e.target.value)} className="w-6 h-6 rounded border border-white/10" />
-              {tiptapReady && (
+          {/* 인라인 스타일 도구 (에디터가 준비된 경우에만 표시) */}
+          {editorReady && !editorError && (
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 glass rounded-xl px-2 py-1">
+                <span className="text-xs opacity-80">크기</span>
+                {[14,16,18,20,22,24,28,32].map(s => (
+                  <button key={s} type="button" onClick={() => applyInlineSize(s)} className="text-xs px-2 py-1 rounded hover:bg-white/10">{s}</button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 glass rounded-xl px-2 py-1">
+                <span className="text-xs opacity-80">색상</span>
+                {['#111827','#ef4444','#10b981','#3b82f6','#f59e0b','#a855f7'].map(c => (
+                  <button key={c} type="button" onClick={() => applyInlineColor(c)}
+                          className="w-5 h-5 rounded-full border border-white/20" style={{ background: c }} />
+                ))}
+                <input type="color" onChange={(e)=>applyInlineColor(e.target.value)} className="w-6 h-6 rounded border border-white/10" />
                 <>
                   <button type="button" onClick={() => editorRef.current?.chain().focus().unsetColor().run()} className="text-xs px-2 py-1 rounded hover:bg-white/10">색상 해제</button>
                   <button type="button" onClick={() => editorRef.current?.chain().focus().setMark('textStyle', { fontSize: null }).run()} className="text-xs px-2 py-1 rounded hover:bg-white/10">크기 해제</button>
                 </>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* TipTap 툴바 (데스크톱 전용) */}
-          {tiptapReady && (
+          {/* TipTap 툴바 (에디터가 준비된 경우에만 표시) */}
+          {editorReady && !editorError && (
             <div className="flex flex-wrap items-center gap-2 mb-3 glass rounded-xl p-2">
               {(() => {
                 const ed = editorRef.current
+                if (!ed) return null
                 const btn = (label: string, on: () => void, active = false) => (
                   <button type="button" onClick={on} className={["px-2 py-1 rounded text-xs border border-white/10", active?"bg-white/20":"hover:bg-white/10"].join(' ')}>{label}</button>
                 )
@@ -322,41 +332,97 @@ export default function Editor(){
             )}
           </div>
 
-          {tiptapReady ? (
-            <div className="rounded-xl overflow-hidden bg-white/5 border border-white/10">
-              <TipTapReact.EditorContent editor={useMemo(() => {
-                if (!tiptapReady || !TipTapReact) return null as any
-                const editor = new TipTapReact.Editor({
-                  extensions: [
-                    StarterKitExt,
-                    TextStyleExt,
-                    ColorExt,
-                    LinkExt.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer' } }),
-                    ImageExt.configure({ inline: false, allowBase64: true }),
-                    TextAlignExt.configure({ types: ['heading','paragraph'] })
-                  ],
-                  content: content || '<p></p>',
-                  onUpdate: ({ editor }: any) => setContent(editor.getHTML()),
-                })
-                editorRef.current = editor
-                return editor
-              }, [tiptapReady])} className="prose prose-invert max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2" />
-            </div>
-          ) : (
-            <textarea
-              ref={textareaRef}
-              className="w-full h-[52vh] md:h-[60vh] bg-transparent outline-none resize-none leading-relaxed"
-              placeholder="본문 내용을 입력하세요"
-              value={content}
-              onChange={e=>setContent(e.target.value)}
-            />
-          )}
+          <div className="rounded-xl overflow-hidden bg-white/5 border border-white/10">
+            {!tipTapLoaded ? (
+              <div className="p-4 text-center">
+                <div className="text-sm opacity-80 mb-3">WYSIWYG 에디터를 로드하는 중...</div>
+                <div className="animate-spin w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full mx-auto"></div>
+              </div>
+            ) : editorError ? (
+              <div className="p-4">
+                <div className="text-red-400 mb-2">WYSIWYG 에디터를 로드할 수 없습니다.</div>
+                <div className="text-sm opacity-80 mb-3">{editorError}</div>
+                <div className="text-sm opacity-60 mb-3">
+                  대신 마크다운 에디터를 사용합니다:
+                </div>
+                <textarea
+                  ref={textareaRef}
+                  className="w-full p-3 bg-white/5 border border-white/10 rounded-lg min-h-[52vh] md:min-h-[60vh] resize-none font-mono text-sm"
+                  placeholder="마크다운으로 작성하세요...
 
-          {!tiptapReady && (
-            <div className="mt-2 text-xs opacity-70">
-              WYSIWYG를 사용하려면 다음 패키지를 설치하세요: <code>@tiptap/react @tiptap/starter-kit @tiptap/extension-text-style @tiptap/extension-color @tiptap/extension-link @tiptap/extension-image @tiptap/extension-text-align</code>
-            </div>
-          )}
+예시:
+# 제목
+## 부제목
+**굵은 글씨**
+*기울임*
+[링크](https://example.com)
+![이미지](https://example.com/image.jpg)
+
+- 목록 항목
+- 또 다른 항목
+
+> 인용문
+
+```코드 블록```"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                />
+                <div className="mt-2 text-xs opacity-60">
+                  마크다운 문법을 사용하여 글을 작성할 수 있습니다. 위의 마크다운 도움말을 참고하세요.
+                </div>
+              </div>
+            ) : tipTapModules ? (
+              <tipTapModules.EditorContent 
+                editor={useMemo(() => {
+                  try {
+                    console.log('TipTap 에디터 초기화 시작...', { tipTapModules })
+                    const { Editor, StarterKit, TextStyle, Color, Link, Image, TextAlign } = tipTapModules
+                    
+                    const extensions = [
+                      StarterKit.default || StarterKit,
+                      TextStyle.default || TextStyle,
+                      Color.default || Color,
+                      Link.default.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer' } }),
+                      Image.default.configure({ inline: false, allowBase64: true }),
+                      TextAlign.default.configure({ types: ['heading','paragraph'] })
+                    ]
+                    
+                    console.log('Extensions 준비 완료:', extensions.length)
+                    
+                    const editor = new Editor({
+                      extensions,
+                      content: content || '<p></p>',
+                      onUpdate: ({ editor }: any) => {
+                        console.log('에디터 업데이트:', editor.getHTML().substring(0, 100))
+                        setContent(editor.getHTML())
+                        setEditorReady(true)
+                      },
+                      onCreate: ({ editor }: any) => {
+                        console.log('에디터 생성 완료')
+                        editorRef.current = editor
+                        setEditorReady(true)
+                        setEditorError(null)
+                      },
+                    })
+                    console.log('TipTap 에디터 초기화 성공')
+                    return editor
+                  } catch (error) {
+                    console.error('TipTap 에디터 초기화 실패:', error)
+                    console.error('Error details:', {
+                      message: error instanceof Error ? error.message : 'Unknown error',
+                      stack: error instanceof Error ? error.stack : undefined,
+                      name: error instanceof Error ? error.name : undefined
+                    })
+                    setEditorError(error instanceof Error ? error.message : '알 수 없는 오류')
+                    return null
+                  }
+                }, [tipTapModules, content])} 
+                className="prose prose-invert max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2" 
+              />
+            ) : null}
+          </div>
+
+          
 
           {/* 첨부 */}
           <div className="mt-3">

@@ -12,4 +12,32 @@ export default defineConfig({
       '/uploads': 'http://localhost:4000',
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'tiptap': [
+            '@tiptap/react',
+            '@tiptap/starter-kit',
+            '@tiptap/extension-text-style',
+            '@tiptap/extension-color',
+            '@tiptap/extension-link',
+            '@tiptap/extension-image',
+            '@tiptap/extension-text-align'
+          ]
+        }
+      }
+    }
+  },
+  optimizeDeps: {
+    include: [
+      '@tiptap/react',
+      '@tiptap/starter-kit',
+      '@tiptap/extension-text-style',
+      '@tiptap/extension-color',
+      '@tiptap/extension-link',
+      '@tiptap/extension-image',
+      '@tiptap/extension-text-align'
+    ]
+  }
 })
