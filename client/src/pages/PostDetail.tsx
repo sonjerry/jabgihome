@@ -66,7 +66,7 @@ export default function PostDetail() {
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
   const editorFontSize = post?.style?.fontSize ?? 16
-  const editorTextColor = post?.style?.textColor ?? '#e5e7eb'
+  const editorTextColor = post?.style?.textColor ?? '#111827'
 
   useEffect(() => {
     if (!id) return
