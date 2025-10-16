@@ -52,9 +52,23 @@ async function generateTierlistData() {
       supabase.from('threads_comments').select('*')
     ])
     
-    if (titlesResult.error) throw titlesResult.error
-    if (reviewsResult.error) throw reviewsResult.error
-    if (commentsResult.error) throw commentsResult.error
+    console.log('📊 Supabase 쿼리 결과:')
+    console.log('  - anime_titles:', titlesResult.data?.length || 0, '개')
+    console.log('  - threads_reviews:', reviewsResult.data?.length || 0, '개')
+    console.log('  - threads_comments:', commentsResult.data?.length || 0, '개')
+    
+    if (titlesResult.error) {
+      console.error('❌ anime_titles 에러:', titlesResult.error)
+      throw titlesResult.error
+    }
+    if (reviewsResult.error) {
+      console.error('❌ threads_reviews 에러:', reviewsResult.error)
+      throw reviewsResult.error
+    }
+    if (commentsResult.error) {
+      console.error('❌ threads_comments 에러:', commentsResult.error)
+      throw commentsResult.error
+    }
     
     const titles = titlesResult.data || []
     const reviews = reviewsResult.data || []
@@ -135,6 +149,7 @@ async function generateTierlistData() {
 async function main() {
   try {
     console.log('🚀 정적 데이터 생성 시작...')
+    console.log('현재 작업 디렉토리:', process.cwd())
     
     const [postsCount, tierlistCount] = await Promise.all([
       generatePostsData(),
@@ -153,7 +168,8 @@ async function main() {
 }
 
 // 직접 실행 시
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url.endsWith('generate-static-data.js')) {
+  console.log('스크립트 직접 실행됨')
   main()
 }
 
