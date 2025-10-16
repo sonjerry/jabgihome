@@ -192,7 +192,7 @@ export default function Home() {
                   className="mt-16 md:mt-24 lg:mt-28 pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 hover:bg-white/15 transition-all duration-200 backdrop-blur-xl px-6 py-3 shadow-glass transform hover:scale-105 active:scale-95"
                   style={{ animation: 'bounceIn 0.8s ease-out 0.3s both' }}
                 >
-                  <span className="opacity-90 text-sm md:text-base font-medium whitespace-nowrap">음소거 해제</span>
+                  <span className="opacity-90 text-sm md:text-base font-medium whitespace-nowrap home-force-white">음소거 해제</span>
                 </button>
               )}
             </div>
@@ -210,8 +210,8 @@ export default function Home() {
             }}
           >
             <div className="text-center">
-              <div className="text-white/80 text-sm mb-3">아래로 스크롤하세요</div>
-              <div className="pointer-events-none rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass">
+              <div className="text-sm mb-3 home-force-white">아래로 스크롤하세요</div>
+              <div className="pointer-events-none rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass home-force-white">
                 <div className="flex items-center gap-3">
                   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
                        style={{ animation: 'homeArrowBlink 1.4s infinite ease-in-out, homeArrowFloat 2.2s infinite ease-in-out', animationDelay: '0ms' }}
@@ -269,9 +269,9 @@ export default function Home() {
               transition: 'opacity 600ms ease-out, transform 600ms ease-out'
             }}>
               <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_DESKTOP} min-h-[9rem] md:min-h-[10rem]`}>
-              <GlassTitle className={NAV_TITLE_DESKTOP}>블로그</GlassTitle>
-              <GlassText className={NAV_TEXT_DESKTOP}>쓸데없는 생각 정리</GlassText>
-              <div className="pt-3 md:pt-4"><CTA to="/blog" title="보러가기" /></div>
+              <GlassTitle className={`${NAV_TITLE_DESKTOP} home-force-white`}>블로그</GlassTitle>
+              <GlassText className={`${NAV_TEXT_DESKTOP} home-subtitle`}>쓸데없는 생각 정리</GlassText>
+              <div className="pt-3 md:pt-4"><CTA to="/blog" title="보러가기" className="home-force-white" /></div>
             </div>
           </GlassCard>
         </div>
@@ -288,9 +288,9 @@ export default function Home() {
               transitionDelay: '100ms'
             }}>
               <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_DESKTOP} min-h-[9rem] md:min-h-[10rem]`}>
-              <GlassTitle className={NAV_TITLE_DESKTOP}>프로젝트</GlassTitle>
-              <GlassText className={NAV_TEXT_DESKTOP}>토이 프로젝트 정리</GlassText>
-              <div className="pt-3 md:pt-4"><CTA to="/projects" title="보러가기" /></div>
+              <GlassTitle className={`${NAV_TITLE_DESKTOP} home-force-white`}>프로젝트</GlassTitle>
+              <GlassText className={`${NAV_TEXT_DESKTOP} home-subtitle`}>토이 프로젝트 정리</GlassText>
+              <div className="pt-3 md:pt-4"><CTA to="/projects" title="보러가기" className="home-force-white" /></div>
             </div>
           </GlassCard>
         </div>
@@ -307,9 +307,9 @@ export default function Home() {
               transitionDelay: '200ms'
             }}>
               <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_DESKTOP} min-h-[9rem] md:min-h-[10rem]`}>
-              <GlassTitle className={NAV_TITLE_DESKTOP}>AI 갤러리</GlassTitle>
-              <GlassText className={NAV_TEXT_DESKTOP}>AI로 만든 애니 캐릭터 갤러리 </GlassText>
-              <div className="pt-3 md:pt-4"><CTA to="/gallery" title="보러가기" /></div>
+              <GlassTitle className={`${NAV_TITLE_DESKTOP} home-force-white`}>AI 갤러리</GlassTitle>
+              <GlassText className={`${NAV_TEXT_DESKTOP} home-subtitle`}>AI로 만든 애니 캐릭터 갤러리 </GlassText>
+              <div className="pt-3 md:pt-4"><CTA to="/gallery" title="보러가기" className="home-force-white" /></div>
             </div>
           </GlassCard>
         </div>
@@ -326,9 +326,9 @@ export default function Home() {
               transitionDelay: '300ms'
             }}>
               <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_DESKTOP} min-h-[9rem] md:min-h-[10rem]`}>
-              <GlassTitle className={NAV_TITLE_DESKTOP}>3D 모델 갤러리</GlassTitle>
-              <GlassText className={NAV_TEXT_DESKTOP}>AI로 만든 3D 모델 갤러리 </GlassText>
-              <div className="pt-3 md:pt-4"><CTA to="/modelgallery" title="보러가기" /></div>
+              <GlassTitle className={`${NAV_TITLE_DESKTOP} home-force-white`}>3D 모델 갤러리</GlassTitle>
+              <GlassText className={`${NAV_TEXT_DESKTOP} home-subtitle`}>AI로 만든 3D 모델 갤러리 </GlassText>
+              <div className="pt-3 md:pt-4"><CTA to="/modelgallery" title="보러가기" className="home-force-white" /></div>
             </div>
           </GlassCard>
         </div>
@@ -345,9 +345,9 @@ export default function Home() {
               transition: 'opacity 500ms cubic-bezier(0.22, 0.61, 0.36, 1), transform 500ms cubic-bezier(0.22, 0.61, 0.36, 1)'
             }}>
               <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_MOBILE}`}> 
-                <GlassTitle className={NAV_TITLE_MOBILE}>블로그</GlassTitle>
-                <GlassText className={NAV_TEXT_MOBILE}>쓸데없는 생각 정리</GlassText>
-                <div className="pt-3"><CTA to="/blog" title="보러가기" /></div>
+                <GlassTitle className={`${NAV_TITLE_MOBILE} home-force-white`}>블로그</GlassTitle>
+                <GlassText className={`${NAV_TEXT_MOBILE} home-subtitle`}>쓸데없는 생각 정리</GlassText>
+                <div className="pt-3"><CTA to="/blog" title="보러가기" className="home-force-white" /></div>
               </div>
             </GlassCard>
           </div>
@@ -361,9 +361,9 @@ export default function Home() {
               transitionDelay: '60ms'
             }}>
               <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_MOBILE}`}>
-                <GlassTitle className={NAV_TITLE_MOBILE}>프로젝트</GlassTitle>
-                <GlassText className={NAV_TEXT_MOBILE}>토이 프로젝트 정리</GlassText>
-                <div className="pt-3"><CTA to="/projects" title="보러가기" /></div>
+                <GlassTitle className={`${NAV_TITLE_MOBILE} home-force-white`}>프로젝트</GlassTitle>
+                <GlassText className={`${NAV_TEXT_MOBILE} home-subtitle`}>토이 프로젝트 정리</GlassText>
+                <div className="pt-3"><CTA to="/projects" title="보러가기" className="home-force-white" /></div>
               </div>
             </GlassCard>
           </div>
@@ -376,9 +376,9 @@ export default function Home() {
               transitionDelay: '120ms'
             }}>
               <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_MOBILE}`}>
-                <GlassTitle className={NAV_TITLE_MOBILE}>AI 그림 갤러리</GlassTitle>
-                <GlassText className={NAV_TEXT_MOBILE}>AI로 만든 그림 갤러리 </GlassText>
-                <div className="pt-3"><CTA to="/gallery" title="보러가기" /></div>
+                <GlassTitle className={`${NAV_TITLE_MOBILE} home-force-white`}>AI 그림 갤러리</GlassTitle>
+                <GlassText className={`${NAV_TEXT_MOBILE} home-subtitle`}>AI로 만든 그림 갤러리 </GlassText>
+                <div className="pt-3"><CTA to="/gallery" title="보러가기" className="home-force-white" /></div>
               </div>
             </GlassCard>
           </div>
@@ -391,9 +391,9 @@ export default function Home() {
               transitionDelay: '180ms'
             }}>
               <div className={`${NAV_INNER_BASE} ${NAV_INNER_PAD_MOBILE}`}>
-                <GlassTitle className={NAV_TITLE_MOBILE}>3D 모델 갤러리</GlassTitle>
-                <GlassText className={NAV_TEXT_MOBILE}>AI로 만든 3D 모델 갤러리 </GlassText>
-                <div className="pt-3"><CTA to="/modelgallery" title="보러가기" /></div>
+                <GlassTitle className={`${NAV_TITLE_MOBILE} home-force-white`}>3D 모델 갤러리</GlassTitle>
+                <GlassText className={`${NAV_TEXT_MOBILE} home-subtitle`}>AI로 만든 3D 모델 갤러리 </GlassText>
+                <div className="pt-3"><CTA to="/modelgallery" title="보러가기" className="home-force-white" /></div>
               </div>
             </GlassCard>
           </div>
@@ -428,17 +428,19 @@ function BodyPortal({ children }: { children: React.ReactNode }) {
 }
 
 // CTA
-function CTA({ to, title }: { to: string; title: string }) {
+function CTA({ to, title, className }: { to: string; title: string; className?: string }) {
   return (
     <Link
       to={to}
-      className="
+      className={
+        `
         block text-center rounded-2xl
         border border-white/20 bg-white/10 hover:bg-white/20 transition
         backdrop-blur px-3 py-2
         text-sm md:text-base
         pointer-events-auto
-      "
+      ` + (className ? ` ${className}` : '')
+      }
     >
       {title}
     </Link>

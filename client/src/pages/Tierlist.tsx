@@ -67,10 +67,54 @@ export default function Tierlist() {
           const items = (data?.items || []) as Array<{ tier: Tier; title: string; filename: string; url: string }>
           // 키 순으로 정렬(안정적 표시)
           setPosters(items.sort((a,b) => a.filename.localeCompare(b.filename, undefined, { numeric: true })) as Poster[])
+          if ((items?.length || 0) > 0) return
         }
+        // 폴백: 개발/초기 환경에서 매니페스트가 없을 때 import.meta.glob 사용
+        const modules = import.meta.glob('../assets/tier/**/*.{png,jpg,jpeg,webp,avif,gif}', {
+          eager: true,
+          query: '?url',
+          import: 'default',
+        }) as Record<string, string>
+        const list: Poster[] = Object.entries(modules)
+          .map(([p, url]) => {
+            const i = p.indexOf('/tier/')
+            if (i === -1) return null
+            const rest = p.slice(i + '/tier/'.length)
+            const [tier, name] = rest.split('/')
+            if (!tier || !name) return null
+            const t = tier as Tier
+            if (!['S','A','B','C','D','F'].includes(t)) return null
+            const title = decodeURIComponent(name.replace(/\.[^/.]+$/, '')).replace(/[_-]+/g, ' ').trim()
+            const filename = decodeURIComponent(name)
+            return { tier: t, title, filename, url }
+          })
+          .filter(Boolean) as Poster[]
+        list.sort((a,b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }))
+        setPosters(list)
       } catch (e) {
         console.warn('failed to load posters manifest', e)
-        setPosters([])
+        // 동일 폴백 로직
+        const modules = import.meta.glob('../assets/tier/**/*.{png,jpg,jpeg,webp,avif,gif}', {
+          eager: true,
+          query: '?url',
+          import: 'default',
+        }) as Record<string, string>
+        const list: Poster[] = Object.entries(modules)
+          .map(([p, url]) => {
+            const i = p.indexOf('/tier/')
+            if (i === -1) return null
+            const rest = p.slice(i + '/tier/'.length)
+            const [tier, name] = rest.split('/')
+            if (!tier || !name) return null
+            const t = tier as Tier
+            if (!['S','A','B','C','D','F'].includes(t)) return null
+            const title = decodeURIComponent(name.replace(/\.[^/.]+$/, '')).replace(/[_-]+/g, ' ').trim()
+            const filename = decodeURIComponent(name)
+            return { tier: t, title, filename, url }
+          })
+          .filter(Boolean) as Poster[]
+        list.sort((a,b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }))
+        setPosters(list)
       }
     }
     load()

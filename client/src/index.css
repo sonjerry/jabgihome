@@ -205,6 +205,9 @@ body {
 
 /* 홈 메인 타이틀 전용(전역 오버라이드 무시) */
 .home-hero-title { color: #ffffff !important; }
+/* Home 전용 강제 컬러 */
+.home-force-white { color: #ffffff !important; }
+.home-subtitle { color: #fbbf24 !important; }
 
 
 

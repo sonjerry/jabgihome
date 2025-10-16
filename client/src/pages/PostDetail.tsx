@@ -31,7 +31,7 @@ function FigureImage(props: React.ImgHTMLAttributes<HTMLImageElement>) {
     <figure className="my-6">
       <div
         className="
-          mx-auto max-w-[64ch]
+          mx-auto max-w-full
           aspect-[4/3] md:aspect-[16/9]
           rounded-2xl border border-white/10 bg-white/[0.03]
           grid
@@ -272,7 +272,7 @@ export default function PostDetail() {
       </div>
 
       <article
-        className="mx-auto max-w-[72ch] px-3 md:px-6 text-left"
+        className="mx-auto w-full max-w-[1200px] px-3 md:px-8 text-left"
         style={{ fontFamily: 'Gulim, 굴림, sans-serif' }}
       >
         {/* 헤더 */}
@@ -297,7 +297,7 @@ export default function PostDetail() {
           )}
         </header>
 
-        {/* 본문: 단순한 블로그 레이아웃, 시스템 폰트, 에디터 설정 적용 */}
+        {/* 본문: 넓은 콘텐츠 영역, 에디터 설정 적용 */}
         <div
           style={{ color: editorTextColor, fontSize: `${editorFontSize}px` }}
           className={clsx(
@@ -313,7 +313,7 @@ export default function PostDetail() {
       </article>
 
       {/* 댓글 */}
-      <section className="mt-12 space-y-6">
+      <section className="mt-12 space-y-6 mx-auto max-w-[900px] px-3 md:px-6">
         <CommentSection postId={post.id} />
       </section>
     </div>
