@@ -170,7 +170,7 @@ export default function Home() {
               <BlurText
                 text="잡다한 기록 홈페이지"
                 animateBy="letters"
-                className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg break-keep whitespace-nowrap"
+                className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg break-keep whitespace-nowrap home-hero-title"
                 delay={20}
                 direction="top"
                 noWrap

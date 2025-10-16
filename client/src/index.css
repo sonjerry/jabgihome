@@ -203,6 +203,9 @@ body {
 .border-white\/20 { border-color: rgba(0,0,0,0.20) !important; }
 .border-white\/25 { border-color: rgba(0,0,0,0.25) !important; }
 
+/* 홈 메인 타이틀 전용(전역 오버라이드 무시) */
+.home-hero-title { color: #ffffff !important; }
+
 
 
 /* 전역 스크롤바 숨김 (스크롤 기능 유지) */
