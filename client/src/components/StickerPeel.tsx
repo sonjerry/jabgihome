@@ -21,6 +21,8 @@ interface StickerPeelProps {
   peelDirection?: number
   className?: string
   onAnyDragStart?: () => void
+  showNudge?: boolean
+  nudgeText?: string
 }
 
 interface CSSVars extends CSSProperties {
@@ -52,6 +54,8 @@ export const StickerPeel: React.FC<StickerPeelProps> = ({
   peelDirection = 0,
   className = '',
   onAnyDragStart,
+  showNudge = false,
+  nudgeText = '끌어서 이동하세요',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const dragTargetRef = useRef<HTMLDivElement>(null)
@@ -59,6 +63,7 @@ export const StickerPeel: React.FC<StickerPeelProps> = ({
   const pointLightFlippedRef = useRef<SVGFEPointLightElement>(null)
   const draggableInstanceRef = useRef<Draggable | null>(null)
   const notifiedDragStartRef = useRef(false)
+  const [localNudge, setLocalNudge] = useState(showNudge)
 
   const defaultPadding = 12
 
@@ -95,6 +100,7 @@ export const StickerPeel: React.FC<StickerPeelProps> = ({
           notifiedDragStartRef.current = true
           try { onAnyDragStart?.() } catch {}
         }
+        if (localNudge) setLocalNudge(false)
       },
       onDrag(this: Draggable) {
         const rot = gsap.utils.clamp(-24, 24, this.deltaX * 0.4)
@@ -351,6 +357,15 @@ export const StickerPeel: React.FC<StickerPeelProps> = ({
           transformOrigin: 'center',
         }}
       >
+        {localNudge && (
+          <div
+            className="absolute -top-8 left-1/2 -translate-x-1/2 z-[90] rounded-2xl border border-black/10 bg-white/95 backdrop-blur-xl px-3.5 py-1.5 text-[12px] font-semibold text-gray-900 shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
+            style={{ animation: 'nudgePop 900ms ease-in-out infinite alternate, nudgeFloat 2.2s ease-in-out infinite, nudgeGlow 2.4s ease-in-out infinite' }}
+          >
+            {nudgeText}
+            <div className="absolute left-1/2 -bottom-1 w-3 h-3 rotate-45 bg-white/95 border-b border-r border-black/10" />
+          </div>
+        )}
         <div className="sticker-main" style={stickerMainStyle}>
           <div style={{ filter: 'url(#pointLight)' }}>
             <img
@@ -518,17 +533,9 @@ export default function AutoStickers() {
             peelDirection={it.peelDirection}
             className="pointer-events-auto z-[251]"
             onAnyDragStart={() => { if (!nudgeGone) { setNudgeGone(true); try { localStorage.setItem('stickerNudgeDismissed','1') } catch {} } }}
+            showNudge={!nudgeGone && idx === (nudgeIdx % Math.max(1, items.length))}
+            nudgeText="끌어서 이동"
           />
-          {/* 랜덤 하나에 넛지 표시 */}
-          {!nudgeGone && idx === (nudgeIdx % Math.max(1, items.length)) && (
-            <div
-              className="absolute -top-8 left-1/2 -translate-x-1/2 z-[90] rounded-xl border border-white/60 bg-white/90 text-gray-900 backdrop-blur-xl px-3 py-1.5 text-[12px] font-semibold shadow-2xl"
-              style={{ animation: 'hintSlideUp 0.4s ease-out, homeArrowFloat 2.2s infinite ease-in-out' }}
-            >
-              끌어서 이동하세요
-              <div className="absolute left-1/2 -bottom-1 w-2.5 h-2.5 rotate-45 bg-white/90 border-b border-r border-white/60" />
-            </div>
-          )}
         </div>
       ))}
     </div>

@@ -19,9 +19,7 @@ class EditorErrorBoundary extends Component<
     return { hasError: true }
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error('에디터 에러:', error, errorInfo)
-  }
+  componentDidCatch(_error: Error, _errorInfo: any) {}
 
   render() {
     if (this.state.hasError) {
@@ -62,7 +60,7 @@ export default function Editor(){
   // TipTap 동적 로드
   useEffect(() => {
     const loadTipTap = async () => {
-      console.log('TipTap 모듈 로드 시작...')
+      
       try {
         const [
           { EditorContent, Editor },
@@ -82,7 +80,7 @@ export default function Editor(){
           import('@tiptap/extension-text-align')
         ])
 
-        console.log('TipTap 모듈 로드 성공:', { EditorContent, Editor, StarterKit })
+        
 
         setTipTapModules({
           EditorContent,
@@ -95,14 +93,8 @@ export default function Editor(){
           TextAlign
         })
         setTipTapLoaded(true)
-        console.log('TipTap 상태 업데이트 완료')
       } catch (error) {
-        console.error('TipTap 모듈 로드 실패:', error)
-        console.error('Error details:', {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
-          name: error instanceof Error ? error.name : undefined
-        })
+        
         setEditorError(error instanceof Error ? error.message : 'TipTap 모듈을 로드할 수 없습니다.')
       }
     }
@@ -116,7 +108,7 @@ export default function Editor(){
 
     const createEditor = () => {
       try {
-        console.log('TipTap 에디터 인스턴스 생성 시작...')
+        
         const { Editor, StarterKit, TextStyle, Color, Link, Image, TextAlign } = tipTapModules
         
         const extensions = [
@@ -133,7 +125,6 @@ export default function Editor(){
           content: content || '<p></p>',
           onUpdate: ({ editor }: any) => {
             const newContent = editor.getHTML()
-            console.log('에디터 업데이트:', newContent.substring(0, 100))
             // content가 실제로 변경되었을 때만 상태 업데이트
             if (newContent !== content) {
               setContent(newContent)
@@ -141,7 +132,6 @@ export default function Editor(){
             setEditorReady(true)
           },
           onCreate: ({ editor }: any) => {
-            console.log('에디터 생성 완료')
             editorRef.current = editor
             setEditorReady(true)
             setEditorError(null)
@@ -149,9 +139,8 @@ export default function Editor(){
         })
         
         setEditorInstance(editor)
-        console.log('TipTap 에디터 인스턴스 생성 성공')
       } catch (error) {
-        console.error('TipTap 에디터 인스턴스 생성 실패:', error)
+        
         setEditorError(error instanceof Error ? error.message : '알 수 없는 오류')
       }
     }
@@ -162,7 +151,6 @@ export default function Editor(){
   // content 변경 시 에디터 내용 업데이트 (에디터가 외부에서 content를 변경받을 때)
   useEffect(() => {
     if (editorInstance && content && editorInstance.getHTML() !== content) {
-      console.log('에디터 내용 외부 업데이트:', content.substring(0, 100))
       editorInstance.commands.setContent(content)
     }
   }, [content, editorInstance])
@@ -171,7 +159,6 @@ export default function Editor(){
   useEffect(() => {
     return () => {
       if (editorInstance) {
-        console.log('에디터 인스턴스 정리')
         editorInstance.destroy()
       }
     }
@@ -191,8 +178,7 @@ export default function Editor(){
         setStyleTextColor(p.style?.textColor || '#e5e7eb')
         setStyleFontSize(p.style?.fontSize || 16)
       })
-      .catch(err => {
-        console.error(err)
+      .catch(_err => {
         alert('글을 불러오는 중 오류가 발생했습니다.')
       })
       .finally(()=> setLoading(false))
@@ -258,8 +244,8 @@ export default function Editor(){
         }
       }
       setAttachments(prev=>[...prev,...uploaded])
-    }catch(e){
-      console.error(e); alert('파일 업로드에 실패했습니다.')
+    }catch(_e){
+      alert('파일 업로드에 실패했습니다.')
     }
   }
 
@@ -291,8 +277,7 @@ export default function Editor(){
       } else {
         nav('/blog')
       }
-    }catch(e){
-      console.error(e)
+    }catch(_e){
       alert('저장에 실패했습니다.')
     }
   }

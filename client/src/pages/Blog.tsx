@@ -127,20 +127,19 @@ export default function Blog() {
     return s
   }, [posts])
 
-  // 가시 목록 계산
-  const visible = useMemo(() => {
-    // 방문자가 이미 본 글(localStorage)에 있는 ID는 제외
-    let viewed: Set<string> | null = null
+  // 가시 목록 계산 (조회 여부로 제거하지 않음)
+  const viewedSet = useMemo(() => {
     try {
       const raw = typeof window !== 'undefined' ? localStorage.getItem('viewedPosts') : null
-      if (raw) viewed = new Set<string>(JSON.parse(raw))
-    } catch {}
+      return raw ? new Set<string>(JSON.parse(raw)) : new Set<string>()
+    } catch { return new Set<string>() }
+  }, [])
 
+  const visible = useMemo(() => {
     const byCatAndDate = (arr: Post[]) =>
       arr
         .filter(p => activeCat === '전체' || p.category === activeCat)
         .filter(p => !activeDate || new Date(p.createdAt).toISOString().split('T')[0] === activeDate)
-        .filter(p => (viewed ? !viewed.has(p.id) : true))
 
     let base: Post[] = posts
 
@@ -241,7 +240,7 @@ export default function Blog() {
 
                   return (
                     <li key={p.id} className="relative pl-0 md:pl-8">
-                      {!inProgressMode && (
+                      {!inProgressMode && !viewedSet.has(p.id) && (
                         <div className="hidden md:block absolute left-2.5 top-8 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_0_4px_rgba(251,191,36,0.2)]" />
                       )}
                       <article className="rounded-2xl bg-white/5 border border-white/10 shadow-glass overflow-hidden">
