@@ -34,6 +34,7 @@ export default function Home() {
   const [volume, setVolume] = useState(0.5)
   // 제거: 언뮤트 상태 의존 로직을 없애기 위해 유지하지 않음
   const [isVideoReady, setIsVideoReady] = useState(false)
+  const [volumeHintVisible, setVolumeHintVisible] = useState(true)
   const revealProgress = useScrollReveal(10)
   
   // iOS 밴딩(바운스) 효과 최소화
@@ -63,8 +64,12 @@ export default function Home() {
         v.muted = true
         setIsMuted(true)
       }
+      // 볼륨이 조절되면 힌트를 숨김
+      if (volume > 0 && volumeHintVisible) {
+        setTimeout(() => setVolumeHintVisible(false), 1000)
+      }
     } catch {}
-  }, [volume])
+  }, [volume, volumeHintVisible])
 
   return (
     <>
@@ -121,6 +126,30 @@ export default function Home() {
               100% { 
                 opacity: 1; 
                 backdrop-filter: blur(20px);
+              }
+            }
+            @keyframes wave {
+              0%, 100% { 
+                transform: translateY(0px) rotate(0deg); 
+              }
+              25% { 
+                transform: translateY(-3px) rotate(1deg); 
+              }
+              50% { 
+                transform: translateY(-2px) rotate(0deg); 
+              }
+              75% { 
+                transform: translateY(-4px) rotate(-1deg); 
+              }
+            }
+            @keyframes hintFadeOut {
+              0% { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+              }
+              100% { 
+                opacity: 0; 
+                transform: translateY(-10px) scale(0.95); 
               }
             }
           `,
@@ -198,28 +227,57 @@ export default function Home() {
         {/* 섹션 레벨 UI: 볼륨바(중앙 약간 아래) */}
         {isVideoReady && (
           <>
-            {/* 위치 고정 컨테이너: translateX(-50%)가 애니메이션 transform에 의해 덮어쓰이지 않도록 애니메이션은 자식으로 분리 */}
-            <div className="absolute left-1/2 top-[66%] -translate-x-1/2 z-10">
-              <div style={{ animation: 'hintSlideUp 0.6s ease-out' }}>
-              <div className="home-force-white flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 backdrop-blur px-4 py-2 shadow-glass">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="opacity-90">
-                  <path d="M5 9v6h4l5 5V4L9 9H5z" />
-                </svg>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={Math.round(volume * 100)}
-                  onChange={(e) => { const val = Number(e.target.value); setVolume(val / 100); if (val>0) setIsMuted(false) }}
-                  className={`home-volume w-56 md:w-72 ${isMuted ? 'muted' : ''}`}
-                />
-                <span className="text-xs opacity-90 w-14 text-right">
-                  {isMuted ? 'MUTE' : Math.round(volume*100)}
-                </span>
-              </div>
-              <div className="mt-2 text-center text-xs home-force-white opacity-80">드래그해서 볼륨을 조절하세요</div>
-              </div>
-            </div>
+            {/* 위치 고정 컨테이너: 스크롤 진행도에 따라 힌트 위치로 부드럽게 이동 */}
+            {(() => {
+              // 힌트 페이드 타이밍과 동일하게 0→1로 보간 (hint는 revealProgress*4로 사라짐)
+              const t = Math.min(1, Math.max(0, revealProgress * 4))
+              const startVh = 66 // 초기 위치(기존)
+              const endVh = 82   // 힌트 UI가 있는 하단 근처 위치
+              const topVh = startVh + (endVh - startVh) * t
+              return (
+                <div className="absolute left-1/2 -translate-x-1/2 z-10" style={{ top: `${topVh}vh`, transition: 'top 300ms ease' }}>
+                  <div style={{ animation: 'hintSlideUp 0.6s ease-out' }}>
+                  <div className="home-force-white flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 backdrop-blur px-4 py-2 shadow-glass">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="opacity-90">
+                      <path d="M5 9v6h4l5 5V4L9 9H5z" />
+                    </svg>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={Math.round(volume * 100)}
+                      onChange={(e) => { 
+                        const val = Number(e.target.value); 
+                        setVolume(val / 100); 
+                        if (val > 0) {
+                          setIsMuted(false);
+                          // 볼륨 조절 시 힌트 숨김
+                          if (volumeHintVisible) {
+                            setTimeout(() => setVolumeHintVisible(false), 800);
+                          }
+                        }
+                      }}
+                      className={`home-volume w-56 md:w-72 ${isMuted ? 'muted' : ''}`}
+                    />
+                    <span className="text-xs opacity-90 w-14 text-right">
+                      {isMuted ? 'MUTE' : Math.round(volume*100)}
+                    </span>
+                  </div>
+                  {volumeHintVisible && (
+                    <div 
+                      className="mt-2 text-center text-xs home-force-white font-medium tracking-wide transition-all duration-700"
+                      style={{
+                        animation: 'wave 2s ease-in-out infinite',
+                        animationDelay: '0.5s'
+                      }}
+                    >
+                      드래그해서 볼륨을 조절하세요
+                    </div>
+                  )}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* 중앙 하단 화살표 3개 힌트 UI - 스크롤 진행도에 따라 점점 사라짐 */}
             <div
@@ -230,7 +288,7 @@ export default function Home() {
                 transition: 'opacity 300ms ease, transform 300ms ease'
               }}
             >
-              <div className="text-sm mb-3 home-force-white">아래로 스크롤하세요</div>
+              <div className="text-sm mb-3 home-force-white font-medium tracking-wide">아래로 스크롤하세요</div>
               <div className="pointer-events-none rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass home-force-white">
                 <div className="flex items-center gap-3">
                   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"

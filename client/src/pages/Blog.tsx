@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
+import AutoStickers from '../components/StickerPeel'
 import type { Post, Attachment } from '../types'
 import { listPosts } from '../lib/api'
 import { useAuth } from '../state/auth'
@@ -175,23 +176,12 @@ export default function Blog() {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden">
+      <AutoStickers />
       <section className="absolute inset-x-0 bottom-0 top-6 px-3 md:px-8 lg:px-12 z-0 overflow-y-auto">
         {/* 헤더 */}
         <GlassCard className="mb-6 md:mb-8">
           <div className="flex items-center justify-between px-2 py-2">
             <div className="flex items-center gap-4">
-              {inProgressMode && (
-                <Link 
-                  to="/projects" 
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm transition-colors"
-                  aria-label="프로젝트 페이지로 돌아가기"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-                  </svg>
-                  뒤로가기
-                </Link>
-              )}
               <div>
                 <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-none">{headerTitle}</h1>
                 <p className="text-sm md:text-base text-white/70 mt-3">{headerSub}</p>

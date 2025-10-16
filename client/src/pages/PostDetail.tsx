@@ -294,7 +294,7 @@ export default function PostDetail() {
   return (
     <div className="pt-24">
       {/* 상단 바: 뒤로 + (관리자) 삭제 */}
-      <div className="mx-auto max-w-[72ch] px-3 md:px-6 flex items-center justify-between mb-8">
+      <div className="mx-auto max-w-[1200px] px-3 md:px-8 flex items-center justify-between mb-8">
         <button
           onClick={() => {
             // URL 파라미터를 확인해서 프로젝트 진행사항에서 온 경우 해당 페이지로 돌아가기

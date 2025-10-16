@@ -313,7 +313,8 @@ export default function Editor(){
         <div className="glass rounded-2xl p-3">
           <input
             className="w-full bg-transparent text-xl md:text-2xl font-semibold mb-3 outline-none"
-            placeholder="제목" value={title} onChange={e=>setTitle(e.target.value)} />
+            placeholder="제목" value={title} onChange={e=>setTitle(e.target.value)}
+            style={{ fontFamily: 'Gulim, 굴림, sans-serif' }} />
 
           <div className="flex flex-wrap gap-2 mb-3">
             <input className="glass px-3 py-2 rounded-xl bg-white/5" placeholder="카테고리"
@@ -460,6 +461,7 @@ export default function Editor(){
 ```코드 블록```"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
+                  style={{ fontFamily: 'Gulim, 굴림, sans-serif' }}
                 />
                 <div className="mt-2 text-xs opacity-60">
                   마크다운 문법을 사용하여 글을 작성할 수 있습니다. 위의 마크다운 도움말을 참고하세요.
@@ -476,12 +478,14 @@ export default function Editor(){
                     placeholder="마크다운으로 작성하세요..."
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
+                    style={{ fontFamily: 'Gulim, 굴림, sans-serif' }}
                   />
                 </div>
               }>
                 <tipTapModules.EditorContent 
                   editor={editorInstance} 
-                  className="prose prose-invert max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2" 
+                  className="prose prose-invert max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2"
+                  style={{ fontFamily: 'Gulim, 굴림, sans-serif' }}
                 />
               </EditorErrorBoundary>
             ) : null}

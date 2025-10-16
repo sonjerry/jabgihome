@@ -17,6 +17,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const app = express()
+const SITE_URL = (process.env.PUBLIC_BASE_URL || process.env.SITE_URL || '').replace(/\/$/, '')
 
 /* ───────────────────── CORS 설정 ───────────────────── */
 const ALLOW_ORIGINS = (process.env.ALLOW_ORIGINS || '')
@@ -1157,6 +1158,114 @@ try {
       }
     }
   }))
+
+  // ───────────────────── SEO/iMessage용 메타 태그 주입: /blog/:id ─────────────────────
+  app.get('/blog/:id', async (req, res) => {
+    try {
+      const id = req.params.id
+      const htmlPath = path.join(distDir, 'index.html')
+      let html = await fs.readFile(htmlPath, 'utf-8')
+
+      // 기본 값
+      const reqHost = (req.headers['x-forwarded-host'] || req.headers.host || '').toString()
+      const scheme = (req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http')).toString()
+      const baseUrl = (SITE_URL || (reqHost ? `${scheme}://${reqHost}` : '')).replace(/\/$/, '')
+      const pageUrl = `${baseUrl}${req.originalUrl}`
+
+      let title = '잡다한 기록 홈페이지'
+      let description = '잡다한 기록 홈페이지'
+      let image = `${baseUrl}/media/wakawaka-ui.jpg`
+
+      // 1) Supabase에서 글 가져오기
+      try {
+        const { data, error } = await supabase.from('posts').select('data').eq('id', id).single()
+        if (!error && data?.data) {
+          const post = data.data
+          title = post.title || title
+          // 간단한 본문 텍스트 요약 생성
+          const raw = (post.content || '').toString()
+          const textOnly = raw
+            .replace(/<[^>]+>/g, ' ')            // HTML 제거
+            .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // 마크다운 이미지 제거
+            .replace(/\[[^\]]*\]\([^)]*\)/g, ' ')   // 마크다운 링크 제거
+            .replace(/\s+/g, ' ')                     // 공백 정리
+            .trim()
+          if (textOnly) description = textOnly.slice(0, 140)
+
+          // 본문 내 첫 이미지 찾기 (HTML 또는 Markdown)
+          const imgMatchHtml = raw.match(/<img[^>]*src=["']([^"']+)["'][^>]*>/i)
+          const imgMatchMd = raw.match(/!\[[^\]]*\]\(([^)]+)\)/)
+          const candidate = (imgMatchHtml?.[1] || imgMatchMd?.[1] || '').trim()
+          if (candidate) {
+            image = candidate.startsWith('http') ? candidate : `${baseUrl}${candidate.startsWith('/') ? '' : '/'}${candidate}`
+          }
+        }
+      } catch {}
+
+      // 2) 실패 시 정적 파일(posts.json)에서 찾아보기 (선택)
+      if (title === '이가을 블로그') {
+        try {
+          const staticPostsPath = path.join(distDir, 'data', 'posts.json')
+          const buf = await fs.readFile(staticPostsPath, 'utf-8')
+          const posts = JSON.parse(buf)
+          const found = Array.isArray(posts) ? posts.find(p => p.id === id) : null
+          if (found) {
+            title = found.title || title
+            const raw = (found.content || '').toString()
+            const textOnly = raw
+              .replace(/<[^>]+>/g, ' ')
+              .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+              .replace(/\[[^\]]*\]\([^)]*\)/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim()
+            if (textOnly) description = textOnly.slice(0, 140)
+
+            const imgMatchHtml = raw.match(/<img[^>]*src=["']([^"']+)["'][^>]*>/i)
+            const imgMatchMd = raw.match(/!\[[^\]]*\]\(([^)]+)\)/)
+            const candidate = (imgMatchHtml?.[1] || imgMatchMd?.[1] || '').trim()
+            if (candidate) {
+              image = candidate.startsWith('http') ? candidate : `${baseUrl}${candidate.startsWith('/') ? '' : '/'}${candidate}`
+            }
+          }
+        } catch {}
+      }
+
+      // 메타 태그 치환 유틸
+      const setMeta = (h, nameOrProp, value, isProperty = false) => {
+        const esc = (s) => (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+        const sel = isProperty ? `property=\"${nameOrProp}\"` : `name=\"${nameOrProp}\"`
+        const metaTag = `<meta ${isProperty ? 'property' : 'name'}="${nameOrProp}" content="${esc(value)}" />`
+        const re = new RegExp(`<meta[^>]+${sel}[^>]*>`, 'i')
+        if (re.test(h)) return h.replace(re, metaTag)
+        return h.replace(/<head[^>]*>/i, (m) => `${m}\n    ${metaTag}`)
+      }
+
+      html = setMeta(html, 'description', description, false)
+      html = setMeta(html, 'og:type', 'article', true)
+      html = setMeta(html, 'og:site_name', '잡다한 기록 홈페이지', true)
+      html = setMeta(html, 'og:title', title, true)
+      html = setMeta(html, 'og:description', description, true)
+      html = setMeta(html, 'og:image', image, true)
+      html = setMeta(html, 'og:url', pageUrl, true)
+      html = setMeta(html, 'twitter:card', 'summary_large_image', false)
+      html = setMeta(html, 'twitter:title', title, false)
+      html = setMeta(html, 'twitter:description', description, false)
+      html = setMeta(html, 'twitter:image', image, false)
+
+      // canonical 링크도 갱신
+      const canonRe = /<link[^>]+rel=["']canonical["'][^>]*>/i
+      const canonicalTag = `<link rel="canonical" href="${pageUrl}" />`
+      if (canonRe.test(html)) html = html.replace(canonRe, canonicalTag)
+      else html = html.replace(/<head[^>]*>/i, (m) => `${m}\n    ${canonicalTag}`)
+
+      res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
+      return res.status(200).send(html)
+    } catch (e) {
+      console.error('meta inject error', e)
+      // 문제가 생기면 기본 SPA로 폴백
+      return res.sendFile(path.join(distDir, 'index.html'))
+    }
+  })
 
   // SPA 라우팅: API/정적 파일이 아닌 모든 경로는 index.html로
   app.get(/^(?!\/api\/|\/static\/).*/, (_req, res) => {

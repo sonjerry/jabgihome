@@ -40,7 +40,7 @@ export default function AudioProvider({ children }: { children: React.ReactNode 
   const [playing, setPlaying] = useState(false)
   const [duration, setDuration] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
-  const [volume, setVolumeState] = useState(1)
+  const [volume, setVolumeState] = useState(0.5)
   const [muted, setMutedState] = useState(false)
 
   // 최신 값을 참조하기 위한 ref들 (이벤트 리스너의 stale closure 방지)
@@ -57,6 +57,8 @@ export default function AudioProvider({ children }: { children: React.ReactNode 
     el.crossOrigin = 'anonymous'
     el.style.display = 'none'
     document.body.appendChild(el)
+    // 기본 볼륨은 50%
+    try { el.volume = 0.5 } catch {}
     audioRef.current = el
     // 홈 비디오 언뮤트 시 음악 일시정지 (겹침 방지)
     const onHomeVideoUnmuted = () => {

@@ -92,6 +92,23 @@ export default function AudioDock() {
   const a = useAudio()
   const hasList = a.playlist.length > 0
   const progress = a.duration ? a.currentTime / a.duration : 0
+  const [nudgeVisible, setNudgeVisible] = useState<boolean>(true)
+
+  // 최초 1회만 노출: 로컬스토리지 체크
+  useEffect(() => {
+    try {
+      const dismissed = localStorage.getItem('audioNudgeDismissed') === '1'
+      if (dismissed) setNudgeVisible(false)
+    } catch {}
+  }, [])
+
+  // 재생이 시작되면 넛지 숨김
+  useEffect(() => {
+    if (a.playing) {
+      setNudgeVisible(false)
+      try { localStorage.setItem('audioNudgeDismissed', '1') } catch {}
+    }
+  }, [a.playing])
 
   // 최초 마운트 시 플레이리스트 주입 (자동재생 없음)
   useEffect(() => {
@@ -126,6 +143,8 @@ export default function AudioDock() {
     } else {
       a.toggle()
     }
+    setNudgeVisible(false)
+    try { localStorage.setItem('audioNudgeDismissed', '1') } catch {}
   }, [a, hasList])
 
   // (원복) 별도 음소거 토글/자동 해제 로직 없이 기본 볼륨 변경만 수행
@@ -139,6 +158,18 @@ export default function AudioDock() {
           'w-full min-h-[17rem] h-auto box-border overflow-visible flex flex-col'
         )}
       >
+        {/* 넛지: 데스크톱 기본 표시 */}
+        {nudgeVisible && (
+          <div className="relative mb-2">
+            <div
+              className="pointer-events-auto rounded-xl border border-amber-300/40 bg-amber-200/15 text-amber-200 px-3 py-2 text-sm font-medium flex items-center gap-2 animate-pulse"
+            >
+              <span className="hidden sm:inline">이거 진짜 갓곡이니까 들어줘..</span>
+              <span className="sm:hidden">갓곡.. ▶ 눌러봐!</span>
+              <button onClick={() => setNudgeVisible(false)} className="ml-auto text-xs opacity-80 hover:opacity-100">닫기</button>
+            </div>
+          </div>
+        )}
         {/* 제목 */}
         <div className="min-w-0">
           <h3 className="text-cream/90 text-base font-semibold break-words font-jp-title">
@@ -218,6 +249,19 @@ export default function AudioDock() {
           />
         </div>
       </div>
+      {/* 모바일 넛지: 왼쪽 가장자리 아래 고정 표시 (사이드바 영역 힌트) */}
+      {nudgeVisible && (
+        <div className="sm:hidden fixed left-3 bottom-20 z-[60]">
+          <div
+            className="pointer-events-auto rounded-2xl border border-amber-300/40 bg-amber-200/15 backdrop-blur px-3 py-2 shadow-glass"
+            style={{ animation: 'hintSlideUp 0.5s ease-out, homeArrowFloat 2.2s infinite ease-in-out' }}
+            onClick={() => setNudgeVisible(false)}
+          >
+            <div className="text-[13px] text-amber-200 font-semibold">이거 진짜 갓곡이니까 들어줘..</div>
+            <div className="text-[11px] text-amber-100/90 mt-1">사이드바 열고 ▶ 눌러보기</div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
