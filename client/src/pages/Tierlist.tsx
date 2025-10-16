@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useEffect } from 'react'
 import GlassCard from '../components/GlassCard'
 import { useAuth } from '../state/auth'
-import { ThreadAPI, ReviewAPI, AnimeTitleAPI } from '../lib/api'
+import { ThreadAPI, ReviewAPI, AnimeTitleAPI, TierlistAPI } from '../lib/api'
 
 type Poster = {
   title: string
@@ -48,16 +48,23 @@ export default function Tierlist() {
   const { role } = useAuth()
   const [tierlistData, setTierlistData] = useState<TierlistData>({ items: [] })
 
-  // 하이브리드 로딩: 정적 파일 우선, API 백업
+  // 하이브리드 로딩: 라이브 API 우선, 정적 파일 백업
   useEffect(() => {
     const loadTierlistData = async () => {
       try {
-        // 1. 정적 파일 먼저 시도 (빠른 로딩)
-        const staticResponse = await fetch('/data/tierlist.json', { cache: 'no-store' })
-        if (staticResponse.ok) {
-          const staticData = await staticResponse.json()
-          setTierlistData(staticData)
-        }
+        // 1) 서버 라이브 데이터 우선
+        try {
+          const live = await TierlistAPI.get()
+          if (live?.items) setTierlistData(live)
+        } catch {}
+        // 2) 정적 파일 폴백
+        try {
+          const staticResponse = await fetch('/data/tierlist.json', { cache: 'no-store' })
+          if (staticResponse.ok) {
+            const staticData = await staticResponse.json()
+            if (!tierlistData.items.length) setTierlistData(staticData)
+          }
+        } catch {}
       } catch (error) {
         console.error('Failed to load tierlist data:', error)
         setTierlistData({ items: [] })

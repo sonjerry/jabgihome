@@ -184,25 +184,26 @@ async function generateIndividualThreadFiles() {
     for (const threadKey of allKeys) {
       try {
         // 해당 thread_key의 모든 데이터 가져오기
-        const [titleResult, reviewResult, commentsResult] = await Promise.all([
-          supabase.from('anime_titles').select('*').eq('thread_key', threadKey).maybeSingle(),
-          supabase.from('threads_reviews').select('*').eq('thread_key', threadKey).maybeSingle(),
+        const [titleList, reviewList, commentsResult] = await Promise.all([
+          supabase.from('anime_titles').select('*').eq('thread_key', threadKey).limit(1),
+          supabase.from('threads_reviews').select('*').eq('thread_key', threadKey).limit(1),
           supabase.from('threads_comments').select('*').eq('thread_key', threadKey)
         ])
         
         const threadData = {
           key: threadKey,
-          title: titleResult.data?.title || '',
+          title: (Array.isArray(titleList.data) ? titleList.data[0]?.title : titleList.data?.title) || '',
           tier: 'F',
           review: '',
           comments: []
         }
         
         // 리뷰 데이터 처리
-        if (reviewResult.data) {
-          threadData.review = reviewResult.data.text || ''
+        const reviewRow = Array.isArray(reviewList.data) ? reviewList.data[0] : reviewList.data
+        if (reviewRow) {
+          threadData.review = reviewRow.text || ''
           const tierMap = ['S', 'A', 'B', 'C', 'D', 'F']
-          threadData.tier = tierMap[reviewResult.data.rating] || 'F'
+          threadData.tier = tierMap[reviewRow.rating] || 'F'
         }
         
         // 댓글 데이터 처리

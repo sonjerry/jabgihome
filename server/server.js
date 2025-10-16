@@ -592,6 +592,10 @@ app.post('/api/threads/:key/comments', async (req, res) => {
     
     // 해당 thread_key의 개별 파일 재생성
     regenerateThreadFile(key).catch(console.error)
+    // 티어리스트 관련 키인 경우 전체 정적 데이터도 재생성 (백그라운드)
+    if (key.includes('.png') || key.includes('.jpg') || key.includes('.jpeg') || key.includes('.webp')) {
+      regenerateStaticData().catch(console.error)
+    }
     
     res.json({ id })
   } catch (e) {
@@ -670,6 +674,10 @@ app.put('/api/threads-comments/:cid', async (req, res) => {
     if (commentData?.thread_key) {
       regenerateThreadFile(commentData.thread_key).catch(console.error)
     }
+  // 티어리스트 관련 키인 경우 전체 정적 데이터도 재생성 (백그라운드)
+  if (commentData?.thread_key && (commentData.thread_key.includes('.png') || commentData.thread_key.includes('.jpg') || commentData.thread_key.includes('.jpeg') || commentData.thread_key.includes('.webp'))) {
+    regenerateStaticData().catch(console.error)
+  }
     
     res.json({ ok: true })
   } catch (e) {
@@ -724,6 +732,10 @@ app.delete('/api/threads-comments/:cid', async (req, res) => {
     if (commentData?.thread_key) {
       regenerateThreadFile(commentData.thread_key).catch(console.error)
     }
+  // 티어리스트 관련 키인 경우 전체 정적 데이터도 재생성 (백그라운드)
+  if (commentData?.thread_key && (commentData.thread_key.includes('.png') || commentData.thread_key.includes('.jpg') || commentData.thread_key.includes('.jpeg') || commentData.thread_key.includes('.webp'))) {
+    regenerateStaticData().catch(console.error)
+  }
     
     res.json({ ok: true })
   } catch (e) {
@@ -743,17 +755,14 @@ app.get('/api/reviews/:key', async (req, res) => {
       .from('threads_reviews')
       .select('*')
       .eq('thread_key', key)
-      .maybeSingle?.() ?? await supabase
-        .from('threads_reviews')
-        .select('*')
-        .eq('thread_key', key)
-        .single()
+      .limit(1)
     if (error) {
-      if (error.code === 'PGRST116') return res.json(null)
       return res.status(500).json({ error: error.message })
     }
-    const rating = typeof data.rating === 'number' ? data.rating : (data.score ?? data.stars ?? null)
-    return res.json({ key: data.thread_key, rating, text: data.text, updatedAt: data.updated_at })
+    const row = Array.isArray(data) ? (data[0] || null) : (data || null)
+    if (!row) return res.json(null)
+    const rating = typeof row.rating === 'number' ? row.rating : (row.score ?? row.stars ?? null)
+    return res.json({ key: row.thread_key, rating, text: row.text, updatedAt: row.updated_at })
   } catch (e) {
     console.error('get review error', e)
     res.status(500).json({ error: 'review get failed' })
@@ -930,25 +939,26 @@ async function regenerateThreadFile(threadKey) {
     console.log(`🔄 ${threadKey} 파일 재생성 중...`)
     
     // 해당 thread_key의 모든 데이터 가져오기
-    const [titleResult, reviewResult, commentsResult] = await Promise.all([
-      supabase.from('anime_titles').select('*').eq('thread_key', threadKey).maybeSingle(),
-      supabase.from('threads_reviews').select('*').eq('thread_key', threadKey).maybeSingle(),
+    const [titleResult, reviewList, commentsResult] = await Promise.all([
+      supabase.from('anime_titles').select('*').eq('thread_key', threadKey).limit(1),
+      supabase.from('threads_reviews').select('*').eq('thread_key', threadKey).limit(1),
       supabase.from('threads_comments').select('*').eq('thread_key', threadKey)
     ])
     
     const threadData = {
       key: threadKey,
-      title: titleResult.data?.title || '',
+      title: (Array.isArray(titleResult.data) ? titleResult.data[0]?.title : titleResult.data?.title) || '',
       tier: 'F',
       review: '',
       comments: []
     }
     
     // 리뷰 데이터 처리
-    if (reviewResult.data) {
-      threadData.review = reviewResult.data.text || ''
+    const reviewRow = Array.isArray(reviewList.data) ? reviewList.data[0] : reviewList.data
+    if (reviewRow) {
+      threadData.review = reviewRow.text || ''
       const tierMap = ['S', 'A', 'B', 'C', 'D', 'F']
-      threadData.tier = tierMap[reviewResult.data.rating] || 'F'
+      threadData.tier = tierMap[reviewRow.rating] || 'F'
     }
     
     // 댓글 데이터 처리
@@ -978,6 +988,55 @@ async function regenerateThreadFile(threadKey) {
   }
 }
 
+// 라이브 티어리스트 API: DB에서 직접 병합하여 반환
+app.get('/api/tierlist', async (_req, res) => {
+  try {
+    const [titlesResult, reviewsResult, commentsResult] = await Promise.all([
+      supabase.from('anime_titles').select('*'),
+      supabase.from('threads_reviews').select('*'),
+      supabase.from('threads_comments').select('*')
+    ])
+
+    if (titlesResult.error) return res.status(500).json({ error: titlesResult.error.message })
+    if (reviewsResult.error) return res.status(500).json({ error: reviewsResult.error.message })
+    if (commentsResult.error) return res.status(500).json({ error: commentsResult.error.message })
+
+    const titles = titlesResult.data || []
+    const reviews = reviewsResult.data || []
+    const comments = commentsResult.data || []
+
+    const itemsMap = new Map()
+    for (const t of titles) {
+      itemsMap.set(t.thread_key, {
+        key: t.thread_key,
+        title: t.title || '',
+        tier: 'F',
+        review: '',
+        comments: [],
+      })
+    }
+    const tierMap = ['S','A','B','C','D','F']
+    for (const r of reviews) {
+      const item = itemsMap.get(r.thread_key) || { key: r.thread_key, title: '', tier: 'F', review: '', comments: [] }
+      item.review = r.text || ''
+      item.tier = tierMap[r.rating] || 'F'
+      itemsMap.set(r.thread_key, item)
+    }
+    for (const c of comments) {
+      const item = itemsMap.get(c.thread_key) || { key: c.thread_key, title: '', tier: 'F', review: '', comments: [] }
+      item.comments.push({ id: c.id, nickname: c.nickname, content: c.content, createdAt: c.created_at })
+      itemsMap.set(c.thread_key, item)
+    }
+
+    const items = Array.from(itemsMap.values())
+    res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=60')
+    return res.json({ items })
+  } catch (e) {
+    console.error('live tierlist error', e)
+    return res.status(500).json({ error: 'tierlist get failed' })
+  }
+})
+
 /* ───────────────────── 정적 파일 제공 API ───────────────────── */
 // 개별 스레드 파일 제공
 app.get('/api/threads/:key', async (req, res) => {
@@ -1006,25 +1065,26 @@ app.get('/api/threads/:key', async (req, res) => {
     }
     
     // 데이터베이스에서 직접 조회
-    const [titleResult, reviewResult, commentsResult] = await Promise.all([
-      supabase.from('anime_titles').select('*').eq('thread_key', key).maybeSingle(),
-      supabase.from('threads_reviews').select('*').eq('thread_key', key).maybeSingle(),
+    const [titleResult, reviewList, commentsResult] = await Promise.all([
+      supabase.from('anime_titles').select('*').eq('thread_key', key).limit(1),
+      supabase.from('threads_reviews').select('*').eq('thread_key', key).limit(1),
       supabase.from('threads_comments').select('*').eq('thread_key', key)
     ])
     
     const threadData = {
       key: key,
-      title: titleResult.data?.title || '',
+      title: (Array.isArray(titleResult.data) ? titleResult.data[0]?.title : titleResult.data?.title) || '',
       tier: 'F',
       review: '',
       comments: []
     }
     
     // 리뷰 데이터 처리
-    if (reviewResult.data) {
-      threadData.review = reviewResult.data.text || ''
+    const reviewRow2 = Array.isArray(reviewList.data) ? reviewList.data[0] : reviewList.data
+    if (reviewRow2) {
+      threadData.review = reviewRow2.text || ''
       const tierMap = ['S', 'A', 'B', 'C', 'D', 'F']
-      threadData.tier = tierMap[reviewResult.data.rating] || 'F'
+      threadData.tier = tierMap[reviewRow2.rating] || 'F'
     }
     
     // 댓글 데이터 처리

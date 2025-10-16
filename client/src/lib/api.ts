@@ -193,3 +193,10 @@ export const AnimeTitleAPI = {
   save: (key: string, title: string) => apiPut<{ ok: boolean }>(`/anime-titles/${encodeURIComponent(key)}`, { title }),
   remove: (key: string) => apiDelete<{ ok: boolean }>(`/anime-titles/${encodeURIComponent(key)}`).then(r => !!r.ok),
 }
+
+/** ─────────── Tierlist (live) ─────────── */
+export type TierlistItem = { key: string; title: string; tier: 'S'|'A'|'B'|'C'|'D'|'F'; review: string; comments: Array<{ id: string; nickname: string; content: string; createdAt: string }> }
+export type TierlistResponse = { items: TierlistItem[] }
+export const TierlistAPI = {
+  get: () => publicGet<TierlistResponse>('/tierlist'),
+}
