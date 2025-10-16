@@ -181,6 +181,7 @@ export default function AudioDock() {
           className="relative pointer-events-auto rounded-2xl border border-white/60 bg-white/90 backdrop-blur-xl px-4 py-3 text-[14px] font-bold text-gray-900 shadow-2xl"
           role="note"
           onClick={() => { setNudgeVisible(false); try { localStorage.setItem('audioNudgeDismissed', '1') } catch {} }}
+          style={{ animation: 'nudgePop 900ms ease-in-out infinite alternate, nudgeFloat 2.2s ease-in-out infinite, nudgeGlow 2.4s ease-in-out infinite' }}
         >
           클릭!!
           {/* 화살표 (버튼을 가리킴) */}
@@ -195,6 +196,17 @@ export default function AudioDock() {
 
   return (
     <div className="w-full">
+      {nudgeVisible && (
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+            @keyframes nudgePop { 0% { transform: scale(0.96); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+            @keyframes nudgeFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+            @keyframes nudgeGlow { 0%,100% { box-shadow: 0 8px 30px rgba(255,255,255,0.25); } 50% { box-shadow: 0 8px 40px rgba(255,255,255,0.4); } }
+          `,
+          }}
+        />
+      )}
       <div
         className={clsx(
           'backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-md',
@@ -288,10 +300,10 @@ export default function AudioDock() {
         <div className="sm:hidden fixed left-3 bottom-20 z-[120]">
           <div
             className="pointer-events-auto rounded-2xl border border-white/60 bg-white/90 backdrop-blur-xl text-gray-900 px-4 py-3 shadow-2xl"
-            style={{ animation: 'hintSlideUp 0.5s ease-out, homeArrowFloat 2.2s infinite ease-in-out' }}
+            style={{ animation: 'hintSlideUp 0.5s ease-out, nudgeFloat 2.2s ease-in-out infinite, nudgeGlow 2.4s ease-in-out infinite' }}
             onClick={() => { setNudgeVisible(false); try { localStorage.setItem('audioNudgeDismissed', '1') } catch {} }}
           >
-            <div className="text-[14px] font-bold">클릭!!</div>
+            <div className="text-[14px] font-bold" style={{ animation: 'nudgePop 900ms ease-in-out infinite alternate' }}>클릭!!</div>
           </div>
         </div>
       )}
