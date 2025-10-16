@@ -503,7 +503,7 @@ export default function AutoStickers() {
   }, [box.w, box.h, urls])
 
   return (
-    <div ref={ref} className="pointer-events-none absolute inset-0 overflow-visible z-[30]">
+    <div ref={ref} className="pointer-events-none absolute inset-0 overflow-visible z-[80]">
       {items.map((it, idx) => (
         <div key={`${it.url}-${idx}`} className="absolute" style={{ left: 0, top: 0 }}>
           <StickerPeel
@@ -516,17 +516,17 @@ export default function AutoStickers() {
             lightingIntensity={0.12}
             initialPosition={{ x: it.x, y: it.y }}
             peelDirection={it.peelDirection}
-            className="pointer-events-auto z-[31]"
+            className="pointer-events-auto z-[81]"
             onAnyDragStart={() => { if (!nudgeGone) { setNudgeGone(true); try { localStorage.setItem('stickerNudgeDismissed','1') } catch {} } }}
           />
           {/* 랜덤 하나에 넛지 표시 */}
           {!nudgeGone && idx === (nudgeIdx % Math.max(1, items.length)) && (
             <div
-              className="absolute -top-8 left-1/2 -translate-x-1/2 z-[7] rounded-xl border border-white/20 bg-black/70 text-white/90 backdrop-blur px-2.5 py-1.5 text-[12px] shadow-2xl"
+              className="absolute -top-8 left-1/2 -translate-x-1/2 z-[90] rounded-xl border border-white/60 bg-white/90 text-gray-900 backdrop-blur-xl px-3 py-1.5 text-[12px] font-semibold shadow-2xl"
               style={{ animation: 'hintSlideUp 0.4s ease-out, homeArrowFloat 2.2s infinite ease-in-out' }}
             >
               끌어서 이동하세요
-              <div className="absolute left-1/2 -bottom-1 w-2.5 h-2.5 rotate-45 bg-black/70 border-b border-r border-white/20" />
+              <div className="absolute left-1/2 -bottom-1 w-2.5 h-2.5 rotate-45 bg-white/90 border-b border-r border-white/60" />
             </div>
           )}
         </div>
