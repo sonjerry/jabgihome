@@ -32,7 +32,7 @@ export default function Home() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [isMuted, setIsMuted] = useState(true)
   const [volume, setVolume] = useState(0.5)
-  const [hasUnmuted, setHasUnmuted] = useState(false)
+  // 제거: 언뮤트 상태 의존 로직을 없애기 위해 유지하지 않음
   const [isVideoReady, setIsVideoReady] = useState(false)
   const revealProgress = useScrollReveal(10)
   
@@ -52,18 +52,7 @@ export default function Home() {
     } catch {}
   }, [])
 
-  const handleUnmute = (e: React.SyntheticEvent) => {
-    e.stopPropagation()
-    const v = videoRef.current
-    setHasUnmuted(true)
-    setIsMuted(false)
-    if (v) {
-      try { v.removeAttribute('muted') } catch {}
-      v.muted = false
-      v.volume = volume
-      try { void v.play() } catch {}
-    }
-  }
+  const handleUnmute = (_e: React.SyntheticEvent) => {}
 
   useEffect(() => {
     const v = videoRef.current
@@ -195,19 +184,7 @@ export default function Home() {
                 delay={80}
                 direction="bottom"
               />
-              {!hasUnmuted && (
-                <button
-                  type="button"
-                  role="button"
-                  tabIndex={0}
-                  onClick={handleUnmute}
-                  onMouseDown={handleUnmute}
-                  className="mt-16 md:mt-24 lg:mt-28 pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 hover:bg-white/15 transition-all duration-200 backdrop-blur-xl px-6 py-3 shadow-glass transform hover:scale-105 active:scale-95"
-                  style={{ animation: 'bounceIn 0.8s ease-out 0.3s both' }}
-                >
-                  <span className="opacity-90 text-sm md:text-base font-medium whitespace-nowrap home-force-white">음소거 해제</span>
-                </button>
-              )}
+              {/* 음소거 해제 버튼 제거 */}
 
               {/* 볼륨/힌트: 항상 표시, 언뮤트 버튼 아래 */}
               <div className="mt-6 md:mt-8 flex flex-col items-center gap-4">
@@ -403,11 +380,11 @@ export default function Home() {
       )}
       </BodyPortal>
 
-      {/* Contact Dock: 언뮤트 전에는 포인터 이벤트 차단하여 버튼과 충돌 방지 */}
+      {/* Contact Dock */}
       <div
         style={{
-          pointerEvents: (isVideoReady && !hasUnmuted) ? 'none' : undefined,
-          zIndex: (isVideoReady && !hasUnmuted) ? 10 as any : undefined,
+          pointerEvents: undefined,
+          zIndex: undefined as any,
           position: 'fixed',
           bottom: 0,
           right: 0

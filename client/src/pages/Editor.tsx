@@ -82,9 +82,10 @@ export default function Editor(){
 
   const onSave = async () => {
     const now = new Date().toISOString()
+    const normalizedCategory = (category || '').trim()
     const post: Post = {
       id: isEdit ? (id as string) : uid(),
-      title, content, category, tags,
+      title, content, category: normalizedCategory, tags,
       createdAt: isEdit ? (createdAt || now) : now,
       updatedAt: isEdit ? now : undefined,
       attachments,
