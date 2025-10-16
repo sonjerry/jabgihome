@@ -216,6 +216,8 @@ body {
 .font-jp-title {
   font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, -apple-system, sans-serif;
   font-weight: 800;
+  font-feature-settings: 'pkna' 1, 'liga' 1; /* 자간/합자 */
+  letter-spacing: 0.02em;
 }
 
 .home-volume {

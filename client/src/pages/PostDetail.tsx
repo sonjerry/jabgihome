@@ -6,6 +6,8 @@ import { getPost } from '../lib/api'
 import CommentSection from '../components/CommentSection'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+// @ts-ignore - type provided via vite-env.d.ts
+import rehypeRaw from 'rehype-raw'
 import type { Components } from 'react-markdown'
 import clsx from 'clsx'
 import { useAuth } from '../state/auth'
@@ -306,7 +308,7 @@ export default function PostDetail() {
             'text-left'
           )}
         >
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={mdComponents}>
             {post.content}
           </ReactMarkdown>
         </div>

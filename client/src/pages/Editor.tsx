@@ -62,6 +62,31 @@ export default function Editor(){
     })
   }
 
+  const wrapSelection = (prefix: string, suffix: string = '') => {
+    const el = textareaRef.current
+    if (!el) return
+    const start = el.selectionStart ?? 0
+    const end = el.selectionEnd ?? 0
+    const before = el.value.slice(0, start)
+    const selected = el.value.slice(start, end)
+    const after = el.value.slice(end)
+    const wrapped = `${before}${prefix}${selected}${suffix || ''}${suffix ? '' : ''}`
+    setContent(wrapped + after)
+    requestAnimationFrame(() => {
+      const pos = (before + prefix + selected + (suffix || '')).length
+      el.selectionStart = el.selectionEnd = pos
+      el.focus()
+    })
+  }
+
+  const applyInlineSize = (px: number) => {
+    // HTML span으로 크기 적용 (PostDetail에서 rehypeRaw로 허용)
+    wrapSelection(`<span style="font-size:${px}px">`, `</span>`) 
+  }
+  const applyInlineColor = (color: string) => {
+    wrapSelection(`<span style="color:${color}">`, `</span>`) 
+  }
+
   const onFiles = async (files: FileList | null) => {
     if(!files) return
     try{
@@ -144,6 +169,24 @@ export default function Editor(){
                 <span key={t} className="text-xs px-2 py-1 rounded-full bg-white/10 cursor-pointer"
                       onClick={()=>removeTag(t)}>#{t} ×</span>
               ))}
+            </div>
+          </div>
+
+          {/* 인라인 스타일 도구 */}
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 glass rounded-xl px-2 py-1">
+              <span className="text-xs opacity-80">크기</span>
+              {[14,16,18,20,22,24,28,32].map(s => (
+                <button key={s} type="button" onClick={() => applyInlineSize(s)} className="text-xs px-2 py-1 rounded hover:bg-white/10">{s}</button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 glass rounded-xl px-2 py-1">
+              <span className="text-xs opacity-80">색상</span>
+              {['#111827','#ef4444','#10b981','#3b82f6','#f59e0b','#a855f7'].map(c => (
+                <button key={c} type="button" onClick={() => applyInlineColor(c)}
+                        className="w-5 h-5 rounded-full border border-white/20" style={{ background: c }} />
+              ))}
+              <input type="color" onChange={(e)=>applyInlineColor(e.target.value)} className="w-6 h-6 rounded border border-white/10" />
             </div>
           </div>
 
