@@ -28,6 +28,7 @@ try {
   // @ts-ignore
   TextAlignExt = require('@tiptap/extension-text-align').default
 } catch {}
+const tiptapAvailable = Boolean(TipTapReact && StarterKitExt)
 
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
 
@@ -186,7 +187,7 @@ export default function Editor(){
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {/* 에디터 */}
         <div className="glass rounded-2xl p-3">
           <input
@@ -334,6 +335,12 @@ export default function Editor(){
             />
           )}
 
+          {!tiptapAvailable && (
+            <div className="mt-2 text-xs opacity-70">
+              WYSIWYG를 사용하려면 다음 패키지를 설치하세요: <code>@tiptap/react @tiptap/starter-kit @tiptap/extension-text-style @tiptap/extension-color @tiptap/extension-link @tiptap/extension-image @tiptap/extension-text-align</code>
+            </div>
+          )}
+
           {/* 첨부 */}
           <div className="mt-3">
             <label className="block text-sm mb-1">첨부 이미지/파일</label>
@@ -362,35 +369,6 @@ export default function Editor(){
                 )
               })}
             </div>
-          </div>
-        </div>
-
-        {/* 스타일 옵션 */}
-        <div className="glass rounded-2xl p-3">
-          <h3 className="text-lg font-semibold mb-3">표시 스타일</h3>
-          <div className="flex items-center gap-3 mb-3">
-            <label className="text-sm opacity-80">글자색</label>
-            <input type="color" value={styleTextColor} onChange={e=>setStyleTextColor(e.target.value)} className="h-8 w-8 rounded border border-white/10" />
-            <span className="text-xs opacity-60">{styleTextColor}</span>
-          </div>
-          <div className="flex items-center gap-3 mb-3">
-            <label className="text-sm opacity-80">글자 크기</label>
-            <select
-              value={styleFontSize}
-              onChange={e=>setStyleFontSize(Number(e.target.value))}
-              className="px-2 py-1 rounded bg-white/10 border border-white/10"
-            >
-              <option value={14}>14</option>
-              <option value={16}>16</option>
-              <option value={18}>18</option>
-              <option value={20}>20</option>
-              <option value={22}>22</option>
-              <option value={24}>24</option>
-            </select>
-          </div>
-
-          <div className="text-xs opacity-70">
-            이 옵션은 독자 화면에서 제목/본문에 적용됩니다.
           </div>
         </div>
 
