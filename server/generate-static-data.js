@@ -45,39 +45,87 @@ async function generateTierlistData() {
   try {
     console.log('🎯 티어리스트 데이터 생성 중...')
     
-    // 포스터 이미지에서 티어 정보 추출
-    const POSTER_MODULES = await import('../client/src/pages/Tierlist.tsx').then(m => {
-      // 동적으로 import된 모듈에서 POSTER_MODULES 추출
-      // 실제로는 파일 시스템에서 직접 읽어야 함
-      return {}
+    // Supabase에서 티어리스트 관련 데이터 가져오기
+    const [titlesResult, reviewsResult, commentsResult] = await Promise.all([
+      supabase.from('anime_titles').select('*'),
+      supabase.from('threads_reviews').select('*'),
+      supabase.from('threads_comments').select('*')
+    ])
+    
+    if (titlesResult.error) throw titlesResult.error
+    if (reviewsResult.error) throw reviewsResult.error
+    if (commentsResult.error) throw commentsResult.error
+    
+    const titles = titlesResult.data || []
+    const reviews = reviewsResult.data || []
+    const comments = commentsResult.data || []
+    
+    // thread_key를 기준으로 데이터 병합
+    const itemsMap = new Map()
+    
+    // 제목 데이터 추가
+    titles.forEach(title => {
+      if (!itemsMap.has(title.thread_key)) {
+        itemsMap.set(title.thread_key, {
+          key: title.thread_key,
+          title: title.title,
+          tier: 'F', // 기본값
+          review: '',
+          comments: []
+        })
+      } else {
+        itemsMap.get(title.thread_key).title = title.title
+      }
     })
     
-    // 임시 티어리스트 데이터 구조
-    const tierlistData = {
-      items: [
-        {
-          key: "단다단",
-          title: "단다단", 
-          tier: "S",
-          review: "강렬한 여운과 완벽한 서사로 모든 걸 아우른 1황 작품. 작화와 스토리텔링이 완벽하게 어우러진 걸작.",
+    // 리뷰 데이터 추가 (rating을 티어로 변환)
+    reviews.forEach(review => {
+      if (!itemsMap.has(review.thread_key)) {
+        itemsMap.set(review.thread_key, {
+          key: review.thread_key,
+          title: '',
+          tier: 'F',
+          review: '',
           comments: []
-        },
-        {
-          key: "봇치",
-          title: "봇치 더 로크",
-          tier: "A", 
-          review: "걸작. 감동을 주는 작품으로 음악과 스토리가 완벽하게 조화를 이룬다.",
+        })
+      }
+      const item = itemsMap.get(review.thread_key)
+      item.review = review.text || ''
+      // rating을 티어로 변환 (0=S, 1=A, 2=B, 3=C, 4=D, 5=F)
+      const tierMap = ['S', 'A', 'B', 'C', 'D', 'F']
+      item.tier = tierMap[review.rating] || 'F'
+    })
+    
+    // 댓글 데이터 추가
+    comments.forEach(comment => {
+      if (!itemsMap.has(comment.thread_key)) {
+        itemsMap.set(comment.thread_key, {
+          key: comment.thread_key,
+          title: '',
+          tier: 'F',
+          review: '',
           comments: []
-        }
-      ]
-    }
+        })
+      }
+      itemsMap.get(comment.thread_key).comments.push({
+        id: comment.id,
+        nickname: comment.nickname,
+        content: comment.content,
+        createdAt: comment.created_at
+      })
+    })
+    
+    const items = Array.from(itemsMap.values())
+    const tierlistData = { items }
     
     // 정적 파일로 저장
     const outputPath = path.join(process.cwd(), 'client/public/data/tierlist.json')
     await fs.writeFile(outputPath, JSON.stringify(tierlistData, null, 2))
     
     console.log(`✅ 티어리스트 데이터 생성 완료: ${outputPath}`)
-    return tierlistData.items.length
+    console.log(`   - ${items.length}개 아이템`)
+    console.log(`   - 제목: ${titles.length}개, 리뷰: ${reviews.length}개, 댓글: ${comments.length}개`)
+    return items.length
   } catch (error) {
     console.error('❌ 티어리스트 데이터 생성 실패:', error.message)
     throw error

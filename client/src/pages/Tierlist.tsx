@@ -7,6 +7,7 @@ type Poster = {
   title: string
   url: string
   tier: Tier
+  filename: string
 }
 
 type Tier = 'S' | 'A' | 'B' | 'C' | 'D' | 'F'
@@ -17,7 +18,7 @@ const POSTER_MODULES = import.meta.glob('../assets/tier/**/*.{png,jpg,jpeg,webp,
   import: 'default',
 }) as Record<string, string>
 
-function extractTierAndTitle(p: string): { tier: Tier; title: string } | null {
+function extractTierAndTitle(p: string): { tier: Tier; title: string; filename: string } | null {
   const i = p.indexOf('/tier/')
   if (i === -1) return null
   const rest = p.slice(i + '/tier/'.length)
@@ -26,7 +27,8 @@ function extractTierAndTitle(p: string): { tier: Tier; title: string } | null {
   const t = tier as Tier
   if (!['S', 'A', 'B', 'C', 'D', 'F'].includes(t)) return null
   const title = decodeURIComponent(name.replace(/\.[^/.]+$/, '')).replace(/[_-]+/g, ' ').trim()
-  return { tier: t, title }
+  const filename = decodeURIComponent(name)
+  return { tier: t, title, filename }
 }
 
 type Review = { rating: number; text: string; updatedAt?: string }
@@ -70,7 +72,7 @@ export default function Tierlist() {
       .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
       .map(([p, url]) => ({
         url,
-        ...(extractTierAndTitle(p) ?? { tier: 'F', title: 'Unknown' }),
+        ...(extractTierAndTitle(p) ?? { tier: 'F', title: 'Unknown', filename: 'unknown' }),
       })) as Poster[],
     []
   )
@@ -113,11 +115,11 @@ export default function Tierlist() {
   }, [open, close, next, prev])
 
   const current = currentList[idx]
-  const currentKey = current ? current.title : ''
+  const currentKey = current ? current.filename : ''
 
   // 정적 데이터에서 현재 아이템 정보 가져오기
   const currentItemData = useMemo(() => {
-    return tierlistData.items.find(item => item.title === currentKey)
+    return tierlistData.items.find(item => item.key === currentKey)
   }, [tierlistData.items, currentKey])
 
   // ── admin comment (admin only) ─────────────────────────────
@@ -187,7 +189,7 @@ export default function Tierlist() {
     }
     
     // 백그라운드에서 API 데이터 확인
-    const storageKey = `tier:${currentKey}`
+    const storageKey = currentKey // 파일명을 그대로 사용
     refreshComment(storageKey)
     refreshComments(storageKey)
     refreshTitle(storageKey)
@@ -199,7 +201,7 @@ export default function Tierlist() {
 
   const handleSaveComment = useCallback(async () => {
     if (role !== 'admin' || !commentText.trim()) return
-    const storageKey = `tier:${currentKey}`
+    const storageKey = currentKey // 파일명을 그대로 사용
     try {
       await ReviewAPI.save(storageKey, 0, commentText.trim())
       await refreshComment(storageKey)
@@ -212,7 +214,7 @@ export default function Tierlist() {
 
   const handleSaveTitle = useCallback(async () => {
     if (role !== 'admin' || !editedTitle.trim()) return
-    const storageKey = `tier:${currentKey}`
+    const storageKey = currentKey // 파일명을 그대로 사용
     try {
       await AnimeTitleAPI.save(storageKey, editedTitle.trim())
       await refreshTitle(storageKey)
@@ -226,7 +228,7 @@ export default function Tierlist() {
   const handleAddComment = useCallback(async () => {
     const text = draft.trim()
     if (!text) return
-    const storageKey = `tier:${currentKey}`
+    const storageKey = currentKey // 파일명을 그대로 사용
     try {
       await ThreadAPI.create(storageKey, { nickname: '익명', password: 'anon', content: text })
       setDraft('')
@@ -241,7 +243,7 @@ export default function Tierlist() {
     if (role !== 'admin') return
     try {
       await ThreadAPI.delete(id)
-      const storageKey = `tier:${currentKey}`
+      const storageKey = currentKey // 파일명을 그대로 사용
       await refreshComments(storageKey)
     } catch (error) {
       console.error('Failed to delete comment:', error)

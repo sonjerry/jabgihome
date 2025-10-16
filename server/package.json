@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "generate-static": "node generate-static-data.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.54.0",

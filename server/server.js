@@ -730,6 +730,13 @@ app.put('/api/reviews/:key', requireAdmin, async (req, res) => {
       .from('threads_reviews')
       .upsert({ thread_key: key, rating, text: text || '', updated_at: nowIso }, { onConflict: 'thread_key' })
     if (error) return res.status(500).json({ ok: false, msg: error.message })
+    
+    // 티어리스트 관련 키인 경우 정적 데이터 재생성 (백그라운드)
+    // thread_key가 파일명 형태인지 확인 (예: .png, .jpg 등 이미지 확장자)
+    if (key.includes('.png') || key.includes('.jpg') || key.includes('.jpeg') || key.includes('.webp')) {
+      regenerateStaticData().catch(console.error)
+    }
+    
     res.json({ ok: true })
   } catch (e) {
     console.error('save review error', e)
@@ -742,6 +749,13 @@ app.delete('/api/reviews/:key', requireAdmin, async (req, res) => {
     const key = decodeURIComponent(req.params.key || '')
     const { error } = await supabase.from('threads_reviews').delete().eq('thread_key', key)
     if (error) return res.status(500).json({ ok: false })
+    
+    // 티어리스트 관련 키인 경우 정적 데이터 재생성 (백그라운드)
+    // thread_key가 파일명 형태인지 확인 (예: .png, .jpg 등 이미지 확장자)
+    if (key.includes('.png') || key.includes('.jpg') || key.includes('.jpeg') || key.includes('.webp')) {
+      regenerateStaticData().catch(console.error)
+    }
+    
     res.json({ ok: true })
   } catch (e) {
     console.error('delete review error', e)
@@ -781,6 +795,13 @@ app.put('/api/anime-titles/:key', requireAdmin, async (req, res) => {
       .from('anime_titles')
       .upsert({ thread_key: key, title: title.trim(), updated_at: nowIso }, { onConflict: 'thread_key' })
     if (error) return res.status(500).json({ ok: false, msg: error.message })
+    
+    // 티어리스트 관련 키인 경우 정적 데이터 재생성 (백그라운드)
+    // thread_key가 파일명 형태인지 확인 (예: .png, .jpg 등 이미지 확장자)
+    if (key.includes('.png') || key.includes('.jpg') || key.includes('.jpeg') || key.includes('.webp')) {
+      regenerateStaticData().catch(console.error)
+    }
+    
     res.json({ ok: true })
   } catch (e) {
     console.error('save anime title error', e)
@@ -793,6 +814,13 @@ app.delete('/api/anime-titles/:key', requireAdmin, async (req, res) => {
     const key = decodeURIComponent(req.params.key || '')
     const { error } = await supabase.from('anime_titles').delete().eq('thread_key', key)
     if (error) return res.status(500).json({ ok: false })
+    
+    // 티어리스트 관련 키인 경우 정적 데이터 재생성 (백그라운드)
+    // thread_key가 파일명 형태인지 확인 (예: .png, .jpg 등 이미지 확장자)
+    if (key.includes('.png') || key.includes('.jpg') || key.includes('.jpeg') || key.includes('.webp')) {
+      regenerateStaticData().catch(console.error)
+    }
+    
     res.json({ ok: true })
   } catch (e) {
     console.error('delete anime title error', e)
