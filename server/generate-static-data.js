@@ -29,8 +29,12 @@ async function generatePostsData() {
     
     const posts = (data || []).map(r => r.data)
     
-    // 정적 파일로 저장
-    const outputPath = path.join(process.cwd(), 'client/public/data/posts.json')
+    // 정적 파일로 저장 (스크립트 파일 기준으로 경로 계산)
+    const serverDir = path.dirname(new URL(import.meta.url).pathname)
+    const repoRoot = path.resolve(serverDir, '..')
+    const dataDir = path.join(repoRoot, 'client', 'public', 'data')
+    await fs.mkdir(dataDir, { recursive: true })
+    const outputPath = path.join(dataDir, 'posts.json')
     await fs.writeFile(outputPath, JSON.stringify(posts, null, 2))
     
     console.log(`✅ ${posts.length}개 포스트 데이터 생성 완료: ${outputPath}`)
@@ -132,8 +136,12 @@ async function generateTierlistData() {
     const items = Array.from(itemsMap.values())
     const tierlistData = { items }
     
-    // 정적 파일로 저장
-    const outputPath = path.join(process.cwd(), 'client/public/data/tierlist.json')
+    // 정적 파일로 저장 (스크립트 파일 기준으로 경로 계산)
+    const serverDir = path.dirname(new URL(import.meta.url).pathname)
+    const repoRoot = path.resolve(serverDir, '..')
+    const dataDir = path.join(repoRoot, 'client', 'public', 'data')
+    await fs.mkdir(dataDir, { recursive: true })
+    const outputPath = path.join(dataDir, 'tierlist.json')
     await fs.writeFile(outputPath, JSON.stringify(tierlistData, null, 2))
     
     console.log(`✅ 티어리스트 데이터 생성 완료: ${outputPath}`)
@@ -150,6 +158,9 @@ async function main() {
   try {
     console.log('🚀 정적 데이터 생성 시작...')
     console.log('현재 작업 디렉토리:', process.cwd())
+    const serverDir = path.dirname(new URL(import.meta.url).pathname)
+    const repoRoot = path.resolve(serverDir, '..')
+    console.log('해석된 repoRoot:', repoRoot)
     
     const [postsCount, tierlistCount] = await Promise.all([
       generatePostsData(),
