@@ -4,6 +4,7 @@ import express from 'express'
 import cookieParser from 'cookie-parser'
 import multer from 'multer'
 import path from 'path'
+import fs from 'fs/promises'
 import { fileURLToPath } from 'url'
 import { customAlphabet } from 'nanoid'
 import jwt from 'jsonwebtoken'
@@ -1084,4 +1085,6 @@ app.get('/static/threads/:filename', async (req, res) => {
 /* ───────────────────── 서버 시작 ───────────────────── */
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API on http://0.0.0.0:${PORT}`)
+  // 서버 시작 시 한 번 정적 데이터 생성 시도 (백그라운드)
+  regenerateStaticData().catch(err => console.error('initial regenerate failed', err))
 })
