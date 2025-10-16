@@ -141,10 +141,10 @@ export default function AudioDock() {
       >
         {/* 제목 */}
         <div className="min-w-0">
-          <h3 className="text-cream/90 text-base font-semibold break-words">
+          <h3 className="text-cream/90 text-base font-semibold break-words font-jp-title">
             {a.playlist[a.idx]?.title ?? 'No tracks'}
           </h3>
-          <p className="text-brown-900 text-xs mt-0.5">레전드 명곡 플레이리스트</p>
+          <p className="text-brown-900 text-xs mt-0.5 font-jp-title">레전드 명곡 플레이리스트</p>
         </div>
 
         {/* 컨트롤 */}
@@ -328,7 +328,7 @@ function PlaylistPopover({
       <button
         ref={btnRef}
         onClick={() => setOpen((v) => !v)}
-        className="w-full h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center gap-2"
+        className="w-full h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center gap-2 font-jp-title"
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls="playlist-popover"

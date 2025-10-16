@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 일본어 굵은 타이틀 폰트 로드 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700;800&display=swap');
+
 /* 폰트 (public/fonts 에 존재해야 함) */
 @font-face {
   font-family: 'ROKAF Sans';
@@ -209,6 +212,12 @@ body {
 .home-force-white { color: #ffffff !important; }
 .home-subtitle { color: #fbbf24 !important; }
 
+/* 일본어 호환 굵은 타이틀 폰트 (음악 플레이어 전용) */
+.font-jp-title {
+  font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, -apple-system, sans-serif;
+  font-weight: 800;
+}
+
 .home-volume {
   -webkit-appearance: none;
   appearance: none;
@@ -235,6 +244,9 @@ body {
   border: 1px solid rgba(0,0,0,0.2);
   box-shadow: 0 1px 6px rgba(0,0,0,0.2);
 }
+.home-volume.muted { background: rgba(255,255,255,0.18); }
+.home-volume.muted::-webkit-slider-thumb { background: #e5e7eb; opacity: 0.6; }
+.home-volume.muted::-moz-range-thumb { background: #e5e7eb; opacity: 0.6; }
 
 /* 전역 스크롤바 숨김 (스크롤 기능 유지) */
 html, body, * {

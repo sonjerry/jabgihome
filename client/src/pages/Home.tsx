@@ -209,10 +209,13 @@ export default function Home() {
                   max={100}
                   value={Math.round(volume * 100)}
                   onChange={(e) => { const val = Number(e.target.value); setVolume(val / 100); if (val>0) setIsMuted(false) }}
-                  className="home-volume w-56 md:w-72"
+                  className={`home-volume w-56 md:w-72 ${isMuted ? 'muted' : ''}`}
                 />
-                <span className="text-xs opacity-90 w-8 text-right">{Math.round(volume*100)}</span>
+                <span className="text-xs opacity-90 w-14 text-right">
+                  {isMuted ? 'MUTE' : Math.round(volume*100)}
+                </span>
               </div>
+              <div className="mt-2 text-center text-xs home-force-white opacity-80">드래그해서 볼륨을 조절하세요</div>
             </div>
 
             {/* 중앙 하단 화살표 3개 힌트 UI */}

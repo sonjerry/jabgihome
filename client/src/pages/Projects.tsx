@@ -42,15 +42,15 @@ const PROJECTS: Project[] = [
   {
     id: 'p1',
     title: '와카와카',
-    summary: 'WI-FI 라즈베리파이 기반 심레이싱 조종 자동차 (와이파이 카)',
+    summary: '와이파이 RC카 (와카)',
     linkUrl: 'http://100.84.162.124:8000/',
     repoUrl: 'https://github.com/sonjerry/wakawaka2',
     status: 'active',
   },
   {
     id: 'p2',
-    title: 'OpenAI 튜링 테스트',
-    summary: '현재 LLM 수준으로 사람과 구별 불가능한 페르소나를 만들 수 있을까',
+    title: 'Openapi 튜링 테스트',
+    summary: '사람과 구별 불가능한 페르소나 구성',
     linkUrl: 'https://example-project2.onrender.com',
     repoUrl: 'https://github.com/sonjerry/Turing-test',
     status: 'paused',
@@ -60,7 +60,7 @@ const PROJECTS: Project[] = [
     title: '이가을 블로그',
     summary: '프론트/백엔드 본 블로그',
     linkUrl: 'https://leegaeulblog.onrender.com',
-    repoUrl: 'https://github.com/sonjerry/LeeGaeulBlog',
+    repoUrl: 'https://github.com/sonjerry/jabgihome',
     status: 'done',
   },
 ]
