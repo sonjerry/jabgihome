@@ -152,7 +152,7 @@ export default function Home() {
         {/* 로딩 오버레이 */}
         {!isVideoReady && (
           <div
-            className={`absolute inset-0 z-[100] flex flex-col items-center justify-center gap-6 px-4 bg-black transition-opacity duration-300`}
+            className={`fixed inset-0 z-[100] grid place-items-center bg-black transition-opacity duration-300`}
           >
             <CircularText
               text={"로딩중*로딩중*로딩중*"}
@@ -172,7 +172,7 @@ export default function Home() {
               <BlurText
                 text="잡다한 기록 홈페이지"
                 animateBy="letters"
-                className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight drop-shadow-lg break-keep whitespace-nowrap home-hero-title"
+                className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight drop-shadow-lg break-keep whitespace-nowrap home-hero-title"
                 delay={20}
                 direction="top"
                 noWrap
@@ -180,7 +180,7 @@ export default function Home() {
               <BlurText
                 text="인스타는 너무 평범해서 홈페이지 직접 만듦"
                 animateBy="words"
-                className="mt-4 md:mt-6 text-base md:text-lg text-amber-300 break-keep"
+                className="mt-5 md:mt-7 text-lg md:text-2xl text-amber-300 break-keep"
                 delay={80}
                 direction="bottom"
               />
@@ -198,7 +198,7 @@ export default function Home() {
         {/* 섹션 레벨 UI: 볼륨바(중앙 약간 아래) */}
         {isVideoReady && (
           <>
-            <div className="absolute left-1/2 top-[58%] -translate-x-1/2 z-10" style={{ animation: 'hintSlideUp 0.6s ease-out' }}>
+            <div className="absolute left-1/2 top-[66%] -translate-x-1/2 z-10" style={{ animation: 'hintSlideUp 0.6s ease-out' }}>
               <div className="home-force-white flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 backdrop-blur px-4 py-2 shadow-glass">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="opacity-90">
                   <path d="M5 9v6h4l5 5V4L9 9H5z" />
@@ -218,8 +218,15 @@ export default function Home() {
               <div className="mt-2 text-center text-xs home-force-white opacity-80">드래그해서 볼륨을 조절하세요</div>
             </div>
 
-            {/* 중앙 하단 화살표 3개 힌트 UI */}
-            <div className="absolute left-1/2 bottom-[8vh] -translate-x-1/2 z-10 text-center">
+            {/* 중앙 하단 화살표 3개 힌트 UI - 스크롤 진행도에 따라 점점 사라짐 */}
+            <div
+              className="absolute left-1/2 bottom-[8vh] z-10 text-center"
+              style={{
+                opacity: Math.max(0, 1 - Math.min(1, revealProgress * 4)),
+                transform: `translate(-50%, ${Math.min(1, revealProgress) * 24}px)`,
+                transition: 'opacity 300ms ease, transform 300ms ease'
+              }}
+            >
               <div className="text-sm mb-3 home-force-white">아래로 스크롤하세요</div>
               <div className="pointer-events-none rounded-3xl border border-white/20 bg-white/10 backdrop-blur px-10 py-3 shadow-glass home-force-white">
                 <div className="flex items-center gap-3">
@@ -270,7 +277,6 @@ export default function Home() {
           className="absolute top-4 left-4 md:top-8 md:left-8"
         >
           <GlassCard className={NAV_CARD_BASE + " w-[22rem] md:w-[26rem]"} style={{
-              animation: 'bounceIn 0.8s ease-out 0s both',
               opacity: Math.max(0, Math.min(1, revealProgress)),
               transform: `translate(${-100 * (1 - revealProgress)}px, ${-50 * (1 - revealProgress)}px)`,
               transition: 'opacity 600ms ease-out, transform 600ms ease-out'
@@ -288,7 +294,6 @@ export default function Home() {
           className="absolute top-4 right-4 md:top-8 md:right-8"
         >
           <GlassCard className={NAV_CARD_BASE + " w-[22rem] md:w-[26rem]"} style={{
-              animation: 'bounceIn 0.8s ease-out 0.1s both',
               opacity: Math.max(0, Math.min(1, revealProgress)),
               transform: `translate(${100 * (1 - revealProgress)}px, ${-50 * (1 - revealProgress)}px)`,
               transition: 'opacity 600ms ease-out, transform 600ms ease-out',
@@ -307,7 +312,6 @@ export default function Home() {
           className="absolute bottom-20 left-4 md:bottom-8 md:left-8"
         >
           <GlassCard className={NAV_CARD_BASE + " w-[22rem] md:w-[26rem]"} style={{
-              animation: 'bounceIn 0.8s ease-out 0.2s both',
               opacity: Math.max(0, Math.min(1, revealProgress)),
               transform: `translate(${-100 * (1 - revealProgress)}px, ${50 * (1 - revealProgress)}px)`,
               transition: 'opacity 600ms ease-out, transform 600ms ease-out',
@@ -326,7 +330,6 @@ export default function Home() {
           className="absolute bottom-20 right-4 md:bottom-8 md:right-8"
         >
           <GlassCard className={NAV_CARD_BASE + " w-[22rem] md:w-[26rem]"} style={{
-              animation: 'bounceIn 0.8s ease-out 0.3s both',
               opacity: Math.max(0, Math.min(1, revealProgress)),
               transform: `translate(${100 * (1 - revealProgress)}px, ${50 * (1 - revealProgress)}px)`,
               transition: 'opacity 600ms ease-out, transform 600ms ease-out',
