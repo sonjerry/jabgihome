@@ -114,7 +114,7 @@ export default function Editor(){
         const extensions = [
           StarterKit.default || StarterKit,
           TextStyle.default || TextStyle,
-          Color.default || Color,
+          (Color.default || Color).configure({ types: ['textStyle'] }),
           Link.default.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer' } }),
           Image.default.configure({ inline: false, allowBase64: true }),
           TextAlign.default.configure({ types: ['heading','paragraph'] })
@@ -161,6 +161,13 @@ export default function Editor(){
       if (editorInstance) {
         editorInstance.destroy()
       }
+    }
+  }, [editorInstance])
+
+  // 에디터 인스턴스가 생성되면 ref 동기화 (예외 상황 대비)
+  useEffect(() => {
+    if (editorInstance && !editorRef.current) {
+      editorRef.current = editorInstance
     }
   }, [editorInstance])
 
@@ -467,11 +474,17 @@ export default function Editor(){
                   />
                 </div>
               }>
-                <tipTapModules.EditorContent 
-                  editor={editorInstance} 
-                  className="prose max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2"
-                  style={{ fontFamily: 'Gulim, 굴림, sans-serif', color: styleTextColor }}
-                />
+                {(() => {
+                  const EC = tipTapModules?.EditorContent
+                  if (!EC) return null
+                  return (
+                    <EC
+                      editor={editorInstance}
+                      className="prose max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2"
+                      style={{ fontFamily: 'Gulim, 굴림, sans-serif', color: styleTextColor }}
+                    />
+                  )
+                })()}
               </EditorErrorBoundary>
             ) : null}
           </div>
