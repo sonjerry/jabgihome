@@ -68,6 +68,9 @@
   }
   .post-content figure, .prose figure { margin-left: 0 !important; margin-right: 0 !important; }
   .fig-responsive { width: 100% !important; min-width: 0 !important; }
+  /* 텍스트가 이미지 위로 포개지는 현상 방지: 모바일에서 단락을 강제로 이미지 아래로 흐르게 */
+  .prose p, .post-content p { clear: both !important; }
+  .fig-responsive { display: block !important; position: relative !important; z-index: 0 !important; }
 }
 
 .post-content figure {
