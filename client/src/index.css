@@ -73,6 +73,12 @@
   .fig-responsive { display: block !important; position: relative !important; z-index: 0 !important; }
 }
 
+/* Safari 구버전 등 aspect-ratio 미지원 대비: figure 높이 붕괴 방지 */
+@supports not (aspect-ratio: 1 / 1) {
+  .fig-responsive { height: auto !important; }
+  .fig-responsive > * { height: auto !important; }
+}
+
 .post-content figure {
   margin-top: 1.25rem; /* mt-5 정도 */
   margin-bottom: 1.25rem; /* mb-5 정도 */
