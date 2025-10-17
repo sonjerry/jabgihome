@@ -110,15 +110,23 @@ export default function Editor(){
       try {
         
         const { Editor, StarterKit, TextStyle, Color, Link, Image, TextAlign } = tipTapModules
-        
+
+        // 동적 임포트 호환: default / named 모두 처리
+        const StarterKitExt = StarterKit?.default ?? StarterKit
+        const TextStyleExt = TextStyle?.default ?? TextStyle?.TextStyle ?? TextStyle
+        const ColorExt = (Color?.default ?? Color?.Color ?? Color)?.configure?.({ types: ['textStyle'] })
+        const LinkExt = (Link?.default ?? Link)?.configure?.({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer' } })
+        const ImageExt = (Image?.default ?? Image)?.configure?.({ inline: false, allowBase64: true })
+        const TextAlignExt = (TextAlign?.default ?? TextAlign)?.configure?.({ types: ['heading','paragraph'] })
+
         const extensions = [
-          StarterKit.default || StarterKit,
-          TextStyle.default || TextStyle,
-          (Color.default || Color).configure({ types: ['textStyle'] }),
-          Link.default.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer' } }),
-          Image.default.configure({ inline: false, allowBase64: true }),
-          TextAlign.default.configure({ types: ['heading','paragraph'] })
-        ]
+          StarterKitExt,
+          TextStyleExt,
+          ColorExt,
+          LinkExt,
+          ImageExt,
+          TextAlignExt,
+        ].filter(Boolean)
         
         const editor = new Editor({
           extensions,
@@ -226,12 +234,16 @@ export default function Editor(){
   }
 
   const applyInlineSize = (px: number) => {
-    if (!editorRef.current) return
-    editorRef.current.chain().focus().setMark('textStyle', { fontSize: `${px}px` }).run()
+    try {
+      if (!editorRef.current) return
+      editorRef.current.chain().focus().setMark('textStyle', { fontSize: `${px}px` }).run()
+    } catch {}
   }
   const applyInlineColor = (color: string) => {
-    if (!editorRef.current) return
-    editorRef.current.chain().focus().setColor(color).run()
+    try {
+      if (!editorRef.current) return
+      editorRef.current.chain().focus().setColor(color).run()
+    } catch {}
   }
 
   const onFiles = async (files: FileList | null) => {
@@ -460,32 +472,17 @@ export default function Editor(){
                 </div>
               </div>
             ) : editorInstance ? (
-              <EditorErrorBoundary fallback={
-                <div className="p-4 text-center">
-                  <div className="text-red-400 mb-2">에디터 렌더링 중 오류가 발생했습니다.</div>
-                  <div className="text-sm opacity-80 mb-3">마크다운 에디터로 전환합니다.</div>
-                  <textarea
-                    ref={textareaRef}
-                    className="w-full p-3 bg-white/5 border border-white/10 rounded-lg min-h-[52vh] md:min-h-[60vh] resize-none font-mono text-sm"
-                    placeholder="마크다운으로 작성하세요..."
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    style={{ fontFamily: 'Gulim, 굴림, sans-serif' }}
+              (() => {
+                const EC = tipTapModules?.EditorContent
+                if (!EC) return null
+                return (
+                  <EC
+                    editor={editorInstance}
+                    className="prose max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2 relative z-0"
+                    style={{ fontFamily: 'Gulim, 굴림, sans-serif', color: styleTextColor }}
                   />
-                </div>
-              }>
-                {(() => {
-                  const EC = tipTapModules?.EditorContent
-                  if (!EC) return null
-                  return (
-                    <EC
-                      editor={editorInstance}
-                      className="prose max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2 relative z-0"
-                      style={{ fontFamily: 'Gulim, 굴림, sans-serif', color: styleTextColor }}
-                    />
-                  )
-                })()}
-              </EditorErrorBoundary>
+                )
+              })()
             ) : null}
           </div>
 
