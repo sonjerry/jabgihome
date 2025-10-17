@@ -63,11 +63,14 @@ export default function Tierlist() {
       try {
         const res = await fetch('/data/posters.json', { cache: 'no-store' })
         if (res.ok) {
-          const data = await res.json()
-          const items = (data?.items || []) as Array<{ tier: Tier; title: string; filename: string; url: string }>
-          // 키 순으로 정렬(안정적 표시)
-          setPosters(items.sort((a,b) => a.filename.localeCompare(b.filename, undefined, { numeric: true })) as Poster[])
-          if ((items?.length || 0) > 0) return
+          const ct = (res.headers.get('content-type') || '').toLowerCase()
+          if (ct.includes('application/json')) {
+            const data = await res.json()
+            const items = (data?.items || []) as Array<{ tier: Tier; title: string; filename: string; url: string }>
+            // 키 순으로 정렬(안정적 표시)
+            setPosters(items.sort((a,b) => a.filename.localeCompare(b.filename, undefined, { numeric: true })) as Poster[])
+            if ((items?.length || 0) > 0) return
+          }
         }
         // 폴백: 개발/초기 환경에서 매니페스트가 없을 때 import.meta.glob 사용
         const modules = import.meta.glob('../assets/tier/**/*.{png,jpg,jpeg,webp,avif,gif}', {

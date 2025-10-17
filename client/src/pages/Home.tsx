@@ -410,10 +410,9 @@ export default function Home() {
       {/* Mobile (<md) - 4장의 카드가 화면을 꽉 채우는 수직 스택, 좌/우 번갈아 등장 */}
       <div className="fixed inset-0 z-30 pointer-events-none md:hidden" style={{ pointerEvents: 'none' }}>
         <div className="absolute inset-0 h-screen grid grid-rows-4 gap-2 px-3 py-3">
-          {/* 1 */}
+          {/* 1: 왼쪽에서 */}
           <div className="h-full">
             <GlassCard className={NAV_CARD_BASE + " w-full h-full"} style={{
-              animation: 'bounceIn 0.8s ease-out 0s both',
               opacity: revealProgress,
               transform: `translateX(${(-60 * (1 - revealProgress)).toFixed(2)}px)`,
               transition: 'opacity 500ms cubic-bezier(0.22, 0.61, 0.36, 1), transform 500ms cubic-bezier(0.22, 0.61, 0.36, 1)'
@@ -425,10 +424,9 @@ export default function Home() {
               </div>
             </GlassCard>
           </div>
-          {/* 2 */}
+          {/* 2: 오른쪽에서 */}
           <div className="h-full">
             <GlassCard className={NAV_CARD_BASE + " w-full h-full"} style={{
-              animation: 'bounceIn 0.8s ease-out 0.08s both',
               opacity: revealProgress,
               transform: `translateX(${(60 * (1 - revealProgress)).toFixed(2)}px)`,
               transition: 'opacity 500ms cubic-bezier(0.22, 0.61, 0.36, 1), transform 500ms cubic-bezier(0.22, 0.61, 0.36, 1)',

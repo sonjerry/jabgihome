@@ -126,10 +126,7 @@ body {
 }
 
 
-/* 폰트 로딩 중 시스템 폰트 플래시 억제 */
-.fonts-loading body {
-  visibility: hidden;
-}
+/* 폰트 로딩 중 본문 숨김 제거: FOUT 허용, FOIT 방지 */
 
 /* 유리 카드 - 컴포넌트 레이어에 선언하여 유틸리티 우선순위와 충돌 최소화 */
 @layer components {

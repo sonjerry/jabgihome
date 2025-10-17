@@ -31,21 +31,7 @@
     <!-- Preload custom fonts to minimize FOUT -->
     <link rel="preload" href="/fonts/ROKAF-Sans-Medium.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="/fonts/Moneygraphy-Rounded.ttf" as="font" type="font/ttf" crossorigin>
-    <script>
-      // Prevent system-font flash: hide text until fonts are ready
-      try {
-        document.documentElement.classList.add('fonts-loading')
-        if (document.fonts && document.fonts.ready) {
-          document.fonts.ready.then(function() {
-            document.documentElement.classList.remove('fonts-loading')
-          })
-        } else {
-          window.addEventListener('load', function() {
-            document.documentElement.classList.remove('fonts-loading')
-          })
-        }
-      } catch (_) {}
-    </script>
+    
     <title>잡다한 기록 홈페이지</title>
   </head>
   <body>

@@ -489,6 +489,24 @@ export default function Editor(){
 
           {/* 마크다운 도움말 제거됨 */}
 
+          {/* 에디터 가독성 향상: 구분선/인용 스타일 강화 */}
+          <style>{`
+            .editor-content hr {
+              border: 0;
+              height: 3px;
+              background: rgba(255, 255, 255, 0.7);
+              margin: 1.25rem 0;
+            }
+            .editor-content blockquote {
+              border-left: 5px solid rgba(255, 255, 255, 0.7);
+              background: rgba(255, 255, 255, 0.08);
+              color: rgba(255, 255, 255, 0.92);
+              padding: 0.75rem 1rem;
+              margin: 1rem 0;
+            }
+            .editor-content blockquote p { margin: 0; }
+          `}</style>
+
           <div className="rounded-xl overflow-hidden bg-white/5 border border-white/10">
             {!tipTapLoaded ? (
               <div className="p-4 text-center">

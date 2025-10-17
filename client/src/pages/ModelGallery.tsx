@@ -209,7 +209,7 @@ export default function ModelGallery() {
                       enableManualRotation
                       enableManualZoom
                       enableHoverRotation
-                      placeholderSrc="/icons/model-placeholder.png"
+                      placeholderSrc="/holder.png"
                       showScreenshotButton={false}
                       ambientIntensity={0.45}
                       keyLightIntensity={1}
@@ -281,7 +281,7 @@ export default function ModelGallery() {
                   enableManualRotation
                   enableManualZoom
                   enableHoverRotation
-                  placeholderSrc="/icons/model-placeholder.png"
+                  placeholderSrc="/title.png"
                   showScreenshotButton={false}
                   ambientIntensity={0.45}
                   keyLightIntensity={1}
