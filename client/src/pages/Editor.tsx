@@ -45,7 +45,7 @@ export default function Editor(){
   const [attachments,setAttachments]=useState<Attachment[]>([])
   const [createdAt, setCreatedAt] = useState<string>('')
   const [loading, setLoading] = useState(isEdit)
-  const [styleTextColor, setStyleTextColor] = useState<string>('#e5e7eb')
+  const [styleTextColor, setStyleTextColor] = useState<string>('#111827')
   const [styleFontSize, setStyleFontSize] = useState<number>(16)
   const [helpOpen, setHelpOpen] = useState<boolean>(false)
   const [editorReady, setEditorReady] = useState<boolean>(false)
@@ -175,7 +175,7 @@ export default function Editor(){
         setTags(p.tags || [])
         setAttachments(p.attachments || [])
         setCreatedAt(p.createdAt || '')
-        setStyleTextColor(p.style?.textColor || '#e5e7eb')
+        setStyleTextColor(p.style?.textColor || '#111827')
         setStyleFontSize(p.style?.fontSize || 16)
       })
       .catch(_err => {
@@ -469,8 +469,8 @@ export default function Editor(){
               }>
                 <tipTapModules.EditorContent 
                   editor={editorInstance} 
-                  className="prose prose-invert max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2"
-                  style={{ fontFamily: 'Gulim, 굴림, sans-serif' }}
+                  className="prose max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2"
+                  style={{ fontFamily: 'Gulim, 굴림, sans-serif', color: styleTextColor }}
                 />
               </EditorErrorBoundary>
             ) : null}

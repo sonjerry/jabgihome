@@ -394,7 +394,7 @@ export default function PostDetail() {
           )}
         >
           {post.content?.startsWith('<') ? (
-            <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: post.content }} />
+            <div className="prose max-w-none" style={{ color: editorTextColor }} dangerouslySetInnerHTML={{ __html: post.content }} />
           ) : (
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
               {post.content}
