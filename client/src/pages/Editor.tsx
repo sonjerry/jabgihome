@@ -273,8 +273,35 @@ export default function Editor(){
 
   const applyInlineSize = (px: number) => {
     try {
-      if (!editorRef.current) return
-      editorRef.current.chain().focus().updateAttributes('textStyle', { fontSize: `${px}px` }).run()
+      const ed: any = editorRef.current
+      if (!ed) return
+      const { state } = ed
+      const { from, to, empty } = state.selection
+      const size = `${px}px`
+      if (empty) {
+        const docSize = state.doc.content.size as number
+        const hasNext = from < docSize && state.doc.textBetween(from, Math.min(from + 1, docSize))
+        if (hasNext) {
+          ed.chain().focus()
+            .setTextSelection({ from, to: Math.min(from + 1, docSize) })
+            .setMark('textStyle', { fontSize: size })
+            .setTextSelection(from + 1)
+            .run()
+          return
+        }
+        const hasPrev = from > 0 && state.doc.textBetween(Math.max(0, from - 1), from)
+        if (hasPrev) {
+          ed.chain().focus()
+            .setTextSelection({ from: Math.max(0, from - 1), to: from })
+            .setMark('textStyle', { fontSize: size })
+            .setTextSelection(from)
+            .run()
+          return
+        }
+        ed.chain().focus().setMark('textStyle', { fontSize: size }).run()
+        return
+      }
+      ed.chain().focus().setMark('textStyle', { fontSize: size }).run()
     } catch {}
   }
   const applyInlineColor = (color: string) => {
