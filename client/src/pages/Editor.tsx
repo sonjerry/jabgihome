@@ -53,6 +53,8 @@ export default function Editor(){
   const [tipTapLoaded, setTipTapLoaded] = useState<boolean>(false)
   const [tipTapModules, setTipTapModules] = useState<any>(null)
   const [editorInstance, setEditorInstance] = useState<any>(null)
+  const [currentFontSize, setCurrentFontSize] = useState<string | null>(null)
+  const [currentColor, setCurrentColor] = useState<string | null>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement|null>(null)
   const editorRef = useRef<any>(null)
@@ -176,11 +178,21 @@ export default function Editor(){
               setContent(newContent)
             }
             setEditorReady(true)
+            try {
+              const attrs = editor.getAttributes('textStyle') || {}
+              setCurrentFontSize(attrs.fontSize ?? null)
+              setCurrentColor(attrs.color ?? null)
+            } catch {}
           },
           onCreate: ({ editor }: any) => {
             editorRef.current = editor
             setEditorReady(true)
             setEditorError(null)
+            try {
+              const attrs = editor.getAttributes('textStyle') || {}
+              setCurrentFontSize(attrs.fontSize ?? null)
+              setCurrentColor(attrs.color ?? null)
+            } catch {}
           },
         })
         
@@ -214,6 +226,23 @@ export default function Editor(){
   useEffect(() => {
     if (editorInstance && !editorRef.current) {
       editorRef.current = editorInstance
+    }
+    if (editorInstance) {
+      // 선택 변화 시 현재 스타일 추적 → 토글 상태 즉시 반영
+      editorInstance.on('selectionUpdate', ({ editor }: any) => {
+        try {
+          const attrs = editor.getAttributes('textStyle') || {}
+          setCurrentFontSize(attrs.fontSize ?? null)
+          setCurrentColor(attrs.color ?? null)
+        } catch {}
+      })
+      editorInstance.on('transaction', ({ editor }: any) => {
+        try {
+          const attrs = editor.getAttributes('textStyle') || {}
+          setCurrentFontSize(attrs.fontSize ?? null)
+          setCurrentColor(attrs.color ?? null)
+        } catch {}
+      })
     }
   }, [editorInstance])
 
@@ -275,39 +304,27 @@ export default function Editor(){
     try {
       const ed: any = editorRef.current
       if (!ed) return
-      const { state } = ed
-      const { from, to, empty } = state.selection
       const size = `${px}px`
-      if (empty) {
-        const docSize = state.doc.content.size as number
-        const hasNext = from < docSize && state.doc.textBetween(from, Math.min(from + 1, docSize))
-        if (hasNext) {
-          ed.chain().focus()
-            .setTextSelection({ from, to: Math.min(from + 1, docSize) })
-            .setMark('textStyle', { fontSize: size })
-            .setTextSelection(from + 1)
-            .run()
-          return
-        }
-        const hasPrev = from > 0 && state.doc.textBetween(Math.max(0, from - 1), from)
-        if (hasPrev) {
-          ed.chain().focus()
-            .setTextSelection({ from: Math.max(0, from - 1), to: from })
-            .setMark('textStyle', { fontSize: size })
-            .setTextSelection(from)
-            .run()
-          return
-        }
-        ed.chain().focus().setMark('textStyle', { fontSize: size }).run()
-        return
+      const same = (currentFontSize || '').replace(/\s+/g,'') === size
+      const chain = ed.chain().focus()
+      if (same) {
+        chain.setMark('textStyle', { fontSize: null }).run()
+      } else {
+        chain.setMark('textStyle', { fontSize: size }).run()
       }
-      ed.chain().focus().setMark('textStyle', { fontSize: size }).run()
     } catch {}
   }
   const applyInlineColor = (color: string) => {
     try {
-      if (!editorRef.current) return
-      editorRef.current.chain().focus().setColor(color).run()
+      const ed: any = editorRef.current
+      if (!ed) return
+      const same = (currentColor || '').toLowerCase() === (color || '').toLowerCase()
+      const chain = ed.chain().focus()
+      if (same) {
+        chain.unsetColor().run()
+      } else {
+        chain.setColor(color).run()
+      }
     } catch {}
   }
 
@@ -409,14 +426,23 @@ export default function Editor(){
               <div className="flex items-center gap-2 glass rounded-xl px-2 py-1">
                 <span className="text-xs opacity-80">크기</span>
                 {[14,16,18,20,22,24,28,32].map(s => (
-                  <button key={s} type="button" onClick={() => applyInlineSize(s)} className="text-xs px-2 py-1 rounded border border-white/10 transition-colors hover:bg-black/5">{s}</button>
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => applyInlineSize(s)}
+                    className={["text-xs px-2 py-1 rounded border border-white/10 transition-colors",
+                      currentFontSize === `${s}px` ? 'bg-black/10' : 'hover:bg-black/5'
+                    ].join(' ')}
+                  >{s}</button>
                 ))}
               </div>
               <div className="flex items-center gap-2 glass rounded-xl px-2 py-1">
                 <span className="text-xs opacity-80">색상</span>
                 {['#111827','#ef4444','#10b981','#3b82f6','#f59e0b','#a855f7'].map(c => (
                   <button key={c} type="button" onClick={() => applyInlineColor(c)}
-                          className="w-5 h-5 rounded-full border border-white/20 ring-0 focus:ring-2 focus:ring-black/20" style={{ background: c }} />
+                          className={["w-5 h-5 rounded-full border border-white/20 ring-0 focus:ring-2 focus:ring-black/20",
+                            (currentColor||'').toLowerCase() === c.toLowerCase() ? 'ring-2 ring-black/30' : ''
+                          ].join(' ')} style={{ background: c }} />
                 ))}
                 <input type="color" onChange={(e)=>applyInlineColor(e.target.value)} className="w-6 h-6 rounded border border-white/10 focus:ring-2 focus:ring-black/20" />
                 <>
