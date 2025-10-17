@@ -130,6 +130,45 @@ export default function PostDetail() {
 
   const title = useMemo(() => post?.title ?? '', [post])
 
+  // TipTap HTML 본문 내 <img> 태그를 통일된 레이아웃(figure)으로 감싸고 캡션(alt) 표시
+  function wrapImagesInHtml(html: string) {
+    try {
+      // src/alt 추출하여 동일한 Figure 레이아웃으로 치환
+      return html.replace(/<img\s+([^>]*?)>/gi, (full, attrs) => {
+        const srcMatch = /src=["']([^"']+)["']/i.exec(attrs) || []
+        const altMatch = /alt=["']([^"']*)["']/i.exec(attrs) || []
+        const src = (srcMatch[1] || '').replace(/"/g, '&quot;')
+        const alt = (altMatch[1] || '').replace(/"/g, '&quot;')
+        const rest = attrs
+          .replace(/\s*(src|alt)=["'][^"']*["']/gi, '')
+          .trim()
+        // FigureImage 컴포넌트의 구조와 유사하게 통일 (4:3 / md:16:9, 캡션 표시)
+        return (
+          `\n<figure class="my-6">\n`
+          + `  <div class="mx-auto max-w-full aspect-[4/3] md:aspect-[16/9] rounded-2xl border border-white/10 bg-white/[0.03] grid">\n`
+          + `    <div class="p-px w-full h-full grid place-items-center">\n`
+          + `      <img src="${src}" alt="${alt}" ${rest ? rest + ' ' : ''}loading="lazy" class="block max-w-full max-h-full w-auto h-auto object-contain object-center select-none rounded-[inherit]" />\n`
+          + `    </div>\n`
+          + `  </div>\n`
+          + (alt ? `  <figcaption class="mt-2 text-center text-xs text-white/60">${alt}</figcaption>\n` : '')
+          + `</figure>\n`
+        )
+      })
+    } catch {
+      return html
+    }
+  }
+
+  // TipTap에서 Shift+Enter로 들어오는 연속 <br>을 가독성 있는 공백 블록으로 치환
+  function normalizeLineBreaks(html: string) {
+    try {
+      // <br>가 2번 이상 연속되면 가독성 간격 블록으로 변환
+      return html.replace(/(?:<br\s*\/?>\s*){2,}/gi, '<div class="br-gap" aria-hidden="true"></div>')
+    } catch {
+      return html
+    }
+  }
+
   const onDelete = async () => {
     if (!id) return
     if (!confirm('정말 삭제할까요? 되돌릴 수 없습니다.')) return
@@ -398,11 +437,17 @@ export default function PostDetail() {
           )}
         >
           {post.content?.startsWith('<') ? (
-            <div className="prose max-w-none" style={{ color: editorTextColor }} dangerouslySetInnerHTML={{ __html: post.content }} />
+            <div
+              className="prose max-w-none"
+              style={{ color: editorTextColor }}
+              dangerouslySetInnerHTML={{ __html: normalizeLineBreaks(wrapImagesInHtml(post.content)) }}
+            />
           ) : (
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
-              {post.content}
-            </ReactMarkdown>
+            <div className="prose max-w-none" style={{ color: editorTextColor }}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                {post.content}
+              </ReactMarkdown>
+            </div>
           )}
         </div>
       </article>

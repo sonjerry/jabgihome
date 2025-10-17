@@ -422,7 +422,7 @@ export default function Editor(){
 
           {/* 인라인 스타일 도구 (에디터가 준비된 경우에만 표시) */}
           {editorReady && !editorError && (
-            <div className="flex flex-wrap items-center gap-2 mb-3 relative z-10 pointer-events-auto sticky top-20" role="toolbar" aria-label="인라인 스타일 도구">
+            <div className="flex flex-wrap items-center gap-2 mb-3 relative z-10 pointer-events-auto sticky top-0 md:top-20" role="toolbar" aria-label="인라인 스타일 도구">
               <div className="flex items-center gap-2 glass rounded-xl px-2 py-1">
                 <span className="text-xs opacity-80">크기</span>
                 {[14,16,18,20,22,24,28,32].map(s => (
@@ -455,7 +455,7 @@ export default function Editor(){
 
           {/* TipTap 툴바 (에디터가 준비된 경우에만 표시) */}
           {editorReady && !editorError && (
-            <div className="flex flex-wrap items-center gap-2 mb-3 glass rounded-xl p-2 relative z-10 pointer-events-auto sticky top-36" role="toolbar" aria-label="서식 도구">
+            <div className="flex flex-wrap items-center gap-2 mb-3 glass rounded-xl p-2 relative z-10 pointer-events-auto sticky top-0 md:top-36" role="toolbar" aria-label="서식 도구" style={{ position: 'sticky' as any, top: 0 }}>
               {(() => {
                 const ed = editorRef.current
                 if (!ed) return null
@@ -489,23 +489,7 @@ export default function Editor(){
 
           {/* 마크다운 도움말 제거됨 */}
 
-          {/* 에디터 가독성 향상: 구분선/인용 스타일 강화 */}
-          <style>{`
-            .editor-content hr {
-              border: 0;
-              height: 3px;
-              background: rgba(255, 255, 255, 0.7);
-              margin: 1.25rem 0;
-            }
-            .editor-content blockquote {
-              border-left: 5px solid rgba(255, 255, 255, 0.7);
-              background: rgba(255, 255, 255, 0.08);
-              color: rgba(255, 255, 255, 0.92);
-              padding: 0.75rem 1rem;
-              margin: 1rem 0;
-            }
-            .editor-content blockquote p { margin: 0; }
-          `}</style>
+          {/* 구분선/인용 스타일은 전역 .prose 규칙으로 통일 */}
 
           <div className="rounded-xl overflow-hidden bg-white/5 border border-white/10">
             {!tipTapLoaded ? (
