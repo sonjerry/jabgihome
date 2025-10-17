@@ -56,7 +56,6 @@ export default function Blog() {
 
   // 모바일 바텀시트
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [sheetTab, setSheetTab] = useState<'calendar' | 'categories'>('calendar')
 
   // 하이브리드 로딩: 정적 파일 우선, API 백업
   useEffect(() => {
@@ -363,10 +362,11 @@ export default function Blog() {
           <>
             <button
               onClick={() => setSheetOpen(true)}
-              className="sm:hidden fixed bottom-4 right-4 z-50 rounded-full px-4 py-3 bg-white/10 backdrop-blur-xl border border-white/20 shadow-glass"
+              className="sm:hidden fixed bottom-2 left-1/2 -translate-x-1/2 z-50 rounded-full px-4 py-2 bg-white/10 backdrop-blur-xl border border-white/20 shadow-glass flex items-center gap-2"
               aria-label="필터 열기"
             >
-              필터
+              <span className="text-sm">⌃</span>
+              <span className="text-sm">필터</span>
             </button>
 
             <AnimatePresence>
@@ -397,61 +397,46 @@ export default function Blog() {
                         </div>
                       </div>
 
-                      {/* 탭 */}
-                      <div className="mb-3 grid grid-cols-2 gap-2">
-                        {(['calendar','categories'] as const).map(t => (
-                          <button
-                            key={t}
-                            onClick={() => setSheetTab(t)}
-                            className={['py-2 rounded-xl border text-sm',
-                              sheetTab === t ? 'bg-white/20 border-white/30' : 'bg-white/10 border-white/10 hover:bg-white/20'
-                            ].join(' ')}
-                          >
-                            {t === 'calendar' ? '달력' : '카테고리'}
-                          </button>
-                        ))}
-                      </div>
 
                       <div className="max-h-[70vh] overflow-y-auto pr-1">
-                        {sheetTab === 'calendar' && (
-                          <div className="p-1">
-                            <Calendar
-                              selectRange={false}
-                              value={null}
-                              onClickDay={(value: Date) => {
-                                const s = value.toISOString().split('T')[0]
-                                setActiveDate(activeDate === s ? null : s)
-                              }}
-                              tileClassName={({ date, view }: { date: Date; view: string }) => {
-                                if (view !== 'month') return undefined
-                                const s = date.toISOString().split('T')[0]
-                                const has = datesWithPosts.has(s)
-                                const isSel = activeDate === s
-                                return [(has ? 'cal-has-post' : 'cal-no-post'), (isSel ? 'cal-selected' : '')].join(' ')
-                              }}
-                              prev2Label={null}
-                              next2Label={null}
-                            />
-                          </div>
-                        )}
-                        {sheetTab === 'categories' && (
-                          <div className="p-1 flex flex-wrap gap-2">
-                            {categories.map(c => {
-                              const active = c === activeCat
-                              return (
-                                <button
-                                  key={c}
-                                  onClick={() => setActiveCat(c)}
-                                  className={['text-[12px] px-3 py-1.5 rounded-full border',
-                                    active ? 'bg-white/20 border-white/30' : 'bg-white/10 border-white/10 hover:bg-white/20'
-                                  ].join(' ')}
-                                >
-                                  {c}
-                                </button>
-                              )
-                            })}
-                          </div>
-                        )}
+                        {/* 모바일용 컴팩트 달력 */}
+                        <div className="p-1">
+                          <Calendar
+                            selectRange={false}
+                            value={null}
+                            onClickDay={(value: Date) => {
+                              const s = value.toISOString().split('T')[0]
+                              setActiveDate(activeDate === s ? null : s)
+                            }}
+                            tileClassName={({ date, view }: { date: Date; view: string }) => {
+                              if (view !== 'month') return undefined
+                              const s = date.toISOString().split('T')[0]
+                              const has = datesWithPosts.has(s)
+                              const isSel = activeDate === s
+                              return [(has ? 'cal-has-post' : 'cal-no-post'), (isSel ? 'cal-selected' : '')].join(' ')
+                            }}
+                            prev2Label={null}
+                            next2Label={null}
+                          />
+                        </div>
+
+                        {/* 카테고리 필터 */}
+                        <div className="p-1 flex flex-wrap gap-2">
+                          {categories.map(c => {
+                            const active = c === activeCat
+                            return (
+                              <button
+                                key={c}
+                                onClick={() => setActiveCat(c)}
+                                className={['text-[12px] px-3 py-1.5 rounded-full border',
+                                  active ? 'bg-white/20 border-white/30' : 'bg-white/10 border-white/10 hover:bg-white/20'
+                                ].join(' ')}
+                              >
+                                {c}
+                              </button>
+                            )
+                          })}
+                        </div>
                       </div>
                     </div>
                   </motion.div>
