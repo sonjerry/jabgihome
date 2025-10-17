@@ -39,7 +39,7 @@ function FigureImage(props: React.ImgHTMLAttributes<HTMLImageElement>) {
           fig-responsive
         "
       >
-        <div className="p-px w-full h-full grid place-items-center">
+        <div className="p-px w-full h-full grid place-items-center fig-inner">
           <img
             {...rest}
             alt={alt}
@@ -146,8 +146,8 @@ export default function PostDetail() {
         // FigureImage 컴포넌트의 구조와 유사하게 통일 (4:3 / md:16:9, 캡션 표시)
         return (
           `\n<figure class="my-6">\n`
-          + `  <div class="mx-auto max-w-full aspect-[4/3] md:aspect-[16/9] rounded-2xl border border-white/10 bg-white/[0.03] grid fig-responsive">\n`
-          + `    <div class="p-px w-full h-full grid place-items-center">\n`
+          + `  <div class=\"mx-auto max-w-full aspect-[4/3] md:aspect-[16/9] rounded-2xl border border-white/10 bg-white/[0.03] grid fig-responsive\">\n`
+          + `    <div class=\"p-px w-full h-full grid place-items-center fig-inner\">\n`
           + `      <img src="${src}" alt="${alt}" ${rest ? rest + ' ' : ''}loading="lazy" class="block max-w-full max-h-full w-auto h-auto object-contain object-center select-none rounded-[inherit]" />\n`
           + `    </div>\n`
           + `  </div>\n`

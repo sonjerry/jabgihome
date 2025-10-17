@@ -71,6 +71,7 @@
   /* 텍스트가 이미지 위로 포개지는 현상 방지: 모바일에서 단락을 강제로 이미지 아래로 흐르게 */
   .prose p, .post-content p { clear: both !important; }
   .fig-responsive { display: block !important; position: relative !important; z-index: 0 !important; }
+  .fig-inner { min-height: clamp(160px, 56vw, 340px); }
 }
 
 /* Safari 구버전 등 aspect-ratio 미지원 대비: figure 높이 붕괴 방지 */
@@ -208,6 +209,19 @@ body {
 /* Typography 튜닝 */
 .prose { max-width: none; }
 .prose :where(img) { margin: 1rem auto; border-radius: 0.75rem; }
+.fig-inner {
+  min-height: clamp(180px, 56vw, 420px);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, rgba(0,0,0,0.03) 25%, rgba(0,0,0,0.06) 37%, rgba(0,0,0,0.03) 63%);
+  background-size: 400% 100%;
+  animation: figShimmer 1.6s ease-in-out infinite;
+}
+.fig-inner > img { position: relative; z-index: 1; }
+@keyframes figShimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
 .prose :where(h1) { @apply mt-8 mb-4 text-3xl md:text-4xl font-bold; }
 .prose :where(h2) { @apply mt-7 mb-3 text-2xl md:text-3xl font-semibold; }
 .prose :where(h3) { @apply mt-6 mb-2 text-xl md:text-2xl font-semibold; }
