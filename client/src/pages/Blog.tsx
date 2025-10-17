@@ -46,6 +46,32 @@ function isProjectTag(t?: string): t is ProjectTag {
   return (PROJECT_TAGS as readonly string[]).includes(t.toLowerCase())
 }
 
+// 콘텐츠(HTML/마크다운 혼재)를 카드 미리보기용 평문으로 정제
+function toPlainText(input: string) {
+  try {
+    // 우선 마크다운 일부를 간단 치환 (링크 텍스트 유지)
+    let s = (input || '')
+      .replace(/!\[[^\]]*\]\([^)]+\)/g, '') // 이미지 마크다운 제거
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // 링크는 텍스트만 남김
+
+    // HTML → 텍스트 디코드 및 태그 제거
+    const div = document.createElement('div')
+    div.innerHTML = s
+    s = (div.textContent || div.innerText || '')
+
+    // 공백 정리
+    s = s.replace(/\s+/g, ' ').trim()
+    return s
+  } catch {
+    return (input || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+  }
+}
+
+function makeExcerpt(content: string, maxLen = 180) {
+  const plain = toPlainText(content)
+  return plain.length > maxLen ? plain.slice(0, maxLen) : plain
+}
+
 /* ───────────── 페이지 ───────────── */
 export default function Blog() {
   
@@ -273,10 +299,9 @@ export default function Blog() {
                 )}
                 {visible.map((p) => {
                   const cover = pickCover(p)
-                  const excerpt = p.content
-                    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
-                    .replace(/[#*`>\-]/g, '')
-                    .slice(0, 180)
+                  const plain = toPlainText(p.content)
+                  const excerpt = plain.slice(0, 180)
+                  const isTrimmed = plain.length > 180
 
                   return (
                     <li key={p.id} className="relative pl-0 md:pl-8">
@@ -307,7 +332,7 @@ export default function Blog() {
                               </header>
                               <p className="text-[12px] md:text-sm text-cream/70 mt-1">{formatDateYMD(p.createdAt)}</p>
                               <p className="text-sm md:text-base text-cream/85 leading-relaxed mt-2 line-clamp-2 md:line-clamp-3">
-                                {excerpt}{p.content.length > 180 ? '…' : ''}
+                                {excerpt}{isTrimmed ? '…' : ''}
                               </p>
                             </div>
                           </div>
