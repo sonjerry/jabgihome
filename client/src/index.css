@@ -66,10 +66,8 @@
     height: auto !important;
     object-fit: contain !important;
   }
-  .post-content figure {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
+  .post-content figure, .prose figure { margin-left: 0 !important; margin-right: 0 !important; }
+  .fig-responsive { width: 100% !important; min-width: 0 !important; }
 }
 
 .post-content figure {

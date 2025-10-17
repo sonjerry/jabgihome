@@ -397,7 +397,7 @@ export default function Editor(){
 
       <div className="grid grid-cols-1 gap-4">
         {/* 에디터 */}
-        <div className="glass rounded-2xl p-3">
+        <div className="glass rounded-2xl p-3" style={{ overflow: 'visible' }}>
           <input
             className="w-full bg-transparent text-xl md:text-2xl font-semibold mb-3 outline-none"
             placeholder="제목" value={title} onChange={e=>setTitle(e.target.value)}
