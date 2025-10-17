@@ -115,7 +115,8 @@ export default function Editor(){
         const StarterKitExt = StarterKit?.default ?? StarterKit
         const TextStyleExt = TextStyle?.default ?? TextStyle?.TextStyle ?? TextStyle
         const ColorExt = (Color?.default ?? Color?.Color ?? Color)?.configure?.({ types: ['textStyle'] })
-        const LinkExt = (Link?.default ?? Link)?.configure?.({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer' } })
+        // Link 확장은 중복 경고 회피를 위해 제외 (StarterKit 조합/환경에 따라 중복 경고 발생)
+        const LinkExt = null
         const ImageExt = (Image?.default ?? Image)?.configure?.({ inline: false, allowBase64: true })
         const TextAlignExt = (TextAlign?.default ?? TextAlign)?.configure?.({ types: ['heading','paragraph'] })
 
@@ -236,7 +237,7 @@ export default function Editor(){
   const applyInlineSize = (px: number) => {
     try {
       if (!editorRef.current) return
-      editorRef.current.chain().focus().setMark('textStyle', { fontSize: `${px}px` }).run()
+      editorRef.current.chain().focus().updateAttributes('textStyle', { fontSize: `${px}px` }).run()
     } catch {}
   }
   const applyInlineColor = (color: string) => {
@@ -355,7 +356,7 @@ export default function Editor(){
                 <input type="color" onChange={(e)=>applyInlineColor(e.target.value)} className="w-6 h-6 rounded border border-white/10" />
                 <>
                   <button type="button" onClick={() => editorRef.current?.chain().focus().unsetColor().run()} className="text-xs px-2 py-1 rounded hover:bg-white/10">색상 해제</button>
-                  <button type="button" onClick={() => editorRef.current?.chain().focus().setMark('textStyle', { fontSize: null }).run()} className="text-xs px-2 py-1 rounded hover:bg-white/10">크기 해제</button>
+                  <button type="button" onClick={() => editorRef.current?.chain().focus().updateAttributes('textStyle', { fontSize: null }).run()} className="text-xs px-2 py-1 rounded hover:bg-white/10">크기 해제</button>
                 </>
               </div>
             </div>
@@ -475,12 +476,27 @@ export default function Editor(){
               (() => {
                 const EC = tipTapModules?.EditorContent
                 if (!EC) return null
+                const handleSurfaceClick = (e: React.MouseEvent<HTMLDivElement>) => {
+                  const target = e.target as HTMLElement
+                  const isInsideProse = !!target.closest('.ProseMirror')
+                  if (!isInsideProse && editorRef.current) {
+                    e.preventDefault()
+                    editorRef.current.chain().focus().run()
+                  }
+                }
                 return (
-                  <EC
-                    editor={editorInstance}
-                    className="prose max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2 relative z-0"
-                    style={{ fontFamily: 'Gulim, 굴림, sans-serif', color: styleTextColor }}
-                  />
+                  <div
+                    className="relative z-0 min-h-[52vh] md:min-h-[60vh] px-3 py-2 cursor-text"
+                    onMouseDown={handleSurfaceClick}
+                    role="textbox"
+                    aria-label="본문 입력 영역"
+                  >
+                    <EC
+                      editor={editorInstance}
+                      className="prose max-w-none"
+                      style={{ fontFamily: 'Gulim, 굴림, sans-serif', color: styleTextColor }}
+                    />
+                  </div>
                 )
               })()
             ) : null}
