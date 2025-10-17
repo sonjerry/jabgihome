@@ -327,7 +327,7 @@ export default function Editor(){
 
           {/* 인라인 스타일 도구 (에디터가 준비된 경우에만 표시) */}
           {editorReady && !editorError && (
-            <div className="flex flex-wrap items-center gap-2 mb-3">
+            <div className="flex flex-wrap items-center gap-2 mb-3 relative z-10 pointer-events-auto sticky top-20" role="toolbar" aria-label="인라인 스타일 도구">
               <div className="flex items-center gap-2 glass rounded-xl px-2 py-1">
                 <span className="text-xs opacity-80">크기</span>
                 {[14,16,18,20,22,24,28,32].map(s => (
@@ -351,7 +351,7 @@ export default function Editor(){
 
           {/* TipTap 툴바 (에디터가 준비된 경우에만 표시) */}
           {editorReady && !editorError && (
-            <div className="flex flex-wrap items-center gap-2 mb-3 glass rounded-xl p-2">
+            <div className="flex flex-wrap items-center gap-2 mb-3 glass rounded-xl p-2 relative z-10 pointer-events-auto sticky top-36" role="toolbar" aria-label="서식 도구">
               {(() => {
                 const ed = editorRef.current
                 if (!ed) return null
@@ -480,7 +480,7 @@ export default function Editor(){
                   return (
                     <EC
                       editor={editorInstance}
-                      className="prose max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2"
+                      className="prose max-w-none min-h-[52vh] md:min-h-[60vh] px-3 py-2 relative z-0"
                       style={{ fontFamily: 'Gulim, 굴림, sans-serif', color: styleTextColor }}
                     />
                   )
