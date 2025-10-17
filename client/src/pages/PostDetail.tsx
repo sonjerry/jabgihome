@@ -85,8 +85,12 @@ export default function PostDetail() {
             
             // 2. 백그라운드에서 API로 최신 데이터 확인
             try {
-              const apiPost = await getPost(id)
-              setPost(apiPost)
+              const API_BASE = import.meta.env.VITE_API_URL || ''
+              const health = await fetch(`${API_BASE}/api/health`, { credentials: 'omit' }).catch(() => null)
+              if (health && health.ok) {
+                const apiPost = await getPost(id)
+                setPost(apiPost)
+              }
             } catch (apiError) {
               console.warn('API fallback failed, using static data:', apiError)
             }

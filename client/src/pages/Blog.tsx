@@ -102,15 +102,18 @@ export default function Blog() {
           }
           setPosts(staticData)
           
-          // 2. 백그라운드에서 API로 최신 데이터 확인
+          // 2. 백그라운드에서 API로 최신 데이터 확인 (API가 접근 가능할 때만)
           try {
-            const apiData = await listPosts()
-            // 데이터가 다르면 API 데이터로 업데이트 (관리자 수정 반영)
-            if (JSON.stringify(staticData) !== JSON.stringify(apiData)) {
-              setPosts(apiData)
+            const API_BASE = import.meta.env.VITE_API_URL || ''
+            const health = await fetch(`${API_BASE}/api/health`, { credentials: 'omit' }).catch(() => null)
+            if (health && health.ok) {
+              const apiData = await listPosts()
+              if (JSON.stringify(staticData) !== JSON.stringify(apiData)) {
+                setPosts(apiData)
+              }
             }
           } catch (apiError) {
-            console.warn('API fallback failed, using static data:', apiError)
+            // 무시: 정적 데이터 유지
           }
           return
         }
