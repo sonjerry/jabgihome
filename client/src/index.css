@@ -34,6 +34,24 @@
   height: auto;
 }
 
+/* 모바일에서 이미지/텍스트 겹침 방지: 강제 블록/클리어 및 폭 제한 */
+@media (max-width: 640px) {
+  .post-content img,
+  .prose img {
+    display: block !important;
+    float: none !important;
+    clear: both !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+  }
+  .post-content figure {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
 .post-content figure {
   margin-top: 1.25rem; /* mt-5 정도 */
   margin-bottom: 1.25rem; /* mb-5 정도 */
