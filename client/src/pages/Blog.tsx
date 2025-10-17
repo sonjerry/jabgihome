@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
-import AutoStickers from '../components/StickerPeel'
 import type { Post, Attachment } from '../types'
 import { listPosts } from '../lib/api'
 import { useAuth } from '../state/auth'
@@ -184,7 +183,6 @@ export default function Blog() {
   return (
     <main className="relative min-h-screen overflow-x-hidden">
       <section className="absolute inset-x-0 bottom-0 top-6 px-3 md:px-8 lg:px-12 z-0 overflow-y-auto">
-        <AutoStickers />
         {/* 헤더 */}
         <GlassCard className="mb-6 md:mb-8">
           <div className="flex items-center justify-between px-2 py-2">
