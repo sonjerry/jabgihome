@@ -1,14 +1,16 @@
 // client/src/pages/Blog.tsx
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
 import type { Post, Attachment } from '../types'
 import { listPosts } from '../lib/api'
 import { useAuth } from '../state/auth'
 import { AnimatePresence, motion } from 'framer-motion'
-import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import '../styles/calendar.css'
+
+// Lazy-load heavy calendar component to speed up initial load
+const CalendarLazy = lazy(() => import('react-calendar'))
 
 /* ───────────── 상수(프로젝트 태그/이름 매핑) ───────────── */
 const PROJECT_TAGS = ['p1', 'p2', 'p3'] as const
@@ -46,6 +48,7 @@ function isProjectTag(t?: string): t is ProjectTag {
 
 /* ───────────── 페이지 ───────────── */
 export default function Blog() {
+  
   const { role, loading } = useAuth()
   const [posts, setPosts] = useState<Post[]>([])
   const location = useLocation()
@@ -62,7 +65,7 @@ export default function Blog() {
     const loadPosts = async () => {
       try {
         // 1. 정적 파일 먼저 시도 (빠른 로딩)
-        const staticResponse = await fetch('/data/posts.json', { cache: 'no-store' })
+        const staticResponse = await fetch('/data/posts.json', { cache: 'force-cache' })
         if (staticResponse.ok) {
           const staticData = await staticResponse.json()
           setPosts(staticData)
@@ -161,6 +164,21 @@ export default function Blog() {
 
   const clearFilters = () => { setActiveCat('전체'); setActiveDate(null) }
 
+  // 스켈레톤 표시 조건: 아직 posts가 비었고 최초 로딩중인 상태로 간주
+  const isInitialLoading = posts.length === 0
+
+  // 커버 이미지 프리패치: posts가 로드되면 상단 n개의 커버 이미지를 사전 요청
+  useEffect(() => {
+    if (!posts || posts.length === 0) return
+    const top = posts.slice(0, 8)
+    top.forEach(p => {
+      const url = pickCover(p)
+      if (!url) return
+      const img = new Image()
+      img.src = url
+    })
+  }, [posts])
+
   // 바텀시트 열렸을 때 바디 스크롤 잠금 + ESC 닫기
   useEffect(() => {
     if (!sheetOpen) return
@@ -228,6 +246,25 @@ export default function Blog() {
                 <div className="hidden md:block absolute left-3 top-0 bottom-0 w-px bg-white/10 pointer-events-none" />
               )}
               <ul className="space-y-4 md:space-y-5">
+                {isInitialLoading && (
+                  Array.from({ length: 8 }).map((_, i) => (
+                    <li key={`skeleton-${i}`} className="relative pl-0 md:pl-8">
+                      <article className="rounded-2xl bg-white/5 border border-white/10 shadow-glass overflow-hidden">
+                        <div className="grid grid-cols-[88px,1fr] md:grid-cols-[128px,1fr] gap-3 md:gap-4 p-3 md:p-4 items-center">
+                          <div className="w-[88px] h-[88px] md:w-[128px] md:h-[128px] rounded-xl overflow-hidden bg-white/10 animate-pulse" />
+                          <div className="min-w-0">
+                            <div className="h-4 md:h-5 w-2/3 bg-white/10 rounded animate-pulse" />
+                            <div className="mt-2 h-3 w-1/3 bg-white/10 rounded animate-pulse" />
+                            <div className="mt-3 space-y-2">
+                              <div className="h-3 bg-white/10 rounded animate-pulse" />
+                              <div className="h-3 w-5/6 bg-white/10 rounded animate-pulse" />
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    </li>
+                  ))
+                )}
                 {visible.map((p) => {
                   const cover = pickCover(p)
                   const excerpt = p.content
@@ -315,7 +352,7 @@ export default function Blog() {
                   )
                 })}
               </ul>
-              {visible.length === 0 && (<p className="text-cream/70">최초 로딩중...</p>)}
+              {visible.length === 0 && !isInitialLoading && (<p className="text-cream/70">게시물이 없습니다.</p>)}
             </div>
           </div>
 
@@ -325,7 +362,8 @@ export default function Blog() {
               <div className="lg:sticky lg:top-20">
                 <GlassCard>
                   <h3 className="text-lg md:text-xl font-semibold mb-3">달력</h3>
-                  <Calendar
+                  <Suspense fallback={<div className="text-sm text-cream/70">달력 로딩중…</div>}>
+                  <CalendarLazy
                     selectRange={false}
                     value={null}
                     onClickDay={(value: Date) => {
@@ -342,6 +380,7 @@ export default function Blog() {
                     prev2Label={null}
                     next2Label={null}
                   />
+                  </Suspense>
                   <div className="mt-3 flex items-center gap-4 text-xs text-cream/80">
                     <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded cal-dot has" /> 글 있음</span>
                     <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded cal-dot none" /> 없음</span>
@@ -362,7 +401,7 @@ export default function Blog() {
           <>
             <button
               onClick={() => setSheetOpen(true)}
-              className="sm:hidden fixed left-1/2 -translate-x-1/2 z-50 px-3 py-1 rounded-t-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-glass"
+              className="md:hidden fixed left-1/2 -translate-x-1/2 z-50 px-3 py-1 rounded-t-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-glass"
               style={{ bottom: 'max(env(safe-area-inset-bottom, 16px), 16px)' }}
               aria-label="필터 열기"
             >
@@ -401,7 +440,8 @@ export default function Blog() {
                       <div className="max-h-[70vh] overflow-y-auto pr-1">
                         {/* 모바일용 컴팩트 달력 */}
                         <div className="p-1">
-                          <Calendar
+                          <Suspense fallback={<div className="text-xs text-cream/70 px-1 pb-2">달력 로딩중…</div>}>
+                          <CalendarLazy
                             selectRange={false}
                             value={null}
                             onClickDay={(value: Date) => {
@@ -418,6 +458,7 @@ export default function Blog() {
                             prev2Label={null}
                             next2Label={null}
                           />
+                          </Suspense>
                         </div>
 
                         {/* 카테고리 필터 */}

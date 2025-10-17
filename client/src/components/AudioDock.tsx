@@ -92,26 +92,9 @@ export default function AudioDock() {
   const a = useAudio()
   const hasList = a.playlist.length > 0
   const progress = a.duration ? a.currentTime / a.duration : 0
-  const [nudgeVisible, setNudgeVisible] = useState<boolean>(true)
   const playBtnRef = useRef<HTMLButtonElement | null>(null)
-  const [nudgePos, setNudgePos] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
-  const nudgeRef = useRef<HTMLDivElement | null>(null)
 
-  // 최초 1회만 노출: 로컬스토리지 체크
-  useEffect(() => {
-    try {
-      const dismissed = localStorage.getItem('audioNudgeDismissed') === '1'
-      if (dismissed) setNudgeVisible(false)
-    } catch {}
-  }, [])
-
-  // 재생이 시작되면 넛지 숨김
-  useEffect(() => {
-    if (a.playing) {
-      setNudgeVisible(false)
-      try { localStorage.setItem('audioNudgeDismissed', '1') } catch {}
-    }
-  }, [a.playing])
+  // 넛지 관련 기능 제거됨
 
   // 최초 마운트 시 플레이리스트 주입 (자동재생 없음)
   useEffect(() => {
@@ -146,70 +129,15 @@ export default function AudioDock() {
     } else {
       a.toggle()
     }
-    setNudgeVisible(false)
-    try { localStorage.setItem('audioNudgeDismissed', '1') } catch {}
   }, [a, hasList])
 
-  // 데스크톱 넛지 포지션 업데이트 (버튼을 가리키도록)
-  useEffect(() => {
-    if (!nudgeVisible) return
-    const update = () => {
-      const btn = playBtnRef.current
-      if (!btn) return
-      const r = btn.getBoundingClientRect()
-      const bw = nudgeRef.current?.offsetWidth || 300
-      const bh = nudgeRef.current?.offsetHeight || 56
-      const left = Math.max(8, r.left + r.width / 2 - bw / 2)
-      const top = Math.max(8, r.top - bh - 12) // 버튼 위 약간 띄움
-      setNudgePos({ left, top })
-    }
-    update()
-    window.addEventListener('resize', update)
-    window.addEventListener('scroll', update, { passive: true })
-    const id = setInterval(update, 500) // 폰트/레이아웃 변동 대비
-    return () => {
-      window.removeEventListener('resize', update)
-      window.removeEventListener('scroll', update)
-      clearInterval(id)
-    }
-  }, [nudgeVisible])
-
-  const renderDesktopNudge = () => {
-    if (!nudgeVisible) return null
-    if (typeof window !== 'undefined' && window.innerWidth < 640) return null // 모바일은 별도 UI 사용
-    return createPortal(
-      <div className="fixed z-[200]" style={{ left: nudgePos.left, top: nudgePos.top }}>
-        <div
-          ref={nudgeRef}
-          className="relative pointer-events-auto rounded-2xl border border-black/10 bg-white/95 backdrop-blur-xl px-5 py-3 text-[15px] font-extrabold text-gray-900 shadow-[0_12px_40px_rgba(0,0,0,0.25)]"
-          role="note"
-          onClick={() => { setNudgeVisible(false); try { localStorage.setItem('audioNudgeDismissed', '1') } catch {} }}
-          style={{ animation: 'nudgePop 900ms ease-in-out infinite alternate, nudgeFloat 2.2s ease-in-out infinite, nudgeGlow 2.4s ease-in-out infinite' }}
-        >
-          클릭!!
-          {/* 화살표 (버튼을 가리킴) */}
-          <div className="absolute left-1/2 -bottom-1.5 w-4 h-4 rotate-45 bg-white/95 border-b border-r border-black/10" />
-        </div>
-      </div>,
-      document.body
-    )
-  }
+  // 넛지 UI 제거됨
 
   // (원복) 별도 음소거 토글/자동 해제 로직 없이 기본 볼륨 변경만 수행
 
   return (
     <div className="w-full">
-      {nudgeVisible && (
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
-            @keyframes nudgePop { 0% { transform: scale(0.96); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
-            @keyframes nudgeFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
-            @keyframes nudgeGlow { 0%,100% { box-shadow: 0 8px 30px rgba(255,255,255,0.25); } 50% { box-shadow: 0 8px 40px rgba(255,255,255,0.4); } }
-          `,
-          }}
-        />
-      )}
+      {/* 넛지 스타일 제거됨 */}
       <div
         className={clsx(
           'backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-md',
@@ -217,7 +145,6 @@ export default function AudioDock() {
           'w-full min-h-[17rem] h-auto box-border overflow-visible flex flex-col'
         )}
       >
-        {renderDesktopNudge()}
         {/* 제목 */}
         <div className="min-w-0">
           <h3 className="text-cream/90 text-base font-semibold break-words font-jp-title">
@@ -298,18 +225,7 @@ export default function AudioDock() {
           />
         </div>
       </div>
-      {/* 모바일 넛지: 왼쪽 가장자리 아래 고정 표시 (사이드바 영역 힌트) */}
-      {nudgeVisible && (
-        <div className="sm:hidden fixed left-3 bottom-24 z-[200]">
-          <div
-            className="pointer-events-auto rounded-2xl border border-black/10 bg-white/95 backdrop-blur-xl text-gray-900 px-5 py-3 shadow-[0_12px_40px_rgba(0,0,0,0.25)]"
-            style={{ animation: 'hintSlideUp 0.5s ease-out, nudgeFloat 2.2s ease-in-out infinite, nudgeGlow 2.4s ease-in-out infinite' }}
-            onClick={() => { setNudgeVisible(false); try { localStorage.setItem('audioNudgeDismissed', '1') } catch {} }}
-          >
-            <div className="text-[15px] font-extrabold" style={{ animation: 'nudgePop 900ms ease-in-out infinite alternate' }}>클릭!!</div>
-          </div>
-        </div>
-      )}
+      {/* 모바일 넛지 제거됨 */}
     </div>
   )
 }
