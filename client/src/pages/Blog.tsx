@@ -65,9 +65,15 @@ export default function Blog() {
     const loadPosts = async () => {
       try {
         // 1. 정적 파일 먼저 시도 (빠른 로딩)
-        const staticResponse = await fetch('/data/posts.json', { cache: 'force-cache' })
+        const staticResponse = await fetch('/data/posts.json', { cache: 'no-store' })
         if (staticResponse.ok) {
           const staticData = await staticResponse.json()
+          // 빈 정적 데이터면 즉시 API 폴백
+          if (Array.isArray(staticData) && staticData.length === 0) {
+            const apiData = await listPosts()
+            setPosts(apiData)
+            return
+          }
           setPosts(staticData)
           
           // 2. 백그라운드에서 API로 최신 데이터 확인
