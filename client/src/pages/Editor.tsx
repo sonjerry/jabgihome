@@ -420,10 +420,10 @@ export default function Editor(){
             </div>
           </div>
 
-          {/* 인라인 스타일 도구 (에디터가 준비된 경우에만 표시) */}
+          {/* 툴바(인라인/서식) 고정: 하나의 sticky 래퍼로 통일 */}
           {editorReady && !editorError && (
-            <div className="flex flex-wrap items-center gap-2 mb-3 relative z-10 pointer-events-auto sticky top-0 md:top-20" role="toolbar" aria-label="인라인 스타일 도구">
-              <div className="flex items-center gap-2 glass rounded-xl px-2 py-1">
+            <div className="sticky top-2 md:top-16 z-20 space-y-2 pointer-events-auto">
+              <div className="flex flex-wrap items-center gap-2 glass rounded-xl px-2 py-1" role="toolbar" aria-label="인라인 스타일 도구">
                 <span className="text-xs opacity-80">크기</span>
                 {[14,16,18,20,22,24,28,32].map(s => (
                   <button
@@ -450,13 +450,8 @@ export default function Editor(){
                   <button type="button" onClick={() => editorRef.current?.chain().focus().setMark('textStyle', { fontSize: null }).run()} className="text-xs px-2 py-1 rounded hover:bg-white/10">크기 해제</button>
                 </>
               </div>
-            </div>
-          )}
-
-          {/* TipTap 툴바 (에디터가 준비된 경우에만 표시) */}
-          {editorReady && !editorError && (
-            <div className="flex flex-wrap items-center gap-2 mb-3 glass rounded-xl p-2 relative z-10 pointer-events-auto sticky top-0 md:top-36" role="toolbar" aria-label="서식 도구" style={{ position: 'sticky' as any, top: 0 }}>
-              {(() => {
+              <div className="flex flex-wrap items-center gap-2 glass rounded-xl p-2" role="toolbar" aria-label="서식 도구">
+                {(() => {
                 const ed = editorRef.current
                 if (!ed) return null
                 const btn = (label: string, on: () => void, active = false) => (
@@ -483,7 +478,8 @@ export default function Editor(){
                     {btn('↷', () => ed?.chain().focus().redo().run())}
                   </>
                 )
-              })()}
+                })()}
+              </div>
             </div>
           )}
 

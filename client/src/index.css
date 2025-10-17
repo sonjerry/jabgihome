@@ -52,7 +52,7 @@
 .prose blockquote p { margin: 0; }
 
 /* TipTap 연속 줄바꿈(Shift+Enter 두 번) 가독 간격 */
-.br-gap { height: 0.75rem; }
+.br-gap { height: 0.4rem; }
 
 /* 모바일에서 이미지/텍스트 겹침 방지: 강제 블록/클리어 및 폭 제한 */
 @media (max-width: 640px) {
