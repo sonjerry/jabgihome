@@ -64,6 +64,7 @@ export default function Editor(){
       try {
         const [
           { EditorContent, Editor },
+          Core,
           StarterKit,
           TextStyle,
           Color,
@@ -72,6 +73,7 @@ export default function Editor(){
           TextAlign
         ] = await Promise.all([
           import('@tiptap/react'),
+          import('@tiptap/core'),
           import('@tiptap/starter-kit'),
           import('@tiptap/extension-text-style'),
           import('@tiptap/extension-color'),
@@ -85,6 +87,7 @@ export default function Editor(){
         setTipTapModules({
           EditorContent,
           Editor,
+          Core,
           StarterKit,
           TextStyle,
           Color,
@@ -109,7 +112,7 @@ export default function Editor(){
     const createEditor = () => {
       try {
         
-        const { Editor, StarterKit, TextStyle, Color, Link, Image, TextAlign } = tipTapModules
+        const { Editor, Core, StarterKit, TextStyle, Color, Link, Image, TextAlign } = tipTapModules
 
         // 동적 임포트 호환: default / named 모두 처리
         const StarterKitExt = StarterKit?.default ?? StarterKit
@@ -120,10 +123,44 @@ export default function Editor(){
         const ImageExt = (Image?.default ?? Image)?.configure?.({ inline: false, allowBase64: true })
         const TextAlignExt = (TextAlign?.default ?? TextAlign)?.configure?.({ types: ['heading','paragraph'] })
 
+        // FontSize 확장 (전역 속성 + 커맨드)
+        const Extension = Core?.Extension ?? Core?.default?.Extension ?? null
+        const FontSizeExt = Extension ? Extension.create({
+          name: 'fontSize',
+          addGlobalAttributes() {
+            return [
+              {
+                types: ['textStyle'],
+                attributes: {
+                  fontSize: {
+                    default: null,
+                    parseHTML: (element: HTMLElement) => element.style?.fontSize || null,
+                    renderHTML: (attributes: { fontSize?: string | null }) => {
+                      if (!attributes?.fontSize) return {}
+                      return { style: `font-size: ${attributes.fontSize}` }
+                    },
+                  },
+                },
+              },
+            ]
+          },
+          addCommands() {
+            return {
+              setFontSize:
+                (fontSize: string) => ({ chain }: any) =>
+                  chain().setMark('textStyle', { fontSize }).run(),
+              unsetFontSize:
+                () => ({ chain }: any) =>
+                  chain().setMark('textStyle', { fontSize: null }).run(),
+            }
+          },
+        }) : null
+
         const extensions = [
           StarterKitExt,
           TextStyleExt,
           ColorExt,
+          FontSizeExt,
           LinkExt,
           ImageExt,
           TextAlignExt,
@@ -255,7 +292,8 @@ export default function Editor(){
         const att = await uploadFile(f)
         uploaded.push(att)
         if ((att.type || '').startsWith('image/')) {
-          const alt = att.name || 'image'
+          const defaultAlt = att.name || 'image'
+          const alt = prompt('이미지 설명(alt)을 입력하세요:', defaultAlt) ?? defaultAlt
           if (editorRef.current) {
             editorRef.current.chain().focus().setImage({ src: att.url, alt }).run()
           } else {
