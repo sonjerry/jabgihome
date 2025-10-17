@@ -321,7 +321,7 @@ export default function Blog() {
 
           {/* 달력 (진행 모드에서는 숨김) */}
           {!inProgressMode && (
-            <aside className="lg:col-span-1">
+            <aside className="hidden lg:block lg:col-span-1">
               <div className="lg:sticky lg:top-20">
                 <GlassCard>
                   <h3 className="text-lg md:text-xl font-semibold mb-3">달력</h3>
@@ -362,11 +362,11 @@ export default function Blog() {
           <>
             <button
               onClick={() => setSheetOpen(true)}
-              className="sm:hidden fixed bottom-2 left-1/2 -translate-x-1/2 z-50 rounded-full px-4 py-2 bg-white/10 backdrop-blur-xl border border-white/20 shadow-glass flex items-center gap-2"
+              className="sm:hidden fixed left-1/2 -translate-x-1/2 z-50 px-3 py-1 rounded-t-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-glass"
+              style={{ bottom: 'max(env(safe-area-inset-bottom, 16px), 16px)' }}
               aria-label="필터 열기"
             >
-              <span className="text-sm">⌃</span>
-              <span className="text-sm">필터</span>
+              <span className="block text-base leading-none">^</span>
             </button>
 
             <AnimatePresence>
