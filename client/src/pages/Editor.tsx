@@ -409,19 +409,19 @@ export default function Editor(){
               <div className="flex items-center gap-2 glass rounded-xl px-2 py-1">
                 <span className="text-xs opacity-80">크기</span>
                 {[14,16,18,20,22,24,28,32].map(s => (
-                  <button key={s} type="button" onClick={() => applyInlineSize(s)} className="text-xs px-2 py-1 rounded hover:bg-white/10">{s}</button>
+                  <button key={s} type="button" onClick={() => applyInlineSize(s)} className="text-xs px-2 py-1 rounded border border-white/10 transition-colors hover:bg-black/5">{s}</button>
                 ))}
               </div>
               <div className="flex items-center gap-2 glass rounded-xl px-2 py-1">
                 <span className="text-xs opacity-80">색상</span>
                 {['#111827','#ef4444','#10b981','#3b82f6','#f59e0b','#a855f7'].map(c => (
                   <button key={c} type="button" onClick={() => applyInlineColor(c)}
-                          className="w-5 h-5 rounded-full border border-white/20" style={{ background: c }} />
+                          className="w-5 h-5 rounded-full border border-white/20 ring-0 focus:ring-2 focus:ring-black/20" style={{ background: c }} />
                 ))}
-                <input type="color" onChange={(e)=>applyInlineColor(e.target.value)} className="w-6 h-6 rounded border border-white/10" />
+                <input type="color" onChange={(e)=>applyInlineColor(e.target.value)} className="w-6 h-6 rounded border border-white/10 focus:ring-2 focus:ring-black/20" />
                 <>
                   <button type="button" onClick={() => editorRef.current?.chain().focus().unsetColor().run()} className="text-xs px-2 py-1 rounded hover:bg-white/10">색상 해제</button>
-                  <button type="button" onClick={() => editorRef.current?.chain().focus().updateAttributes('textStyle', { fontSize: null }).run()} className="text-xs px-2 py-1 rounded hover:bg-white/10">크기 해제</button>
+                  <button type="button" onClick={() => editorRef.current?.chain().focus().setMark('textStyle', { fontSize: null }).run()} className="text-xs px-2 py-1 rounded hover:bg-white/10">크기 해제</button>
                 </>
               </div>
             </div>
@@ -434,7 +434,7 @@ export default function Editor(){
                 const ed = editorRef.current
                 if (!ed) return null
                 const btn = (label: string, on: () => void, active = false) => (
-                  <button type="button" onClick={on} className={["px-2 py-1 rounded text-xs border border-white/10", active?"bg-white/20":"hover:bg-white/10"].join(' ')}>{label}</button>
+                  <button type="button" onClick={on} className={["px-2 py-1 rounded text-xs border border-white/10 transition-colors", active?"bg-black/10":"hover:bg-black/5"].join(' ')}>{label}</button>
                 )
                 return (
                   <>
@@ -461,41 +461,7 @@ export default function Editor(){
             </div>
           )}
 
-          {/* 마크다운 도움말 (아코디언) */}
-          <div className="mb-3">
-            <button
-              type="button"
-              onClick={() => setHelpOpen(v=>!v)}
-              className="w-full flex items-center justify-between rounded-xl px-3 py-2 bg-white/10 hover:bg-white/15 border border-white/15"
-              aria-expanded={helpOpen}
-            >
-              <span className="text-sm font-semibold">마크다운 도움말</span>
-              <span aria-hidden>{helpOpen ? '▴' : '▾'}</span>
-            </button>
-            {helpOpen && (
-              <div className="mt-2 glass rounded-xl p-3 text-sm leading-relaxed">
-                <ul className="list-disc pl-5 space-y-1">
-                  <li><code># 제목</code>, <code>## 부제목</code>, <code>### 소제목</code></li>
-                  <li><code>**굵게**</code>, <code>*기울임*</code>, <code>~~취소선~~</code></li>
-                  <li>링크: <code>[텍스트](https://example.com)</code></li>
-                  <li>이미지: <code>![alt](https://.../image.png)</code></li>
-                  <li>코드 블럭:
-                    <pre className="bg-white/5 border border-white/10 rounded-md p-2 mt-1"><code>{"```ts\nconst x = 1\n```"}</code></pre>
-                  </li>
-                  <li>목록: <code>- 항목</code> 또는 <code>1. 항목</code></li>
-                  <li>인용: <code>&gt; 인용문</code></li>
-                </ul>
-                <div className="mt-3">
-                  <div className="font-semibold mb-1">추가 스타일 토큰</div>
-                  <p className="opacity-80">HTML 없이 안전하게 크기/색상 적용:</p>
-                  <ul className="list-disc pl-5 space-y-1 mt-1">
-                    <li>크기: <code>{"{{size:24|이 문장은 24px}}"}</code></li>
-                    <li>색상: <code>{"{{color:#ef4444|빨간 텍스트}}"}</code></li>
-                  </ul>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* 마크다운 도움말 제거됨 */}
 
           <div className="rounded-xl overflow-hidden bg-white/5 border border-white/10">
             {!tipTapLoaded ? (
@@ -550,8 +516,8 @@ export default function Editor(){
                   }
                 }
                 return (
-                  <div
-                    className="relative z-0 min-h-[52vh] md:min-h-[60vh] px-3 py-2 cursor-text"
+              <div
+                className="relative z-0 min-h-[52vh] md:min-h-[60vh] px-3 py-2 cursor-text editor-content"
                     onMouseDown={handleSurfaceClick}
                     role="textbox"
                     aria-label="본문 입력 영역"
