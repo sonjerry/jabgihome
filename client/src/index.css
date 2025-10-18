@@ -34,6 +34,15 @@
   height: auto;
 }
 
+/* 에디터 내 이미지 크기 조절 */
+.editor-content img, .prose img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
 /* 공통 타이포 간격: HTML(프로즈) 렌더링 시 문단/인용/구분선 가독성 강화 */
 .prose p { margin: 1rem 0; line-height: 1.85; }
 .prose hr {

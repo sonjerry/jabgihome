@@ -146,11 +146,21 @@ export default function Tierlist() {
   const refreshTitle = useCallback(async (key: string) => {
     try {
       const t = await AnimeTitleAPI.get(key)
-      if (t) setSavedTitle(t.title)
-      else setSavedTitle(null)
+      if (t && t.title) {
+        setSavedTitle(t.title)
+        setEditedTitle(t.title)
+      } else {
+        // 데이터베이스에 제목이 없으면 파일명에서 기본 제목 생성
+        const defaultTitle = key.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ').trim()
+        setSavedTitle(defaultTitle || '제목 없음')
+        setEditedTitle(defaultTitle || '')
+      }
     } catch (error) {
       console.warn('Failed to load title:', error)
-      setSavedTitle(null)
+      // 에러 시에도 파일명에서 기본 제목 생성
+      const defaultTitle = key.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ').trim()
+      setSavedTitle(defaultTitle || '제목 없음')
+      setEditedTitle(defaultTitle || '')
     }
   }, [])
 
@@ -315,7 +325,7 @@ export default function Tierlist() {
                       </button>
                       <button
                         onClick={() => {
-                          setEditedTitle(savedTitle || current.title)
+                          setEditedTitle(savedTitle || current?.title || '')
                           setEditingTitle(false)
                         }}
                         className="px-3 py-1 bg-gray-500/80 hover:bg-gray-500 text-white text-sm rounded transition-colors"
@@ -327,7 +337,9 @@ export default function Tierlist() {
                 ) : (
                   <div className="flex items-start justify-between">
                     <div>
-                      <h2 className="text-xl font-bold text-white mb-2">{editedTitle}</h2>
+                      <h2 className="text-xl font-bold text-white mb-2">
+                        {editedTitle || savedTitle || current?.title || '제목 없음'}
+                      </h2>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-white/60">티어:</span>
                         <span className={`px-2 py-1 rounded text-sm font-semibold ${
