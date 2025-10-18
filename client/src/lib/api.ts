@@ -96,6 +96,9 @@ export async function updatePost(p: Post): Promise<{ ok: boolean; id: string }> 
   if (!p.id) throw new Error('id required')
   return apiPut<{ ok: boolean; id: string }>(`/posts/${p.id}`, p)
 }
+export async function deletePost(id: string): Promise<{ ok: boolean }> {
+  return apiDelete<{ ok: boolean }>(`/posts/${id}`)
+}
 export async function uploadFile(file: File): Promise<Attachment> {
   const fd = new FormData()
   fd.append('file', file)

@@ -3,7 +3,7 @@ import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import GlassCard from '../components/GlassCard'
 import type { Post, Attachment } from '../types'
-import { listPosts } from '../lib/api'
+import { listPosts, deletePost } from '../lib/api'
 import { useAuth } from '../state/auth'
 import { AnimatePresence, motion } from 'framer-motion'
 import 'react-calendar/dist/Calendar.css'
@@ -77,6 +77,7 @@ export default function Blog() {
   
   const { role, loading } = useAuth()
   const [posts, setPosts] = useState<Post[]>([])
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
   const location = useLocation()
 
   // 필터 상태
@@ -329,22 +330,26 @@ export default function Blog() {
                               onClick={async (e) => {
                                 e.stopPropagation()
                                 if (!confirm('정말 삭제할까요? 되돌릴 수 없습니다.')) return
+                                
+                                setDeletingIds(prev => new Set(prev).add(p.id))
                                 try {
-                                  const API_BASE = import.meta.env.VITE_API_URL || ''
-                                  const res = await fetch(`${API_BASE}/api/posts/${p.id}`, {
-                                    method: 'DELETE',
-                                    credentials: 'include',
-                                  })
-                                  if (!res.ok) throw new Error(await res.text().catch(() => 'delete failed'))
-                                  // 페이지 새로고침으로 목록 업데이트
-                                  window.location.reload()
+                                  await deletePost(p.id)
+                                  // 로컬 상태에서 즉시 제거하여 UI 업데이트
+                                  setPosts(prev => prev.filter(post => post.id !== p.id))
                                 } catch (err) {
-                                  console.error(err)
-                                  alert('삭제에 실패했습니다.')
+                                  console.error('Delete failed:', err)
+                                  alert('삭제에 실패했습니다. 페이지를 새로고침해주세요.')
+                                } finally {
+                                  setDeletingIds(prev => {
+                                    const newSet = new Set(prev)
+                                    newSet.delete(p.id)
+                                    return newSet
+                                  })
                                 }
                               }}
-                              className="p-1.5 rounded-lg bg-white/10 hover:bg-red-500/20 text-red-400 transition-colors"
-                              title="삭제"
+                              disabled={deletingIds.has(p.id)}
+                              className="p-1.5 rounded-lg bg-white/10 hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={deletingIds.has(p.id) ? "삭제 중..." : "삭제"}
                             >
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>

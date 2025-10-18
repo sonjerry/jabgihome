@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import React from 'react'
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import type { Post } from '../types'
-import { getPost } from '../lib/api'
+import { getPost, deletePost } from '../lib/api'
 import CommentSection from '../components/CommentSection'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -151,15 +151,10 @@ export default function PostDetail() {
     if (!confirm('정말 삭제할까요? 되돌릴 수 없습니다.')) return
     try {
       setDeleting(true)
-      const API_BASE = import.meta.env.VITE_API_URL || ''
-      const res = await fetch(`${API_BASE}/api/posts/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      })
-      if (!res.ok) throw new Error(await res.text().catch(() => 'delete failed'))
+      await deletePost(id)
       nav('/blog')
     } catch (e) {
-      console.error(e)
+      console.error('Delete failed:', e)
       alert('삭제에 실패했습니다.')
     } finally {
       setDeleting(false)

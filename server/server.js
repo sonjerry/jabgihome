@@ -398,17 +398,76 @@ app.put('/api/posts/:id', requireAdmin, async (req, res) => {
   }
 })
 
+// 파일 삭제 헬퍼 함수
+async function deleteAttachmentFile(attachment) {
+  try {
+    if (!attachment?.id) return false
+    
+    // Supabase Storage에서 파일 삭제
+    const { error } = await supabase.storage
+      .from(SUPABASE_BUCKET)
+      .remove([attachment.id])
+    
+    if (error) {
+      console.warn(`Failed to delete file ${attachment.id}:`, error.message)
+      return false
+    }
+    
+    console.log(`✅ File deleted: ${attachment.id}`)
+    return true
+  } catch (e) {
+    console.warn(`Error deleting file ${attachment.id}:`, e.message)
+    return false
+  }
+}
+
 /** 삭제 */
 app.delete('/api/posts/:id', requireAdmin, async (req, res) => {
   try {
     const id = req.params.id
+    
+    // 1. 포스트 정보를 먼저 가져와서 첨부 파일 목록 확인
+    const { data: postData, error: fetchError } = await supabase
+      .from('posts')
+      .select('data')
+      .eq('id', id)
+      .single()
+    
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      return res.status(500).json({ error: fetchError.message })
+    }
+    
+    // 2. 첨부 파일들 삭제
+    if (postData?.data?.attachments) {
+      const attachments = postData.data.attachments
+      console.log(`🗑️ Deleting ${attachments.length} attachments for post ${id}`)
+      
+      // 병렬로 모든 첨부 파일 삭제
+      const deletePromises = attachments.map(attachment => deleteAttachmentFile(attachment))
+      const results = await Promise.allSettled(deletePromises)
+      
+      const successCount = results.filter(r => r.status === 'fulfilled' && r.value).length
+      console.log(`✅ Deleted ${successCount}/${attachments.length} attachments`)
+    }
+    
+    // 3. 관련 댓글들 삭제
+    const { error: commentsError } = await supabase
+      .from('comments')
+      .delete()
+      .eq('post_id', id)
+    
+    if (commentsError) {
+      console.warn('Failed to delete comments for post:', commentsError.message)
+    }
+    
+    // 4. 포스트 삭제
     const { error } = await supabase.from('posts').delete().eq('id', id)
     if (error) return res.status(500).json({ error: error.message })
-    // 캐시 무효화
+    
+    // 5. 캐시 무효화
     clearCache(['posts:index', `posts:item:${id}`])
     
-    // 정적 데이터 재생성 (백그라운드)
-    
+    console.log(`✅ Post deleted: ${id}`)
     res.json({ ok: true })
   } catch (e) {
     console.error('delete post error', e)
