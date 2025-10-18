@@ -31,23 +31,12 @@ export default function Tierlist() {
   const { role } = useAuth()
   const [tierlistData, setTierlistData] = useState<TierlistData>({ items: [] })
 
-  // 하이브리드 로딩: 라이브 API 우선, 정적 파일 백업
+  // API에서 직접 데이터 로딩
   useEffect(() => {
     const loadTierlistData = async () => {
       try {
-        // 1) 서버 라이브 데이터 우선
-        try {
-          const live = await TierlistAPI.get()
-          if (live?.items) setTierlistData(live)
-        } catch {}
-        // 2) 정적 파일 폴백
-        try {
-          const staticResponse = await fetch('/data/tierlist.json', { cache: 'no-store' })
-          if (staticResponse.ok) {
-            const staticData = await staticResponse.json()
-            if (!tierlistData.items.length) setTierlistData(staticData)
-          }
-        } catch {}
+        const live = await TierlistAPI.get()
+        if (live?.items) setTierlistData(live)
       } catch (error) {
         console.error('Failed to load tierlist data:', error)
         setTierlistData({ items: [] })
@@ -61,18 +50,7 @@ export default function Tierlist() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('/data/posters.json', { cache: 'no-store' })
-        if (res.ok) {
-          const ct = (res.headers.get('content-type') || '').toLowerCase()
-          if (ct.includes('application/json')) {
-            const data = await res.json()
-            const items = (data?.items || []) as Array<{ tier: Tier; title: string; filename: string; url: string }>
-            // 키 순으로 정렬(안정적 표시)
-            setPosters(items.sort((a,b) => a.filename.localeCompare(b.filename, undefined, { numeric: true })) as Poster[])
-            if ((items?.length || 0) > 0) return
-          }
-        }
-        // 폴백: 개발/초기 환경에서 매니페스트가 없을 때 import.meta.glob 사용
+        // import.meta.glob을 사용하여 티어 포스터 이미지들을 직접 로드
         const modules = import.meta.glob('../assets/tier/**/*.{png,jpg,jpeg,webp,avif,gif}', {
           eager: true,
           query: '?url',
@@ -95,29 +73,8 @@ export default function Tierlist() {
         list.sort((a,b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }))
         setPosters(list)
       } catch (e) {
-        console.warn('failed to load posters manifest', e)
-        // 동일 폴백 로직
-        const modules = import.meta.glob('../assets/tier/**/*.{png,jpg,jpeg,webp,avif,gif}', {
-          eager: true,
-          query: '?url',
-          import: 'default',
-        }) as Record<string, string>
-        const list: Poster[] = Object.entries(modules)
-          .map(([p, url]) => {
-            const i = p.indexOf('/tier/')
-            if (i === -1) return null
-            const rest = p.slice(i + '/tier/'.length)
-            const [tier, name] = rest.split('/')
-            if (!tier || !name) return null
-            const t = tier as Tier
-            if (!['S','A','B','C','D','F'].includes(t)) return null
-            const title = decodeURIComponent(name.replace(/\.[^/.]+$/, '')).replace(/[_-]+/g, ' ').trim()
-            const filename = decodeURIComponent(name)
-            return { tier: t, title, filename, url }
-          })
-          .filter(Boolean) as Poster[]
-        list.sort((a,b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }))
-        setPosters(list)
+        console.warn('failed to load tier posters', e)
+        setPosters([])
       }
     }
     load()
@@ -163,10 +120,6 @@ export default function Tierlist() {
   const current = currentList[idx]
   const currentKey = current ? current.filename : ''
 
-  // 정적 데이터에서 현재 아이템 정보 가져오기
-  const currentItemData = useMemo(() => {
-    return tierlistData.items.find(item => item.key === currentKey)
-  }, [tierlistData.items, currentKey])
 
   // ── admin comment (admin only) ─────────────────────────────
   const [commentText, setCommentText] = useState('')
@@ -186,15 +139,9 @@ export default function Tierlist() {
       else setSavedComment(null)
     } catch (error) {
       console.warn('Failed to load comment:', error)
-      // 정적 데이터에서 폴백
-      const item = tierlistData.items.find(item => item.key === key)
-      if (item?.review) {
-        setSavedComment({ rating: 0, text: item.review, updatedAt: new Date().toISOString() })
-      } else {
-        setSavedComment(null)
-      }
+      setSavedComment(null)
     }
-  }, [tierlistData.items])
+  }, [])
 
   const refreshTitle = useCallback(async (key: string) => {
     try {
@@ -203,11 +150,9 @@ export default function Tierlist() {
       else setSavedTitle(null)
     } catch (error) {
       console.warn('Failed to load title:', error)
-      // 정적 데이터에서 폴백
-      const item = tierlistData.items.find(item => item.key === key)
-      setSavedTitle(item?.title || null)
+      setSavedTitle(null)
     }
-  }, [tierlistData.items])
+  }, [])
 
   const refreshComments = useCallback(async (key: string) => {
     try {
@@ -215,52 +160,22 @@ export default function Tierlist() {
       setComments(list.map(c => ({ id: c.id, nickname: c.nickname, content: c.content, createdAt: c.createdAt })))
     } catch (error) {
       console.warn('Failed to load comments:', error)
-      // 정적 데이터에서 폴백
-      const item = tierlistData.items.find(item => item.key === key)
-      setComments(item?.comments || [])
+      setComments([])
     }
-  }, [tierlistData.items])
+  }, [])
 
   useEffect(() => {
     if (!open || !currentKey) return
     const storageKey = currentKey
 
-    // 1) 단일 스레드 정적 데이터 우선 로드 → 즉시 표시
-    ThreadAPI.getThread(storageKey)
-      .then(data => {
-        if (!data) return
-        setEditedTitle(data.title || '')
-        setSavedTitle(data.title || '')
-        if (data.review) {
-          setSavedComment({ rating: 0, text: data.review, updatedAt: new Date().toISOString() })
-        } else {
-          setSavedComment(null)
-        }
-        setComments(data.comments || [])
-      })
-      .catch(() => {
-        // 폴백: 기존 정적 tierlistData로 즉시 채우기
-        if (currentItemData) {
-          setEditedTitle(currentItemData.title)
-          setSavedTitle(currentItemData.title)
-          if (currentItemData.review) {
-            setSavedComment({ rating: 0, text: currentItemData.review, updatedAt: new Date().toISOString() })
-          } else {
-            setSavedComment(null)
-          }
-          setComments(currentItemData.comments || [])
-        }
-      })
-      .finally(() => {
-        // 2) 라이브 데이터 백그라운드 새로고침
-        refreshComment(storageKey)
-        refreshComments(storageKey)
-        refreshTitle(storageKey)
-        setCommentText('')
-        setDraft('')
-        setEditingTitle(false)
-      })
-  }, [open, currentKey, currentItemData, refreshComment, refreshComments, refreshTitle])
+    // API에서 직접 데이터 로딩
+    refreshComment(storageKey)
+    refreshComments(storageKey)
+    refreshTitle(storageKey)
+    setCommentText('')
+    setDraft('')
+    setEditingTitle(false)
+  }, [open, currentKey, refreshComment, refreshComments, refreshTitle])
 
   const handleSaveComment = useCallback(async () => {
     if (role !== 'admin' || !commentText.trim()) return

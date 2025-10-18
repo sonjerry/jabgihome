@@ -86,39 +86,10 @@ export default function Blog() {
   // 모바일 바텀시트
   const [sheetOpen, setSheetOpen] = useState(false)
 
-  // 하이브리드 로딩: 정적 파일 우선, API 백업
+  // API에서 직접 데이터 로딩
   useEffect(() => {
     const loadPosts = async () => {
       try {
-        // 1. 정적 파일 먼저 시도 (빠른 로딩)
-        const staticResponse = await fetch('/data/posts.json', { cache: 'no-store' })
-        if (staticResponse.ok) {
-          const staticData = await staticResponse.json()
-          // 빈 정적 데이터면 즉시 API 폴백
-          if (Array.isArray(staticData) && staticData.length === 0) {
-            const apiData = await listPosts()
-            setPosts(apiData)
-            return
-          }
-          setPosts(staticData)
-          
-          // 2. 백그라운드에서 API로 최신 데이터 확인 (API가 접근 가능할 때만)
-          try {
-            const API_BASE = import.meta.env.VITE_API_URL || ''
-            const health = await fetch(`${API_BASE}/api/health`, { credentials: 'omit' }).catch(() => null)
-            if (health && health.ok) {
-              const apiData = await listPosts()
-              if (JSON.stringify(staticData) !== JSON.stringify(apiData)) {
-                setPosts(apiData)
-              }
-            }
-          } catch (apiError) {
-            // 무시: 정적 데이터 유지
-          }
-          return
-        }
-        
-        // 3. 정적 파일 실패 시 API 사용
         const apiData = await listPosts()
         setPosts(apiData)
       } catch (error) {

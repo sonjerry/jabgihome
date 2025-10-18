@@ -361,7 +361,6 @@ app.post('/api/posts', requireAdmin, async (req, res) => {
     clearCache(['posts:index', `posts:item:${post.id}`])
     
     // 정적 데이터 재생성 (백그라운드)
-    regenerateStaticData().catch(console.error)
     
     res.json({ ok: true, id: data.id })
   } catch (e) {
@@ -391,7 +390,6 @@ app.put('/api/posts/:id', requireAdmin, async (req, res) => {
     clearCache(['posts:index', `posts:item:${id}`])
     
     // 정적 데이터 재생성 (백그라운드)
-    regenerateStaticData().catch(console.error)
     
     res.json({ ok: true, id: data.id })
   } catch (e) {
@@ -410,7 +408,6 @@ app.delete('/api/posts/:id', requireAdmin, async (req, res) => {
     clearCache(['posts:index', `posts:item:${id}`])
     
     // 정적 데이터 재생성 (백그라운드)
-    regenerateStaticData().catch(console.error)
     
     res.json({ ok: true })
   } catch (e) {
@@ -592,10 +589,8 @@ app.post('/api/threads/:key/comments', async (req, res) => {
     if (error) return res.status(500).json({ error: error.message })
     
     // 해당 thread_key의 개별 파일 재생성
-    regenerateThreadFile(key).catch(console.error)
     // 티어리스트 관련 키인 경우 전체 정적 데이터도 재생성 (백그라운드)
     if (key.includes('.png') || key.includes('.jpg') || key.includes('.jpeg') || key.includes('.webp')) {
-      regenerateStaticData().catch(console.error)
     }
     
     res.json({ id })
@@ -673,11 +668,9 @@ app.put('/api/threads-comments/:cid', async (req, res) => {
     
     // 해당 thread_key의 개별 파일 재생성
     if (commentData?.thread_key) {
-      regenerateThreadFile(commentData.thread_key).catch(console.error)
     }
   // 티어리스트 관련 키인 경우 전체 정적 데이터도 재생성 (백그라운드)
   if (commentData?.thread_key && (commentData.thread_key.includes('.png') || commentData.thread_key.includes('.jpg') || commentData.thread_key.includes('.jpeg') || commentData.thread_key.includes('.webp'))) {
-    regenerateStaticData().catch(console.error)
   }
     
     res.json({ ok: true })
@@ -731,11 +724,9 @@ app.delete('/api/threads-comments/:cid', async (req, res) => {
     
     // 해당 thread_key의 개별 파일 재생성
     if (commentData?.thread_key) {
-      regenerateThreadFile(commentData.thread_key).catch(console.error)
     }
   // 티어리스트 관련 키인 경우 전체 정적 데이터도 재생성 (백그라운드)
   if (commentData?.thread_key && (commentData.thread_key.includes('.png') || commentData.thread_key.includes('.jpg') || commentData.thread_key.includes('.jpeg') || commentData.thread_key.includes('.webp'))) {
-    regenerateStaticData().catch(console.error)
   }
     
     res.json({ ok: true })
@@ -783,12 +774,10 @@ app.put('/api/reviews/:key', requireAdmin, async (req, res) => {
     if (error) return res.status(500).json({ ok: false, msg: error.message })
     
     // 해당 thread_key의 개별 파일 재생성
-    regenerateThreadFile(key).catch(console.error)
     
     // 티어리스트 관련 키인 경우 전체 정적 데이터도 재생성 (백그라운드)
     // thread_key가 파일명 형태인지 확인 (예: .png, .jpg 등 이미지 확장자)
     if (key.includes('.png') || key.includes('.jpg') || key.includes('.jpeg') || key.includes('.webp')) {
-      regenerateStaticData().catch(console.error)
     }
     
     res.json({ ok: true })
@@ -805,12 +794,10 @@ app.delete('/api/reviews/:key', requireAdmin, async (req, res) => {
     if (error) return res.status(500).json({ ok: false })
     
     // 해당 thread_key의 개별 파일 재생성
-    regenerateThreadFile(key).catch(console.error)
     
     // 티어리스트 관련 키인 경우 전체 정적 데이터도 재생성 (백그라운드)
     // thread_key가 파일명 형태인지 확인 (예: .png, .jpg 등 이미지 확장자)
     if (key.includes('.png') || key.includes('.jpg') || key.includes('.jpeg') || key.includes('.webp')) {
-      regenerateStaticData().catch(console.error)
     }
     
     res.json({ ok: true })
@@ -854,12 +841,10 @@ app.put('/api/anime-titles/:key', requireAdmin, async (req, res) => {
     if (error) return res.status(500).json({ ok: false, msg: error.message })
     
     // 해당 thread_key의 개별 파일 재생성
-    regenerateThreadFile(key).catch(console.error)
     
     // 티어리스트 관련 키인 경우 전체 정적 데이터도 재생성 (백그라운드)
     // thread_key가 파일명 형태인지 확인 (예: .png, .jpg 등 이미지 확장자)
     if (key.includes('.png') || key.includes('.jpg') || key.includes('.jpeg') || key.includes('.webp')) {
-      regenerateStaticData().catch(console.error)
     }
     
     res.json({ ok: true })
@@ -876,12 +861,10 @@ app.delete('/api/anime-titles/:key', requireAdmin, async (req, res) => {
     if (error) return res.status(500).json({ ok: false })
     
     // 해당 thread_key의 개별 파일 재생성
-    regenerateThreadFile(key).catch(console.error)
     
     // 티어리스트 관련 키인 경우 전체 정적 데이터도 재생성 (백그라운드)
     // thread_key가 파일명 형태인지 확인 (예: .png, .jpg 등 이미지 확장자)
     if (key.includes('.png') || key.includes('.jpg') || key.includes('.jpeg') || key.includes('.webp')) {
-      regenerateStaticData().catch(console.error)
     }
     
     res.json({ ok: true })
@@ -916,79 +899,8 @@ if (PREWARM_INTERVAL_MS > 0) {
   }, PREWARM_INTERVAL_MS).unref?.()
 }
 
-/* ───────────────────── 정적 데이터 생성 ───────────────────── */
-import { generatePostsData, generateTierlistData, generateIndividualThreadFiles, generatePostersManifest } from './generate-static-data.js'
 
-// 관리자 수정 시 정적 파일 자동 생성
-async function regenerateStaticData() {
-  try {
-    console.log('🔄 정적 데이터 재생성 중...')
-    await Promise.all([
-      generatePostsData(),
-      generateTierlistData(),
-      generateIndividualThreadFiles(),
-      generatePostersManifest()
-    ])
-    console.log('✅ 정적 데이터 재생성 완료')
-  } catch (error) {
-    console.error('❌ 정적 데이터 재생성 실패:', error)
-  }
-}
 
-// 특정 thread_key의 파일만 재생성
-async function regenerateThreadFile(threadKey) {
-  try {
-    console.log(`🔄 ${threadKey} 파일 재생성 중...`)
-    
-    // 해당 thread_key의 모든 데이터 가져오기
-    const [titleResult, reviewList, commentsResult] = await Promise.all([
-      supabase.from('anime_titles').select('*').eq('thread_key', threadKey).limit(1),
-      supabase.from('threads_reviews').select('*').eq('thread_key', threadKey).limit(1),
-      supabase.from('threads_comments').select('*').eq('thread_key', threadKey)
-    ])
-    
-    const threadData = {
-      key: threadKey,
-      title: (Array.isArray(titleResult.data) ? titleResult.data[0]?.title : titleResult.data?.title) || '',
-      tier: 'F',
-      review: '',
-      comments: []
-    }
-    
-    // 리뷰 데이터 처리
-    const reviewRow = Array.isArray(reviewList.data) ? reviewList.data[0] : reviewList.data
-    if (reviewRow) {
-      threadData.review = reviewRow.text || ''
-      const tierMap = ['S', 'A', 'B', 'C', 'D', 'F']
-      threadData.tier = tierMap[reviewRow.rating] || 'F'
-    }
-    
-    // 댓글 데이터 처리
-    if (commentsResult.data) {
-      threadData.comments = commentsResult.data.map(comment => ({
-        id: comment.id,
-        nickname: comment.nickname,
-        content: comment.content,
-        createdAt: comment.created_at
-      }))
-    }
-    
-    // 파일 저장
-    const serverDir = path.dirname(new URL(import.meta.url).pathname)
-    const repoRoot = path.resolve(serverDir, '..')
-    const threadsDir = path.join(repoRoot, 'client', 'public', 'threads')
-    await fs.mkdir(threadsDir, { recursive: true })
-    
-    const safeFileName = threadKey.replace(/[^a-zA-Z0-9._-]/g, '_') + '.json'
-    const filePath = path.join(threadsDir, safeFileName)
-    
-    await fs.writeFile(filePath, JSON.stringify(threadData, null, 2))
-    console.log(`✅ ${threadKey} 파일 재생성 완료: ${filePath}`)
-    
-  } catch (error) {
-    console.error(`❌ ${threadKey} 파일 재생성 실패:`, error)
-  }
-}
 
 // 라이브 티어리스트 API: DB에서 직접 병합하여 반환
 app.get('/api/tierlist', async (_req, res) => {
@@ -1099,7 +1011,6 @@ app.get('/api/threads/:key', async (req, res) => {
     }
     
     // 백그라운드에서 정적 파일 생성
-    regenerateThreadFile(key).catch(console.error)
     
     res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
     res.json(threadData)
@@ -1279,5 +1190,4 @@ try {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API on http://0.0.0.0:${PORT}`)
   // 서버 시작 시 한 번 정적 데이터 생성 시도 (백그라운드)
-  regenerateStaticData().catch(err => console.error('initial regenerate failed', err))
 })
